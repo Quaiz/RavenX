@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="gridline.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="index.html" />
+    <link rel="manifest" href="manifest.json" />
+
+    <title>Gridline — Real-Time Geopolitical Intelligence Dashboard</title>
+    <meta name="description" content="Real-time geopolitical intelligence dashboard. Live conflict tracking, GPS jamming, commodity markets, AI analyst, and 30+ OSINT data layers." />
+    <meta name="keywords" content="geopolitical intelligence, OSINT, conflict tracking, geopolitical risk, real-time conflict map, GPS jamming map, satellite fire tracking, commodity markets, AI intelligence analyst, open source intelligence, threat monitoring, geopolitical dashboard, SIGINT, GEOINT, military activity tracker, global threat map, armed conflict tracker" />
+    <meta name="author" content="Gridline" />
+
+    <!-- Open Graph (Facebook, LinkedIn, Discord, iMessage, etc.) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://gridline.world/" />
+    <meta property="og:title" content="Gridline — Real-Time Geopolitical Intelligence Dashboard" />
+    <meta property="og:description" content="Real-time geopolitical intelligence dashboard. Live conflict tracking, GPS jamming, commodity markets, AI analyst, and 30+ OSINT data layers." />
+    <meta property="og:image" content="https://gridline.world/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:site_name" content="Gridline" />
+    <meta property="og:locale" content="en_US" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Gridline — Real-Time Geopolitical Intelligence" />
+    <meta name="twitter:description" content="Real-time geopolitical intelligence dashboard. Live conflict tracking, GPS jamming, commodity markets, AI analyst, and 30+ OSINT data layers." />
+    <meta name="twitter:image" content="https://gridline.world/og-image.png" />
+
+    <!-- Theme & PWA -->
+    <meta name="theme-color" content="#0a0a0a" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Gridline" />
+    <link rel="apple-touch-icon" href="gridline-logo.png" />
+
+    <!-- Preconnects (max 4 for performance) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://a.basemaps.cartocdn.com" crossorigin />
+    <link rel="preconnect" href="https://clerk.gridline.world" />
+    <link rel="dns-prefetch" href="https://b.basemaps.cartocdn.com" />
+    <link rel="dns-prefetch" href="https://c.basemaps.cartocdn.com" />
+    <link rel="dns-prefetch" href="https://d.basemaps.cartocdn.com" />
+    <!-- Non-render-blocking font load -->
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'" />
+    <noscript><link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" /></noscript>
+
+    <!-- Structured Data: Organization -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Gridline",
+      "url": "https://gridline.world",
+      "logo": "https://gridline.world/gridline-logo.png",
+      "description": "Real-time geopolitical intelligence dashboard for analysts, researchers, and newsrooms.",
+      "foundingDate": "2025",
+      "sameAs": [
+        "https://github.com/Dissident3/Gridline"
+      ]
+    }
+    </script>
+
+    <!-- Structured Data: WebSite + Sitelinks Search Box -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Gridline",
+      "url": "https://gridline.world",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://gridline.world/country/{search_term_string}",
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
+
+    <!-- Structured Data: WebApplication -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Gridline",
+      "url": "https://gridline.world",
+      "description": "Real-time geopolitical intelligence dashboard with live conflict tracking, satellite fires, GPS jamming, commodity markets, AI analyst, and 30+ OSINT data layers.",
+      "applicationCategory": "SecurityApplication",
+      "operatingSystem": "Web",
+      "browserRequirements": "Requires JavaScript. Works in Chrome, Firefox, Safari, Edge.",
+      "offers": [
+        {
+          "@type": "Offer",
+          "name": "Free",
+          "price": "0",
+          "priceCurrency": "USD",
+          "description": "17 modules and 20+ map layers including conflict tracking, market data, and weather alerts."
+        },
+        {
+          "@type": "Offer",
+          "name": "Pro",
+          "price": "24",
+          "priceCurrency": "USD",
+          "description": "Everything in Free plus AI Intelligence Analyst, live vessel tracking, satellite imagery, GPS jamming detection, and more.",
+          "priceSpecification": {
+            "@type": "UnitPriceSpecification",
+            "price": "24",
+            "priceCurrency": "USD",
+            "unitText": "MONTH",
+            "billingDuration": {
+              "@type": "QuantitativeValue",
+              "value": 1,
+              "unitCode": "MON"
+            }
+          }
+        }
+      ],
+      "featureList": [
+        "Real-time conflict event tracking",
+        "Satellite fire detection (NASA FIRMS)",
+        "GPS jamming and spoofing detection",
+        "Live commodity, forex, crypto and stock markets",
+        "AI-powered intelligence analyst",
+        "30+ interactive OSINT map layers",
+        "Nuclear facilities monitor",
+        "Live vessel tracking (AIS)",
+        "Weather and natural disaster alerts",
+        "Country intelligence profiles"
+      ],
+      "screenshot": "https://gridline.world/og-image.png",
+      "author": {
+        "@type": "Organization",
+        "name": "Gridline"
+      }
+    }
+    </script>
+
+    <!-- Structured Data: FAQ -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is Gridline?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Gridline is a real-time geopolitical intelligence dashboard that combines live conflict tracking, satellite fire detection, GPS jamming maps, commodity markets, and 30+ OSINT data layers in one terminal-style interface. It's built for analysts, researchers, and newsrooms."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is Gridline free to use?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Gridline offers a comprehensive free tier with 17 modules and 20+ map layers including live conflict tracking, market data, weather alerts, and country intelligence. A Pro subscription at $24 USD/month adds the AI Intelligence Analyst, live vessel tracking, satellite layers, and more."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What data sources does Gridline use?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Gridline aggregates data from GDELT, NASA FIRMS, USGS, NWS, NOAA, Wikidata, AIS vessel tracking, Yahoo Finance, Polymarket, and many other open-source intelligence (OSINT) feeds — all updated in real-time."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What OSINT layers does Gridline offer?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Gridline offers 30+ map layers including armed conflict events, satellite fires (NASA FIRMS), earthquakes, volcanoes, GPS jamming zones, military bases, live vessel tracking, nuclear facilities, undersea cables, oil and gas pipelines, shipping lanes, weather alerts, and more."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How is Gridline different from other OSINT platforms?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Gridline combines geopolitical intelligence, financial markets, and OSINT data layers in a single real-time dashboard. Unlike platforms that focus on one domain, Gridline lets you overlay conflict data with commodity markets, satellite imagery, vessel tracking, and AI analysis simultaneously."
+          }
+        }
+      ]
+    }
+    </script>
+
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-8B2QDK69JL"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-8B2QDK69JL');
+    </script>
+    <script type="module" crossorigin src="assets/index-DssHJg0x.js"></script>
+    <link rel="modulepreload" crossorigin href="assets/vendor-query-CfXuTsGB.js">
+    <link rel="modulepreload" crossorigin href="assets/vendor-clerk-DHVz-SdJ.js">
+    <link rel="stylesheet" crossorigin href="assets/index-Duhfzw5x.css">
+  </head>
+  <body>
+    <div id="root"></div>
+    <noscript>
+      <div style="background:#0a0a0a;color:#ccc;font-family:monospace;padding:40px;max-width:800px;margin:0 auto">
+        <h1>Gridline — Real-Time Geopolitical Intelligence Dashboard</h1>
+        <p>Gridline is a free, real-time geopolitical intelligence platform for analysts, researchers, and newsrooms. Monitor global events with 30+ interactive OSINT data layers.</p>
+        <h2>Features</h2>
+        <ul>
+          <li>Live armed conflict event tracking (GDELT)</li>
+          <li>Satellite fire detection (NASA FIRMS)</li>
+          <li>GPS jamming and spoofing zones</li>
+          <li>Nuclear facilities monitor (370+ plants)</li>
+          <li>Live vessel tracking (AIS)</li>
+          <li>Earthquake, volcano, and weather alerts</li>
+          <li>Military bases and chokepoints</li>
+          <li>Undersea cables and pipeline infrastructure</li>
+          <li>Commodity, forex, crypto, and stock markets</li>
+          <li>Country intelligence profiles with economic indicators</li>
+          <li>AI-powered intelligence analyst</li>
+          <li>Prediction markets and sentiment tracking</li>
+        </ul>
+        <h2>Data Sources</h2>
+        <p>Gridline aggregates data from GDELT, NASA FIRMS, USGS, NWS, NOAA, Wikidata, AIS, Yahoo Finance, Polymarket, World Bank, IMF, and other open-source intelligence feeds.</p>
+        <p><a href="app.html" style="color:#00ffaa">Launch Gridline Dashboard</a> | <a href="terms.html" style="color:#00ffaa">Terms</a> | <a href="privacy.html" style="color:#00ffaa">Privacy</a></p>
+      </div>
+    </noscript>
+  </body>
+</html>

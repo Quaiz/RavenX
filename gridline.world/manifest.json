@@ -1,0 +1,21 @@
+{
+  "name": "Gridline — Real-Time Geopolitical Intelligence",
+  "short_name": "Gridline",
+  "description": "Real-time geopolitical intelligence dashboard. Live conflict tracking, satellite fires, GPS jamming, commodity markets, AI analyst, and 30+ OSINT data layers.",
+  "start_url": "/app",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
+  "icons": [
+    {
+      "src": "/gridline-logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/gridline-logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

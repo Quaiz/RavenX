@@ -1,0 +1,12 @@
+flask
+flask-cors
+feedparser
+requests
+youtube-search-python
+yt-dlp
+libsql-client
+python-dotenv
+httpx==0.25.2
+reverse_geocoder
+psutil
+gunicorn

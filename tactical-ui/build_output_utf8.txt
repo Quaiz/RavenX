@@ -1,0 +1,46 @@
+﻿
+> raven-x-tactical-ui@1.0.0 build
+> vite build
+
+[36mvite v5.4.21 [32mbuilding for production...[36m[39m
+transforming...
+[32mΓ£ô[39m 1527 modules transformed.
+node.exe : [31mx[39m Build failed in 3.87s
+At C:\Program Files\nodejs\npm.ps1:29 char:3
++   & $NODE_EXE $NPM_CLI_JS $args
++   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([31mx[39m Build failed in 3.87s:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[31merror during build:
+[31msrc/Layout.jsx (11:7): "default" is not exported by "src/components/CountryIntel.jsx", imported by 
+"src/Layout.jsx".[31m
+file: [36mD:/ThirdYearsInHell/miniproject/RavenX/tactical-ui/src/Layout.jsx:11:7[31m
+[33m
+ 9: 
+10: // Intel Inspector Modules
+11: import CountryIntel from './components/CountryIntel';
+           ^
+12: import LocalAirRadar from './components/LocalAirRadar';
+13: import NuclearStatus from './components/NuclearStatus';
+[31m
+    at getRollupError 
+(file:///D:/ThirdYearsInHell/miniproject/RavenX/tactical-ui/node_modules/rollup/dist/es/shared/parseAst.js:406:41)
+    at error 
+(file:///D:/ThirdYearsInHell/miniproject/RavenX/tactical-ui/node_modules/rollup/dist/es/shared/parseAst.js:402:42)
+    at Module.error 
+(file:///D:/ThirdYearsInHell/miniproject/RavenX/tactical-ui/node_modules/rollup/dist/es/shared/node-entry.js:17384:16)
+    at Module.traceVariable 
+(file:///D:/ThirdYearsInHell/miniproject/RavenX/tactical-ui/node_modules/rollup/dist/es/shared/node-entry.js:17817:29)
+    at ModuleScope.findVariable 
+(file:///D:/ThirdYearsInHell/miniproject/RavenX/tactical-ui/node_modules/rollup/dist/es/shared/node-entry.js:15407:39)
+    at Identifier.bind 
+(file:///D:/ThirdYearsInHell/miniproject/RavenX/tactical-ui/node_modules/rollup/dist/es/shared/node-entry.js:5450:40)
+    at Property.bind 
+(file:///D:/ThirdYearsInHell/miniproject/RavenX/tactical-ui/node_modules/rollup/dist/es/shared/node-entry.js:2832:23)
+    at ObjectExpression.bind 
+(file:///D:/ThirdYearsInHell/miniproject/RavenX/tactical-ui/node_modules/rollup/dist/es/shared/node-entry.js:2828:28)
+    at VariableDeclarator.bind 
+(file:///D:/ThirdYearsInHell/miniproject/RavenX/tactical-ui/node_modules/rollup/dist/es/shared/node-entry.js:2832:23)
+    at VariableDeclaration.bind (file:///D:/ThirdYearsInHell/miniproject/RavenX/tactical-ui/node_modules/rollup/dist/es
+/shared/node-entry.js:2828:28)[39m
