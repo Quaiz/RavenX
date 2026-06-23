@@ -55,8 +55,10 @@ class TacticalAudioEngine {
   play(id, clone = true, vol = 1.0) {
     if (!this.enabled) return;
     
-    if (!this.audioContext || this.audioContext.state === 'suspended') {
+    if (!this.audioContext) {
       this.init();
+    } else if (this.audioContext.state === 'suspended') {
+      this.audioContext.resume();
     }
     
     if (!this.buffers[id] || !this.audioContext) return;
