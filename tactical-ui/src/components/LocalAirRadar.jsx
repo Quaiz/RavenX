@@ -241,16 +241,37 @@ const LocalAirRadar = () => {
         <AlertTriangle size={32} className="text-red-500 animate-pulse" />
         <div className="text-[12px] font-bold text-red-500 tracking-widest uppercase">GPS SIGNAL LOST</div>
         <div className="text-[10px] text-white/50">{error}</div>
-        <button 
-            onClick={() => {
-                audio.playClick();
-                requestGPS();
-            }}
-            className="mt-4 px-4 py-2 border border-red-500/50 bg-red-500/10 text-red-400 text-[10px] font-bold tracking-widest uppercase hover:bg-red-500/20 transition-colors"
-        >
-            MANUAL OVERRIDE: INITIATE GPS LOCK
-        </button>
-        <div className="text-[9px] text-red-400/50 mt-2 max-w-xs">If this fails, ensure Location Services are turned ON in your phone's settings, and try using Chrome/Safari directly instead of Facebook/Zalo.</div>
+        <div className="flex flex-col gap-2 w-full max-w-xs mt-4">
+          <div className="flex gap-2">
+            <input type="number" id="manual-lat" placeholder="LAT (e.g. 21.0285)" className="w-1/2 bg-black/50 border border-cyan-500/30 text-[10px] text-cyan-400 p-2 outline-none text-center" defaultValue="21.0285" />
+            <input type="number" id="manual-lon" placeholder="LON (e.g. 105.8542)" className="w-1/2 bg-black/50 border border-cyan-500/30 text-[10px] text-cyan-400 p-2 outline-none text-center" defaultValue="105.8542" />
+          </div>
+          <button 
+              onClick={() => {
+                  audio.playClick();
+                  const lat = parseFloat(document.getElementById('manual-lat').value);
+                  const lon = parseFloat(document.getElementById('manual-lon').value);
+                  if (!isNaN(lat) && !isNaN(lon)) {
+                      setError(null);
+                      setUserLoc({ lat, lon });
+                      if (rangeMode === 'LOCAL') fetchLocalFlights(lat, lon);
+                  }
+              }}
+              className="px-4 py-2 border border-cyan-500/50 bg-cyan-500/10 text-cyan-400 text-[10px] font-bold tracking-widest uppercase hover:bg-cyan-500/20 transition-colors"
+          >
+              OVERRIDE: INITIATE MANUAL LOCK
+          </button>
+          <button 
+              onClick={() => {
+                  audio.playClick();
+                  requestGPS();
+              }}
+              className="px-4 py-2 border border-red-500/50 bg-red-500/10 text-red-400 text-[10px] font-bold tracking-widest uppercase hover:bg-red-500/20 transition-colors"
+          >
+              RETRY AUTO-GPS LOCK
+          </button>
+        </div>
+        <div className="text-[9px] text-red-400/50 mt-2 max-w-xs">If AUTO fails, enter coordinates manually and press OVERRIDE.</div>
       </div>
     );
   }
