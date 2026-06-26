@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
-import { CircleMarker, Marker, Tooltip, GeoJSON, TileLayer, Polyline, useMap, Popup } from 'react-leaflet';
+import { CircleMarker, Marker, Tooltip, GeoJSON, TileLayer, Polyline, useMap, Popup, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 window.L = L;
 import 'leaflet-terminator/leaflet-terminator.js';
@@ -360,7 +360,7 @@ function TerminatorLayer() {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-function OverlayLayers() {
+ function OverlayLayers() {
  const active = useStore(state => state.mapConfig.activeOverlays);
  const gdelt = useStore(state => state.feeds.gdelt);
  const aircraft = useStore(state => state.feeds.aircraft);
@@ -368,6 +368,24 @@ function OverlayLayers() {
  const fetchGdelt = useStore(s => s.fetchGdelt);
  const fetchAircraft = useStore(s => s.fetchAircraft);
  const fetchFires = useStore(s => s.fetchFires);
+
+ const map = useMapEvents({
+  zoomend: (e) => {
+   const z = e.target.getZoom();
+   const container = e.target.getContainer();
+   if (z < 6) container.classList.add('low-zoom');
+   else container.classList.remove('low-zoom');
+  }
+ });
+
+ useEffect(() => {
+  if (map) {
+   const z = map.getZoom();
+   const container = map.getContainer();
+   if (z < 6) container.classList.add('low-zoom');
+   else container.classList.remove('low-zoom');
+  }
+ }, [map]);
 
  const [earthquakes, setEarthquakes] = useState([]);
  const [iss, setIss] = useState(null);
