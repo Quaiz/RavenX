@@ -10,6 +10,7 @@ COPY . .
 # we need to build it with VITE_BACKEND_URL=/api so that it sends requests to itself,
 # and then Nginx intercepts /api and forwards it to the backend container.
 ENV VITE_BACKEND_URL=/api
+ENV NODE_OPTIONS="--max-old-space-size=2048"
 RUN npm run build
 
 FROM nginx:alpine
