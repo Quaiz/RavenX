@@ -258,3 +258,9 @@ body.defcon-3::after {
   pointer-events: none;
   z-index: 999999;
 }
+
+/* Map Low Zoom Anti-Cluttering */
+.low-zoom .custom-aircraft-icon svg {
+  transform: scale(0.4);
+  opacity: 0.7;
+}
