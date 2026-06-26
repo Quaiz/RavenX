@@ -9,7 +9,7 @@ COPY . .
 # Actually, if the frontend currently uses VITE_BACKEND_URL to make requests,
 # we need to build it with VITE_BACKEND_URL=/api so that it sends requests to itself,
 # and then Nginx intercepts /api and forwards it to the backend container.
-ENV VITE_BACKEND_URL=/api
+ENV VITE_BACKEND_URL=""
 ENV NODE_OPTIONS="--max-old-space-size=2048"
 RUN npm run build
 
