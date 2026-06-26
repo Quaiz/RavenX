@@ -1814,12 +1814,12 @@ def proxy_aircraft():
         ]
         
         if lat and lon:
-            # Add user's local bounding box to ensure Radar has data
+            # Insert user's local bounding box AT THE BEGINNING to ensure it doesn't get truncated by [:1500]
             lat = float(lat)
             lon = float(lon)
             local_bounds = f"{lat+15},{lat-15},{lon-15},{lon+15}"
             if local_bounds not in bounds_list:
-                bounds_list.append(local_bounds)
+                bounds_list.insert(0, local_bounds)
             
         states = []
         for bounds in bounds_list:
