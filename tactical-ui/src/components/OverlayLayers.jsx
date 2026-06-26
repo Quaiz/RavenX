@@ -241,31 +241,35 @@ function SingleAircraft({ ac }) {
  const markerRef = useRef(null);
  const map = useMap();
  const isZooming = useRef(false);
-
+ const lastUpdate = useRef(Date.now());
  const animState = useRef({
  startLat: ac.lat,
  startLon: ac.lon,
  targetLat: ac.lat,
  targetLon: ac.lon,
  startTime: Date.now(),
- duration: 60000 // 60s API cache interval
+ duration: 10000 
  });
 
  useEffect(() => {
- // When API gives new coords, smoothly animate from CURRENT position to NEW position
  const currentLat = markerRef.current ? markerRef.current.getLatLng().lat : ac.lat;
  const currentLon = markerRef.current ? markerRef.current.getLatLng().lng : ac.lon;
  
+ const now = Date.now();
+ let dur = now - lastUpdate.current;
+ if (dur < 2000) dur = 10000;
+ if (dur > 65000) dur = 60000;
+ lastUpdate.current = now;
+
  animState.current = {
  startLat: currentLat,
  startLon: currentLon,
  targetLat: ac.lat,
  targetLon: ac.lon,
- startTime: Date.now(),
- duration: 60000 
+ startTime: now,
+ duration: dur 
  };
 
- // Update rotation natively via DOM so React-Leaflet doesn't destroy the marker
  if (markerRef.current) {
  const el = markerRef.current.getElement();
  if (el) {

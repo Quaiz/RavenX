@@ -182,7 +182,7 @@ const LocalAirRadar = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rangeMode]);
 
-  // Unified 2s polling interval
+  // Unified polling interval
   useEffect(() => {
     if (!userLoc) return;
     
@@ -190,11 +190,18 @@ const LocalAirRadar = () => {
     fetchGlobalFlights(userLoc.lat, userLoc.lon).finally(() => setIsScanning(false));
     if (rangeMode === 'LOCAL') fetchLocalFlights(userLoc.lat, userLoc.lon);
 
-    const interval = setInterval(() => {
-      fetchGlobalFlights(userLoc.lat, userLoc.lon);
+    const localInterval = setInterval(() => {
       if (rangeMode === 'LOCAL') fetchLocalFlights(userLoc.lat, userLoc.lon);
     }, 2000);
-    return () => clearInterval(interval);
+
+    const globalInterval = setInterval(() => {
+      fetchGlobalFlights(userLoc.lat, userLoc.lon);
+    }, 10000);
+
+    return () => {
+      clearInterval(localInterval);
+      clearInterval(globalInterval);
+    };
   }, [userLoc, rangeMode, RADAR_MAX_DIST_KM, fetchGlobalFlights]);
 
   // Compute final display flights
