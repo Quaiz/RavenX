@@ -1807,19 +1807,19 @@ def proxy_aircraft():
         return jsonify(proxy_cache[cache_key]["data"])
 
     try:
+        bounds_list = [
+            '55,20,-130,-70', # North America
+            '65,35,-10,35',   # Europe
+            '45,5,90,145'     # East / SE Asia
+        ]
+        
         if lat and lon:
-            # Create a ~1500km bounding box around user
+            # Add user's local bounding box to ensure Radar has data
             lat = float(lat)
             lon = float(lon)
-            bounds_list = [f"{lat+15},{lat-15},{lon-15},{lon+15}"]
-        else:
-            # FR24 truncates large global bounds, resulting in a single unnatural square cluster.
-            # We fetch the 3 most active global airspaces instead to get a nice global spread.
-            bounds_list = [
-                '55,20,-130,-70', # North America
-                '65,35,-10,35',   # Europe
-                '45,5,90,145'     # East / SE Asia
-            ]
+            local_bounds = f"{lat+15},{lat-15},{lon-15},{lon+15}"
+            if local_bounds not in bounds_list:
+                bounds_list.append(local_bounds)
             
         states = []
         for bounds in bounds_list:
@@ -1859,6 +1859,10 @@ def proxy_aircraft():
                 continue
             
         states = states[:1500] # Increased limit for local bounds
+            
+        if not states and cache_key in proxy_cache:
+            # If FR24 rate limited us and returned nothing, fallback to last known good cache!
+            return jsonify(proxy_cache[cache_key]["data"])
             
         data = {"states": states, "source": "fr24", "count": len(states)}
         proxy_cache[cache_key] = {"time": now, "data": data}
