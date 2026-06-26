@@ -144,7 +144,7 @@ const LocalAirRadar = () => {
 
   const requestGPS = () => {
     setError(null);
-    if ("geolocation" in navigator) {
+    if ("geolocation" in navigator && window.isSecureContext) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const { latitude, longitude } = position.coords;
@@ -152,16 +152,28 @@ const LocalAirRadar = () => {
           if (rangeMode === 'LOCAL') fetchLocalFlights(latitude, longitude);
         },
         (err) => {
-          if (err.code === 1) {
-            setError("PERMISSION DENIED: Browser or OS blocked location access.");
-          } else {
-            setError(err.message);
-          }
+          fetchLocationByIP();
         },
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
       );
     } else {
-      setError("Geolocation not supported by this browser.");
+      // Not secure context (HTTP) or geolocation unsupported, fallback to IP
+      fetchLocationByIP();
+    }
+  };
+
+  const fetchLocationByIP = async () => {
+    try {
+      const res = await fetch('https://ipapi.co/json/');
+      const data = await res.json();
+      if (data.latitude && data.longitude) {
+         setUserLoc({ lat: data.latitude, lon: data.longitude });
+         if (rangeMode === 'LOCAL') fetchLocalFlights(data.latitude, data.longitude);
+      } else {
+         setError("Failed to acquire location via IP fallback.");
+      }
+    } catch(err) {
+      setError("LOCATION BLOCKED: HTTP Environment restricts GPS, and IP fallback failed.");
     }
   };
 

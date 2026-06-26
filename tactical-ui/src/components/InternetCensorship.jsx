@@ -283,13 +283,19 @@ const InternetCensorship = () => {
   
   // Create a corpus of text from incidents to feed the matrix algorithm
   const corpus = data.incidents.map(i => i.title).join(" ");
-  setMatrixData(generateMatrixData(corpus));
+  const rawData = generateMatrixData(corpus);
+  const sortedData = rawData.sort((a, b) => b.dpiScore - a.dpiScore);
+  setMatrixData(sortedData);
   } else {
-  setMatrixData(generateMatrixData(""));
+  const rawData = generateMatrixData("");
+  const sortedData = rawData.sort((a, b) => b.dpiScore - a.dpiScore);
+  setMatrixData(sortedData);
   }
   } catch (e) {
   console.error("Failed to fetch censorship news", e);
-  setMatrixData(generateMatrixData(""));
+  const rawData = generateMatrixData("");
+  const sortedData = rawData.sort((a, b) => b.dpiScore - a.dpiScore);
+  setMatrixData(sortedData);
   } finally {
   setLoading(false);
   }
