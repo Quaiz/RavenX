@@ -1811,22 +1811,27 @@ def proxy_aircraft():
             # Create a ~1500km bounding box around user
             lat = float(lat)
             lon = float(lon)
-            bounds = f"{lat+15},{lat-15},{lon-15},{lon+15}"
+            bounds_list = [f"{lat+15},{lat-15},{lon-15},{lon+15}"]
         else:
-            bounds = '80,-80,-180,180'
+            # FR24 truncates large global bounds, resulting in a single unnatural square cluster.
+            # We fetch the 3 most active global airspaces instead to get a nice global spread.
+            bounds_list = [
+                '55,20,-130,-70', # North America
+                '65,35,-10,35',   # Europe
+                '45,5,90,145'     # East / SE Asia
+            ]
             
-        url = f'https://data-cloud.flightradar24.com/zones/fcgi/feed.js?bounds={bounds}'
-        r = _session.get(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}, timeout=10)
-        r.raise_for_status()
-        raw = r.json()
-        
         states = []
-        # FR24 returns a dict where keys are icao/id and values are arrays
-        # [0="", 1=lat, 2=lon, 3=heading, 4=alt(ft), 5=speed(kts), 6=squawk, 7=radar, 8=type, 9=reg, 10=ts, 11=orig, 12=dest, 13=flight, 14=onground, 15=vspeed, 16=callsign]
-        
-        for k, v in raw.items():
-            if k in ["full_count", "version"] or not isinstance(v, list) or len(v) < 17:
-                continue
+        for bounds in bounds_list:
+            try:
+                url = f'https://data-cloud.flightradar24.com/zones/fcgi/feed.js?bounds={bounds}'
+                r = _session.get(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}, timeout=5)
+                r.raise_for_status()
+                raw = r.json()
+                
+                for k, v in raw.items():
+                    if k in ["full_count", "version"] or not isinstance(v, list) or len(v) < 17:
+                        continue
             
             icao = k
             lat = v[1]
@@ -1849,6 +1854,9 @@ def proxy_aircraft():
             states.append([
                 icao, callsign, origin, 0, 0, lon, lat, alt, False, vel, heading, vspeed, None, squawk, None, False, 0
             ])
+        except Exception as e:
+            print(f"[Aircraft] Error fetching region {bounds}: {e}")
+            continue
             
         states = states[:1500] # Increased limit for local bounds
             
