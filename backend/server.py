@@ -1833,30 +1833,30 @@ def proxy_aircraft():
                     if k in ["full_count", "version"] or not isinstance(v, list) or len(v) < 17:
                         continue
             
-            icao = k
-            lat = v[1]
-            lon = v[2]
-            heading = v[3]
-            alt = v[4] * 0.3048 if v[4] else 0 # ft to m
-            vel = v[5] * 0.514444 if v[5] else 0 # kts to m/s
-            squawk = v[6]
-            callsign = v[16] or v[13] or v[9] or icao
-            reg = str(v[9]).strip() if v[9] else ""
-            origin = get_country_from_reg(reg)
-            if origin == "UNKNOWN" and reg:
-                origin = f"UNK ({reg})"
-            vspeed = v[15]
-            
-            if not lat or not lon: continue
-                
-            # Convert to OpenSky format expected by frontend:
-            # ["icao", "callsign", "origin", 0, 0, lon, lat, alt, False, vel, heading, vrate, null, squawk, null, False, 0]
-            states.append([
-                icao, callsign, origin, 0, 0, lon, lat, alt, False, vel, heading, vspeed, None, squawk, None, False, 0
-            ])
-        except Exception as e:
-            print(f"[Aircraft] Error fetching region {bounds}: {e}")
-            continue
+                    icao = k
+                    lat = v[1]
+                    lon = v[2]
+                    heading = v[3]
+                    alt = v[4] * 0.3048 if v[4] else 0 # ft to m
+                    vel = v[5] * 0.514444 if v[5] else 0 # kts to m/s
+                    squawk = v[6]
+                    callsign = v[16] or v[13] or v[9] or icao
+                    reg = str(v[9]).strip() if v[9] else ""
+                    origin = get_country_from_reg(reg)
+                    if origin == "UNKNOWN" and reg:
+                        origin = f"UNK ({reg})"
+                    vspeed = v[15]
+                    
+                    if not lat or not lon: continue
+                        
+                    # Convert to OpenSky format expected by frontend:
+                    # ["icao", "callsign", "origin", 0, 0, lon, lat, alt, False, vel, heading, vrate, null, squawk, null, False, 0]
+                    states.append([
+                        icao, callsign, origin, 0, 0, lon, lat, alt, False, vel, heading, vspeed, None, squawk, None, False, 0
+                    ])
+            except Exception as e:
+                print(f"[Aircraft] Error fetching region {bounds}: {e}")
+                continue
             
         states = states[:1500] # Increased limit for local bounds
             
