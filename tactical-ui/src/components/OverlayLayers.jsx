@@ -237,47 +237,35 @@ function SatelliteLayer() {
  );
 }
 
-function SingleAircraft({ ac }) {
- const markerRef = useRef(null);
+const DumbAircraft = React.memo(({ ac, registerMarker }) => {
+ const staticIcon = useMemo(() => aircraftIcon(ac.heading), []);
+ return (
+ <Marker 
+  ref={(el) => registerMarker(ac.id, el)} 
+  position={[ac.lat, ac.lon]} 
+  icon={staticIcon}
+ >
+  <Popup className="tactical-popup" closeButton={false}>
+  <TacticalPopup lines={[
+   ac.callsign || ac.id || 'UNKNOWN FLIGHT',
+   `ORIGIN: ${ac.origin || 'UNKNOWN'}`,
+   `ICAO: ${ac.id ? ac.id.toUpperCase() : 'N/A'}`,
+   `SQUAWK: ${ac.squawk || 'NONE'}`,
+   `VEL: ${Math.round((ac.vel || 0) * 3.6)} km/h`,
+   `HDG: ${Math.round(ac.heading || 0)}°`,
+   `ALT: ${Math.round(ac.alt || 0)} m`,
+   `LAT/LON: ${ac.lat.toFixed(3)}°, ${ac.lon.toFixed(3)}°`
+  ]} accentColor={'#ffb800'} />
+  </Popup>
+ </Marker>
+ );
+});
+
+function CentralizedAircraftLayer({ aircraft }) {
  const map = useMap();
+ const markersRef = useRef(new Map());
+ const animStates = useRef(new Map());
  const isZooming = useRef(false);
- const lastUpdate = useRef(Date.now());
- const animState = useRef({
- startLat: ac.lat,
- startLon: ac.lon,
- targetLat: ac.lat,
- targetLon: ac.lon,
- startTime: Date.now(),
- duration: 10000 
- });
-
- useEffect(() => {
- const currentLat = markerRef.current ? markerRef.current.getLatLng().lat : ac.lat;
- const currentLon = markerRef.current ? markerRef.current.getLatLng().lng : ac.lon;
- 
- const now = Date.now();
- let dur = now - lastUpdate.current;
- if (dur < 2000) dur = 10000;
- if (dur > 65000) dur = 60000;
- lastUpdate.current = now;
-
- animState.current = {
- startLat: currentLat,
- startLon: currentLon,
- targetLat: ac.lat,
- targetLon: ac.lon,
- startTime: now,
- duration: dur 
- };
-
- if (markerRef.current) {
- const el = markerRef.current.getElement();
- if (el) {
- const div = el.querySelector('div');
- if (div) div.style.transform = `rotate(${ac.heading || 0}deg)`;
- }
- }
- }, [ac.lat, ac.lon, ac.heading]);
 
  useEffect(() => {
  const handleZoomStart = () => { isZooming.current = true; };
@@ -285,48 +273,100 @@ function SingleAircraft({ ac }) {
  map.on('zoomstart', handleZoomStart);
  map.on('zoomend', handleZoomEnd);
  return () => {
- map.off('zoomstart', handleZoomStart);
- map.off('zoomend', handleZoomEnd);
+  map.off('zoomstart', handleZoomStart);
+  map.off('zoomend', handleZoomEnd);
  };
  }, [map]);
 
  useEffect(() => {
- const iv = setInterval(() => {
- if (!markerRef.current || isZooming.current) return;
- try {
- const state = animState.current;
- const elapsed = Date.now() - state.startTime;
- let progress = elapsed / state.duration;
- if (progress > 1) progress = 1;
- 
- // Linear interpolation towards target
- const newLat = state.startLat + (state.targetLat - state.startLat) * progress;
- const newLon = state.startLon + (state.targetLon - state.startLon) * progress;
- 
- markerRef.current.setLatLng([newLat, newLon]);
- } catch (e) {}
- }, 16); // 60 FPS
- return () => clearInterval(iv);
+ const now = Date.now();
+ aircraft.forEach(ac => {
+  const state = animStates.current.get(ac.id);
+  if (state) {
+  const marker = markersRef.current.get(ac.id);
+  const currentLat = marker ? marker.getLatLng().lat : state.targetLat;
+  const currentLon = marker ? marker.getLatLng().lng : state.targetLon;
+  
+  let dur = now - state.lastUpdate;
+  if (dur < 2000) dur = 10000;
+  if (dur > 65000) dur = 60000;
+  
+  animStates.current.set(ac.id, {
+   startLat: currentLat,
+   startLon: currentLon,
+   targetLat: ac.lat,
+   targetLon: ac.lon,
+   startTime: now,
+   duration: dur,
+   lastUpdate: now
+  });
+
+  if (marker) {
+   const el = marker.getElement();
+   if (el) {
+   const div = el.querySelector('div');
+   if (div) div.style.transform = `rotate(${ac.heading || 0}deg)`;
+   }
+  }
+  } else {
+  animStates.current.set(ac.id, {
+   startLat: ac.lat,
+   startLon: ac.lon,
+   targetLat: ac.lat,
+   targetLon: ac.lon,
+   startTime: now,
+   duration: 10000,
+   lastUpdate: now
+  });
+  }
+ });
+ }, [aircraft]);
+
+ useEffect(() => {
+ let frameId;
+ const animate = () => {
+  if (!isZooming.current) {
+  const now = Date.now();
+  markersRef.current.forEach((marker, id) => {
+   const state = animStates.current.get(id);
+   if (state) {
+   const elapsed = now - state.startTime;
+   let progress = elapsed / state.duration;
+   if (progress > 1) progress = 1;
+   
+   const newLat = state.startLat + (state.targetLat - state.startLat) * progress;
+   const newLon = state.startLon + (state.targetLon - state.startLon) * progress;
+   
+   try { marker.setLatLng([newLat, newLon]); } catch (e) {}
+   }
+  });
+  }
+  frameId = requestAnimationFrame(animate);
+ };
+ frameId = requestAnimationFrame(animate);
+ return () => cancelAnimationFrame(frameId);
  }, []);
 
- // Icon is created strictly ONCE per aircraft so it NEVER blinks
- const staticIcon = useMemo(() => aircraftIcon(ac.heading), []);
+ useEffect(() => {
+ const validIds = new Set(aircraft.map(a => a.id));
+ for (const id of markersRef.current.keys()) {
+  if (!validIds.has(id)) {
+  markersRef.current.delete(id);
+  animStates.current.delete(id);
+  }
+ }
+ }, [aircraft]);
+
+ const registerMarker = (id, el) => {
+ if (el) markersRef.current.set(id, el);
+ };
 
  return (
- <Marker ref={markerRef} position={[ac.lat, ac.lon]} icon={staticIcon}>
- <Popup className="tactical-popup"closeButton={false}>
- <TacticalPopup lines={[
- ac.callsign || ac.id || 'UNKNOWN FLIGHT',
- `ORIGIN: ${ac.origin || 'UNKNOWN'}`,
- `ICAO: ${ac.id ? ac.id.toUpperCase() : 'N/A'}`,
- `SQUAWK: ${ac.squawk || 'NONE'}`,
- `VEL: ${Math.round((ac.vel || 0) * 3.6)} km/h`,
- `HDG: ${Math.round(ac.heading || 0)}°`,
- `ALT: ${Math.round(ac.alt || 0)} m`,
- `LAT/LON: ${ac.lat.toFixed(3)}°, ${ac.lon.toFixed(3)}°`
- ]} accentColor={'#ffb800'} />
- </Popup>
- </Marker>
+ <>
+  {aircraft.map(ac => (
+  <DumbAircraft key={ac.id} ac={ac} registerMarker={registerMarker} />
+  ))}
+ </>
  );
 }
 
@@ -643,9 +683,9 @@ function TerminatorLayer() {
  ))}
 
  {/* ── ADSB AIRCRAFT (Limited to top 800 for performance) ── */}
- {active.includes('ADSB_AIRCRAFT') && aircraft.slice(0, 800).map(ac => (
- <SingleAircraft key={ac.id} ac={ac} />
- ))}
+ {active.includes('ADSB_AIRCRAFT') && (
+ <CentralizedAircraftLayer aircraft={aircraft.slice(0, 300)} />
+ )}
 
  {/* ── FIRMS FIRES ── */}
  {active.includes('FIRMS_FIRES') && fires.map((f, i) => (

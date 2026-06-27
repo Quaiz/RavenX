@@ -1807,23 +1807,29 @@ def proxy_aircraft():
         return jsonify(proxy_cache[cache_key]["data"])
 
     try:
-        bounds_list = [
-            '55,20,-130,-70', # North America
-            '65,35,-10,35',   # Europe
-            '45,5,90,145'     # East / SE Asia
-        ]
-        
-        if lat and lon:
-            # Insert user's local bounding box AT THE BEGINNING to ensure it doesn't get truncated by [:1500]
-            lat = float(lat)
-            lon = float(lon)
-            local_bounds = f"{lat+15},{lat-15},{lon-15},{lon+15}"
-            if local_bounds not in bounds_list:
-                bounds_list.insert(0, local_bounds)
-            
+        import random
         states = []
-        for bounds in bounds_list:
+        
+        # 1. Fetch Global Background (OpenSky Network) - Evenly distributed worldwide
+        try:
+            r = _session.get('https://opensky-network.org/api/states/all', timeout=8)
+            if r.status_code == 200:
+                opensky_data = r.json()
+                if opensky_data and "states" in opensky_data and opensky_data["states"]:
+                    # Filter valid coords
+                    valid = [s for s in opensky_data["states"] if s[5] is not None and s[6] is not None]
+                    # Randomly scatter 300 planes across the globe to prevent square clumps
+                    sampled = random.sample(valid, min(300, len(valid)))
+                    states.extend(sampled)
+        except Exception as e:
+            print(f"[Aircraft] OpenSky error: {e}")
+
+        # 2. Fetch High-Fidelity Local Radar Data (FR24) if coordinates are provided
+        if lat and lon:
             try:
+                lat_f = float(lat)
+                lon_f = float(lon)
+                bounds = f"{lat_f+15},{lat_f-15},{lon_f-15},{lon_f+15}"
                 url = f'https://data-cloud.flightradar24.com/zones/fcgi/feed.js?bounds={bounds}'
                 r = _session.get(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}, timeout=5)
                 r.raise_for_status()
@@ -1834,8 +1840,8 @@ def proxy_aircraft():
                         continue
             
                     icao = k
-                    lat = v[1]
-                    lon = v[2]
+                    v_lat = v[1]
+                    v_lon = v[2]
                     heading = v[3]
                     alt = v[4] * 0.3048 if v[4] else 0 # ft to m
                     vel = v[5] * 0.514444 if v[5] else 0 # kts to m/s
@@ -1847,21 +1853,17 @@ def proxy_aircraft():
                         origin = f"UNK ({reg})"
                     vspeed = v[15]
                     
-                    if not lat or not lon: continue
+                    if not v_lat or not v_lon: continue
                         
-                    # Convert to OpenSky format expected by frontend:
-                    # ["icao", "callsign", "origin", 0, 0, lon, lat, alt, False, vel, heading, vrate, null, squawk, null, False, 0]
+                    # Convert to OpenSky format expected by frontend
                     states.append([
-                        icao, callsign, origin, 0, 0, lon, lat, alt, False, vel, heading, vspeed, None, squawk, None, False, 0
+                        icao, callsign, origin, 0, 0, v_lon, v_lat, alt, False, vel, heading, vspeed, None, squawk, None, False, 0
                     ])
             except Exception as e:
-                print(f"[Aircraft] Error fetching region {bounds}: {e}")
-                continue
-            
-        states = states[:1500] # Increased limit for local bounds
+                print(f"[Aircraft] FR24 local error: {e}")
             
         if not states and cache_key in proxy_cache:
-            # If FR24 rate limited us and returned nothing, fallback to last known good cache!
+            # If both failed or rate limited, fallback to last known good cache
             return jsonify(proxy_cache[cache_key]["data"])
             
         data = {"states": states, "source": "fr24", "count": len(states)}
