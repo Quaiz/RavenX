@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { MapContainer, TileLayer, useMap, useMapEvents, CircleMarker, Marker, Tooltip, GeoJSON } from 'react-leaflet';
 import L from 'leaflet';
 import useStore from '../store';
-import { Layers, Search, ChevronUp, ChevronDown, Map as MapIcon, X, Navigation, ShieldAlert } from 'lucide-react';
+import { Layers, Search, ChevronUp, ChevronDown, Map as MapIcon, X, Navigation, ShieldAlert, Crosshair } from 'lucide-react';
 import OverlayLayers from './OverlayLayers';
 import { CursorTelemetry, HexGridOverlay, TacticalRangefinder, TacticalGeofence } from './TacticalMapTools';
 
@@ -417,6 +417,9 @@ const GothamGlobe = React.memo(() => {
  const [rangefinderActive, setRangefinderActive] = useState(false);
  const [geofenceActive, setGeofenceActive] = useState(false);
 
+ const predictiveTracking = useStore(s => s.predictiveTracking);
+ const togglePredictiveTracking = useStore(s => s.togglePredictiveTracking);
+
  useEffect(() => {
  fetchGeoData();
  }, []);
@@ -466,7 +469,7 @@ const GothamGlobe = React.memo(() => {
  </button>
 
  <button
- onClick={() => { setGeofenceActive(prev => !prev); setRangefinderActive(false); }}
+ onClick={() => { setGeofenceActive(prev => !prev); setRangefinderActive(false); if(predictiveTracking.active) togglePredictiveTracking(); }}
  className={`flex items-center gap-1.5 px-2.5 py-1 text-[8px] font-bold tracking-widest uppercase transition-all shrink-0 ${geofenceActive
  ? 'bg-red-500/20 text-red-400 border border-red-500/50 shadow-[0_0_8px_rgba(239,68,68,0.3)]'
  : 'bg-white/[0.03] text-white/40 border border-white/5 hover:text-white/70 hover:bg-white/[0.06]'
@@ -474,7 +477,19 @@ const GothamGlobe = React.memo(() => {
  title="Draw Geofence Perimeter"
  >
  <ShieldAlert size={10} />
- GEOFENCE {geofenceActive ? 'DRAWING (MIDDLE CLICK)' : ''}
+ GEOFENCE {geofenceActive ? 'DRAWING' : ''}
+ </button>
+
+ <button
+ onClick={() => { togglePredictiveTracking(); setRangefinderActive(false); setGeofenceActive(false); }}
+ className={`flex items-center gap-1.5 px-2.5 py-1 text-[8px] font-bold tracking-widest uppercase transition-all shrink-0 ${predictiveTracking.active
+ ? 'bg-orange-500/20 text-orange-400 border border-orange-500/50 shadow-[0_0_8px_rgba(249,115,22,0.3)]'
+ : 'bg-white/[0.03] text-white/40 border border-white/5 hover:text-white/70 hover:bg-white/[0.06]'
+ }`}
+ title="Target Predictive Tracking (Data Fusion)"
+ >
+ <Crosshair size={10} />
+ FUSION {predictiveTracking.active ? 'ACTIVE' : ''}
  </button>
  </div>
 
@@ -517,6 +532,24 @@ const GothamGlobe = React.memo(() => {
  </MapContainer>
 
  <HexGridOverlay />
+
+ {predictiveTracking.active && (
+ <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-[2000] bg-black/85 border border-orange-500/40 px-6 py-4 flex flex-col items-center gap-3 backdrop-blur-lg shadow-[0_0_20px_rgba(249,115,22,0.2)]">
+  <div className="flex items-center gap-2 mb-1">
+  <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse" />
+  <span className="text-[12px] font-bold text-orange-400 tracking-widest">DATA FUSION: PREDICTIVE TRACKING</span>
+  </div>
+  <span className="text-[10px] text-white/70 font-mono tracking-widest text-center">
+  {predictiveTracking.points.length === 0 ? "CLICK MAP TO SET POINT A (PAST LOCATION)" :
+   predictiveTracking.points.length === 1 ? "CLICK MAP TO SET POINT B (CURRENT LOCATION)" :
+   predictiveTracking.status === 'CALCULATING' ? "CALCULATING OSRM ROUTE & PREDICTED TRAJECTORY..." :
+   "TARGET TRAJECTORY SUCCESSFULLY PREDICTED"}
+  </span>
+  <button onClick={togglePredictiveTracking} className="mt-2 px-6 py-2 bg-red-500/20 text-red-400 font-bold tracking-widest text-[10px] border border-red-500/50 hover:bg-red-500/40 transition-colors">
+  {predictiveTracking.status === 'DONE' ? 'CLEAR & EXIT' : 'CANCEL'}
+  </button>
+ </div>
+ )}
 
  <style dangerouslySetInnerHTML={{
  __html: `

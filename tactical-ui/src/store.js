@@ -431,6 +431,52 @@ const useStore = create(persist((set, get) => ({
  layerOpacity: 0.8,
  },
 
+ predictiveTracking: {
+ active: false,
+ points: [], // [{lat, lon}]
+ routeGeoJson: null,
+ predictedGeoJson: null,
+ projectedPoint: null,
+ status: 'IDLE' // IDLE, SELECTING, CALCULATING, DONE
+ },
+
+ togglePredictiveTracking: () => set(state => {
+ const next = !state.predictiveTracking.active;
+ if (next) audio.playClick();
+ return {
+  predictiveTracking: {
+  active: next,
+  points: [],
+  routeGeoJson: null,
+  predictedGeoJson: null,
+  projectedPoint: null,
+  status: next ? 'SELECTING' : 'IDLE'
+  }
+ };
+ }),
+
+ addPredictivePoint: (lat, lon) => set(state => {
+ const pts = [...state.predictiveTracking.points, {lat, lon}];
+ if (pts.length <= 2) audio.playClick();
+ return {
+  predictiveTracking: {
+  ...state.predictiveTracking,
+  points: pts,
+  status: pts.length >= 2 ? 'CALCULATING' : 'SELECTING'
+  }
+ };
+ }),
+
+ setPredictiveResults: (routeGeoJson, predictedGeoJson, projectedPoint) => set(state => ({
+ predictiveTracking: {
+  ...state.predictiveTracking,
+  routeGeoJson,
+  predictedGeoJson,
+  projectedPoint,
+  status: 'DONE'
+ }
+ })),
+
  baseMaps: [
  // DARK
  { id: 'BLACKOUT', name: 'BLACKOUT', category: 'DARK', url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' },

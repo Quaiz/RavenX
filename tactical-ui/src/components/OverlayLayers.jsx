@@ -262,6 +262,7 @@ const DumbAircraft = React.memo(({ ac, registerMarker }) => {
 });
 
 function CentralizedAircraftLayer({ aircraft }) {
+// ... existing CentralizedAircraftLayer code is unmodified, wait, I need to NOT replace it but insert after it. Let's use EndLine exactly where CentralizedAircraftLayer ends.
  const map = useMap();
  const markersRef = useRef(new Map());
  const animStates = useRef(new Map());
@@ -355,6 +356,7 @@ function CentralizedAircraftLayer({ aircraft }) {
   animStates.current.delete(id);
   }
  }
+ }
  }, [aircraft]);
 
  const registerMarker = (id, el) => {
@@ -367,6 +369,87 @@ function CentralizedAircraftLayer({ aircraft }) {
   <DumbAircraft key={ac.id} ac={ac} registerMarker={registerMarker} />
   ))}
  </>
+ );
+}
+
+function PredictiveTrackingLayer() {
+ const map = useMap();
+ const predictiveTracking = useStore(state => state.predictiveTracking);
+ const addPoint = useStore(state => state.addPredictivePoint);
+ const setResults = useStore(state => state.setPredictiveResults);
+
+ useMapEvents({
+  click: (e) => {
+  if (predictiveTracking.active && predictiveTracking.points.length < 2) {
+   addPoint(e.latlng.lat, e.latlng.lng);
+  }
+  }
+ });
+
+ useEffect(() => {
+  if (predictiveTracking.status === 'CALCULATING' && predictiveTracking.points.length === 2) {
+  const p1 = predictiveTracking.points[0];
+  const p2 = predictiveTracking.points[1];
+  
+  const fetchRoutes = async () => {
+   try {
+   // A to B route
+   const r1 = await fetch(`https://router.project-osrm.org/route/v1/driving/${p1.lon},${p1.lat};${p2.lon},${p2.lat}?overview=full&geometries=geojson`);
+   const d1 = await r1.json();
+   const routeGeo = d1.routes && d1.routes[0] ? d1.routes[0].geometry : null;
+
+   // Project Point C
+   const dLat = p2.lat - p1.lat;
+   const dLon = p2.lon - p1.lon;
+   // Project roughly 5x the distance forward
+   const p3 = { lat: p2.lat + (dLat * 5), lon: p2.lon + (dLon * 5) };
+
+   // B to C route (Predicted)
+   const r2 = await fetch(`https://router.project-osrm.org/route/v1/driving/${p2.lon},${p2.lat};${p3.lon},${p3.lat}?overview=full&geometries=geojson`);
+   const d2 = await r2.json();
+   const predGeo = d2.routes && d2.routes[0] ? d2.routes[0].geometry : null;
+   
+   const actualP3 = (d2.waypoints && d2.waypoints[1]) 
+    ? { lon: d2.waypoints[1].location[0], lat: d2.waypoints[1].location[1] } 
+    : p3;
+
+   setResults(routeGeo, predGeo, actualP3);
+   } catch (e) {
+   console.error("OSRM Error", e);
+   setResults(null, null, null);
+   }
+  };
+  fetchRoutes();
+  }
+ }, [predictiveTracking.status, predictiveTracking.points, setResults]);
+
+ if (!predictiveTracking.active) return null;
+
+ return (
+  <>
+  {predictiveTracking.points[0] && (
+   <Marker position={[predictiveTracking.points[0].lat, predictiveTracking.points[0].lon]} icon={mkDot('#ef4444', 12)}>
+    <Tooltip direction="top" permanent className="tactical-tooltip-red">POINT A (PAST)</Tooltip>
+   </Marker>
+  )}
+  {predictiveTracking.points[1] && (
+   <Marker position={[predictiveTracking.points[1].lat, predictiveTracking.points[1].lon]} icon={GPS_ICON}>
+    <Tooltip direction="top" permanent className="tactical-tooltip-red">POINT B (CURRENT)</Tooltip>
+   </Marker>
+  )}
+  {predictiveTracking.projectedPoint && (
+   <Marker position={[predictiveTracking.projectedPoint.lat, predictiveTracking.projectedPoint.lon]} icon={mkPulse('#f97316', 50)}>
+    <Tooltip direction="bottom" permanent className="tactical-tooltip-orange">PREDICTED DEST</Tooltip>
+   </Marker>
+  )}
+  
+  {predictiveTracking.routeGeoJson && (
+   <GeoJSON data={predictiveTracking.routeGeoJson} style={{ color: '#ef4444', weight: 4, opacity: 0.8 }} />
+  )}
+  {predictiveTracking.predictedGeoJson && (
+   <GeoJSON data={predictiveTracking.predictedGeoJson} style={{ color: '#f97316', weight: 4, dashArray: '10, 15', className: 'flowing-dash' }} />
+  )}
+  </>
  );
 }
 
@@ -686,6 +769,8 @@ function TerminatorLayer() {
  {active.includes('ADSB_AIRCRAFT') && (
  <CentralizedAircraftLayer aircraft={aircraft.slice(0, 300)} />
  )}
+
+ <PredictiveTrackingLayer />
 
  {/* ── FIRMS FIRES ── */}
  {active.includes('FIRMS_FIRES') && fires.map((f, i) => (
