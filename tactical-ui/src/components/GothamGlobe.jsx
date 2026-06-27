@@ -37,6 +37,20 @@ function MapController() {
       map.flyTo([mapTarget.lat, mapTarget.lng], mapTarget.zoom || 14, { duration: 2.5 });
     }
   }, [mapTarget, map]);
+
+  useEffect(() => {
+    const preventMiddleScroll = (e) => {
+      if (e.button === 1) {
+        e.preventDefault();
+      }
+    };
+    const container = map.getContainer();
+    container.addEventListener('mousedown', preventMiddleScroll);
+    return () => {
+      container.removeEventListener('mousedown', preventMiddleScroll);
+    };
+  }, [map]);
+
   return null;
 }
 
@@ -76,7 +90,7 @@ function MapStatus() {
  return null;
 }
 
-function TacticalLayers() {
+function TacticalLayers({ rangefinderActive, geofenceActive, predictiveTrackingActive }) {
  const map = useMap();
  const geoData = useStore(s => s.feeds.geoData);
  const activeCountry = useStore(s => s.activeCountry);
@@ -124,6 +138,7 @@ function TacticalLayers() {
  }, [activeCountry, geoData]);
 
  const onCountryClick = (e) => {
+  if (rangefinderActive || geofenceActive || predictiveTrackingActive) return;
  const feature = e.target.feature;
  if (!feature || !feature.properties) return;
 
@@ -521,7 +536,11 @@ const GothamGlobe = React.memo(() => {
  opacity={layerOpacity}
  />
 
- <TacticalLayers />
+ <TacticalLayers 
+  rangefinderActive={rangefinderActive} 
+  geofenceActive={geofenceActive} 
+  predictiveTrackingActive={predictiveTracking.active} 
+ />
  <OverlayLayers />
  <CursorTelemetry />
  <TacticalRangefinder active={rangefinderActive} />
