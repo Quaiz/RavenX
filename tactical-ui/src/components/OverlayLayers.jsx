@@ -356,7 +356,6 @@ function CentralizedAircraftLayer({ aircraft }) {
   animStates.current.delete(id);
   }
  }
- }
  }, [aircraft]);
 
  const registerMarker = (id, el) => {
