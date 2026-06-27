@@ -378,8 +378,9 @@ function PredictiveTrackingLayer() {
  const setResults = useStore(state => state.setPredictiveResults);
 
  useMapEvents({
-  click: (e) => {
-  if (predictiveTracking.active && predictiveTracking.points.length < 2) {
+  mousedown: (e) => {
+  // button === 1 is Middle Click
+  if (e.originalEvent.button === 1 && predictiveTracking.active && predictiveTracking.points.length < 2) {
    addPoint(e.latlng.lat, e.latlng.lng);
   }
   }
