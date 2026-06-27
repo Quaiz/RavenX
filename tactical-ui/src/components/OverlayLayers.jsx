@@ -396,7 +396,10 @@ function PredictiveTrackingLayer() {
    // A to B route
    const r1 = await fetch(`https://router.project-osrm.org/route/v1/driving/${p1.lon},${p1.lat};${p2.lon},${p2.lat}?overview=full&geometries=geojson`);
    const d1 = await r1.json();
-   const routeGeo = d1.routes && d1.routes[0] ? d1.routes[0].geometry : null;
+   let routeGeo = null;
+   if (d1.routes && d1.routes[0] && d1.routes[0].geometry) {
+    routeGeo = { type: "Feature", properties: {}, geometry: d1.routes[0].geometry };
+   }
 
    // Project Point C
    const dLat = p2.lat - p1.lat;
@@ -407,7 +410,10 @@ function PredictiveTrackingLayer() {
    // B to C route (Predicted)
    const r2 = await fetch(`https://router.project-osrm.org/route/v1/driving/${p2.lon},${p2.lat};${p3.lon},${p3.lat}?overview=full&geometries=geojson`);
    const d2 = await r2.json();
-   const predGeo = d2.routes && d2.routes[0] ? d2.routes[0].geometry : null;
+   let predGeo = null;
+   if (d2.routes && d2.routes[0] && d2.routes[0].geometry) {
+    predGeo = { type: "Feature", properties: {}, geometry: d2.routes[0].geometry };
+   }
    
    const actualP3 = (d2.waypoints && d2.waypoints[1]) 
     ? { lon: d2.waypoints[1].location[0], lat: d2.waypoints[1].location[1] } 
@@ -444,10 +450,10 @@ function PredictiveTrackingLayer() {
   )}
   
   {predictiveTracking.routeGeoJson && (
-   <GeoJSON data={predictiveTracking.routeGeoJson} style={{ color: '#ef4444', weight: 4, opacity: 0.8 }} />
+   <GeoJSON key={`route-${predictiveTracking.points.length}`} data={predictiveTracking.routeGeoJson} style={{ color: '#ef4444', weight: 4, opacity: 0.8 }} />
   )}
   {predictiveTracking.predictedGeoJson && (
-   <GeoJSON data={predictiveTracking.predictedGeoJson} style={{ color: '#f97316', weight: 4, dashArray: '10, 15', className: 'flowing-dash' }} />
+   <GeoJSON key={`pred-${predictiveTracking.points.length}`} data={predictiveTracking.predictedGeoJson} style={{ color: '#f97316', weight: 4, dashArray: '10, 15', className: 'flowing-dash' }} />
   )}
   </>
  );
