@@ -41,8 +41,10 @@ export function TacticalRangefinder({ active }) {
  const map = useMapEvents({
  mousedown(e) {
  if (!active) return;
- if (e.originalEvent.button === 1) { // Middle mouse button
- e.originalEvent.preventDefault(); // Stop browser auto-scroll
+  const isMobile = window.innerWidth < 768 || L.Browser.touch;
+  const isTrigger = isMobile || e.originalEvent.button === 1;
+  if (isTrigger) { // Middle mouse button (or tap on mobile)
+  if (e.originalEvent.button === 1) e.originalEvent.preventDefault(); // Stop browser auto-scroll
  if (points.length >= 2) {
  setPoints([e.latlng]); // Reset to new starting point
  } else {
@@ -106,8 +108,10 @@ export function TacticalGeofence({ active, onToggle }) {
  const map = useMapEvents({
  mousedown(e) {
  if (!active) return;
- if (e.originalEvent.button === 1) { // Middle click
-          e.originalEvent.preventDefault();
+  const isMobile = window.innerWidth < 768 || L.Browser.touch;
+  const isTrigger = isMobile || e.originalEvent.button === 1;
+  if (isTrigger) { // Middle click (or tap on mobile)
+           if (e.originalEvent.button === 1) e.originalEvent.preventDefault();
  if (!center) {
  setCenter(e.latlng);
  } else {
