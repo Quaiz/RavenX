@@ -540,8 +540,8 @@ const GothamGlobe = React.memo(() => {
   <span className="text-[12px] font-bold text-orange-400 tracking-widest">DATA FUSION: PREDICTIVE TRACKING</span>
   </div>
   <span className="text-[10px] text-white/70 font-mono tracking-widest text-center">
-  {predictiveTracking.points.length === 0 ? "CLICK MAP TO SET POINT A (PAST LOCATION)" :
-   predictiveTracking.points.length === 1 ? "CLICK MAP TO SET POINT B (CURRENT LOCATION)" :
+  {predictiveTracking.points.length === 0 ? "MIDDLE CLICK MAP TO SET POINT A (PAST LOCATION)" :
+   predictiveTracking.points.length === 1 ? "MIDDLE CLICK MAP TO SET POINT B (CURRENT LOCATION)" :
    predictiveTracking.status === 'CALCULATING' ? "CALCULATING OSRM ROUTE & PREDICTED TRAJECTORY..." :
    "TARGET TRAJECTORY SUCCESSFULLY PREDICTED"}
   </span>
