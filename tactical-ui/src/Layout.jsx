@@ -509,6 +509,8 @@ const Layout = ({ user, showGreeting, onEnterDashboard, onLogout, onUsernameChan
  return <LinkAnalysis />;
  case 'GLOBAL_TARGETS':
  return <GlobalTargets />;
+ case 'WANTED_CRIMINALS':
+ 	return <GlobalTargets />;
  case 'C2_TACTICAL_CENTER':
  	return <C2TacticalCenter />;
  default:
