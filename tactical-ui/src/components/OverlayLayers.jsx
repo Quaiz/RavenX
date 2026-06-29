@@ -496,6 +496,9 @@ function TerminatorLayer() {
  const gdelt = useStore(state => state.feeds.gdelt);
  const aircraft = useStore(state => state.feeds.aircraft);
  const fires = useStore(state => state.feeds.fires);
+ const selectedTarget = useStore(state => state.selectedTarget);
+ const isTrackingActive = useStore(state => state.isTrackingActive);
+ const c2Operators = useStore(state => state.c2Operators);
  const fetchGdelt = useStore(s => s.fetchGdelt);
  const fetchAircraft = useStore(s => s.fetchAircraft);
  const fetchFires = useStore(s => s.fetchFires);
@@ -925,6 +928,62 @@ function TerminatorLayer() {
  </CircleMarker>
  );
  })}
+
+  {/* ── C2 OPERATORS OVERLAY ── */}
+  {c2Operators.map(op => {
+    const isKIA = op.status === 'KIA';
+    const color = isKIA ? '#ef4444' : '#22c55e';
+    return (
+      <CircleMarker
+        key={`c2-op-${op.id}`}
+        center={[op.lat, op.lng]}
+        radius={7}
+        pathOptions={{ color, fillColor: color, fillOpacity: 0.8, weight: 2 }}
+      >
+        <Tooltip direction="top" permanent className={isKIA ? "tactical-tooltip-red" : "tactical-tooltip-cyan"}>
+          {op.callsign} {isKIA ? '[KIA]' : ''}
+        </Tooltip>
+      </CircleMarker>
+    );
+  })}
+
+  {/* ── TARGET LOCK TRACKING PULSAR ── */}
+  {isTrackingActive && selectedTarget && (() => {
+    const NATIONALITY_COORDS = {
+      'RU': { lat: 61.524, lng: 105.318 },
+      'US': { lat: 37.090, lng: -95.712 },
+      'CN': { lat: 35.861, lng: 104.195 },
+      'IR': { lat: 32.427, lng: 53.688 },
+      'KP': { lat: 40.339, lng: 127.510 },
+      'VN': { lat: 14.058, lng: 108.277 },
+      'IN': { lat: 20.593, lng: 78.962 },
+      'PK': { lat: 30.375, lng: 69.345 },
+      'SY': { lat: 34.802, lng: 38.996 },
+      'IQ': { lat: 33.223, lng: 43.679 },
+      'AF': { lat: 33.939, lng: 67.710 },
+      'UA': { lat: 48.379, lng: 31.165 },
+      'IL': { lat: 31.046, lng: 34.851 },
+      'YE': { lat: 15.552, lng: 48.516 },
+      'MX': { lat: 23.634, lng: -102.552 }
+    };
+    const coords = NATIONALITY_COORDS[selectedTarget.nationality];
+    if (!coords) return null;
+    return (
+      <React.Fragment key="c2-target-lock-pulsar">
+        <Marker position={[coords.lat, coords.lng]} icon={mkPulse('#ef4444', 55)} />
+        <CircleMarker
+          center={[coords.lat, coords.lng]}
+          radius={5}
+          pathOptions={{ color: '#ef4444', fillColor: '#ef4444', fillOpacity: 0.9, weight: 1 }}
+        >
+          <Tooltip direction="bottom" permanent className="tactical-tooltip-red">
+            HVT LOCK: {selectedTarget.name}
+          </Tooltip>
+        </CircleMarker>
+      </React.Fragment>
+    );
+  })()}
+
  </>
  );
 }

@@ -19,7 +19,8 @@ export const MODULE_CATEGORIES = {
  { id: 'LIVE_WEBCAMS', name: 'LIVE WEBCAMS', desc: 'Global live street camera streams', status: 'ACTIVE' },
  { id: 'LINK_ANALYSIS', name: 'ENTITY GRAPH', desc: 'Palantir-style node/link network analysis', status: 'ACTIVE' },
  { id: 'DISEASE_OUTBREAKS', name: 'DISEASE OUTBREAKS', desc: 'WHO global epidemic alerts and updates', status: 'ACTIVE' },
- { id: 'WANTED_CRIMINALS', name: 'WANTED CRIMINALS', desc: 'INTERPOL Red Notices global registry', status: 'ACTIVE' },
+	{ id: 'GLOBAL_TARGETS', name: 'TARGET REGISTRY', desc: 'Interpol Red/Yellow Notices + FBI Wanted list integration', status: 'ACTIVE' },
+	{ id: 'C2_TACTICAL_CENTER', name: 'C2 COMMAND CENTER', desc: 'Unified military command console (ABIS + Comms + Blue Force)', status: 'ACTIVE' },
  ],
 
  // ── Markets & Finance ────────────────────────────────────────────────────────
@@ -66,7 +67,7 @@ export const MODULE_CATEGORIES = {
 
 export const WORKSPACE_MODULES = {
  1: ['MAP_MODULE', 'WORLD_CLOCK', 'LOCAL_AIR_RADAR', 'ADSB_AIRCRAFT', 'AIS_VESSELS', 'WEATHER_ALERTS', 'SEISMIC', 'NASA_FIRES', 'SPACE_WEATHER', 'AIR_QUALITY', 'GPS_JAMMING', 'POWER_GRIDS', 'LIVE_WEBCAMS'],
- 2: ['LINK_ANALYSIS', 'AI_ANALYST', 'OSINT_FEED', 'GLOBAL_NEWS', 'PREDICTION_MARKETS', 'WANTED_CRIMINALS', 'COUNTRY_INTEL', 'CENSORSHIP', 'GOOGLE_TRENDS', 'HUMANITARIAN', 'DISEASE_OUTBREAKS'],
+ 2: ['LINK_ANALYSIS', 'AI_ANALYST', 'OSINT_FEED', 'GLOBAL_NEWS', 'PREDICTION_MARKETS', 'GLOBAL_TARGETS', 'C2_TACTICAL_CENTER', 'COUNTRY_INTEL', 'CENSORSHIP', 'GOOGLE_TRENDS', 'HUMANITARIAN', 'DISEASE_OUTBREAKS'],
  3: ['MARKET_TERMINAL', 'CRYPTO', 'FOREX', 'MACRO_FEEDS', 'MONETARY_POLICY', 'CORPORATE_INTEL', 'MILITARY_BASES', 'NUCLEAR_FACILITIES', 'MARITIME_INTEL', 'MILITARY_HARDWARE']
 };
 
@@ -860,7 +861,23 @@ const useStore = create(persist((set, get) => ({
  const aqiData = await aqiResp.json();
  set({ weatherData: { syncing: false, city: name.toUpperCase(), temp: wData.current.temperature_2m, feels_like: wData.current.apparent_temperature, wind: wData.current.wind_speed_10m, humidity: wData.current.relative_humidity_2m, aqi: aqiData.current.us_aqi || 0, condition: wData.current.weather_code < 3 ? 'SUNNY' : 'CLOUDY', forecast: [] }, activePin: { label: name.toUpperCase(), lat: latitude, lon: longitude } });
  } catch (err) { set({ weatherData: { ...get().weatherData, syncing: false } }); }
- }
+ },
+
+ selectedTarget: null,
+ setSelectedTarget: (target) => set({ selectedTarget: target }),
+ isTrackingActive: false,
+ setTrackingActive: (active) => set({ isTrackingActive: active }),
+ c2Operators: [
+   { id: 'price', callsign: 'BRAVO 0-6', name: 'CPT. JOHN PRICE', status: 'ACTIVE', group: 'SAS / TF-141', lat: 34.555, lng: 69.203, alt: 1850 },
+   { id: 'ghost', callsign: 'BRAVO 0-7', name: 'LT. SIMON GHOST RILEY', status: 'ACTIVE', group: 'SAS / TF-141', lat: 31.628, lng: 65.737, alt: 1010 },
+   { id: 'soap', callsign: 'BRAVO 0-8', name: 'SGT. JOHN SOAP MACTAVISH', status: 'ACTIVE', group: 'SAS / TF-141', lat: 33.315, lng: 44.366, alt: 34 },
+   { id: 'gaz', callsign: 'BRAVO 0-9', name: 'SGT. KYLE GAZ GARRICK', status: 'ACTIVE', group: 'SAS / TF-141', lat: 35.689, lng: 51.389, alt: 1120 },
+   { id: 'laswell', callsign: 'WATCHER-1', name: 'KATE LASWELL', status: 'ACTIVE', group: 'CIA / Ops', lat: 38.907, lng: -77.036, alt: 22 }
+ ],
+ setOperatorStatus: (id, status) => set(state => ({ c2Operators: state.c2Operators.map(op => op.id === id ? { ...op, status } : op) })),
+ commsLink: { activeCall: null, isEncrypted: true, strength: -48, logs: [] },
+ setCommsLink: (next) => set(state => ({ commsLink: { ...state.commsLink, ...next } })),
+ addCommsLog: (log) => set(state => ({ commsLink: { ...state.commsLink, logs: [...state.commsLink.logs.slice(-20), log] } }))
 }), {
  name: 'raven-global-store',
  partialize: (state) => ({
@@ -879,4 +896,3 @@ const useStore = create(persist((set, get) => ({
 }));
 
 export default useStore;
-
