@@ -3,26 +3,52 @@ import { useMap, useMapEvents, Polyline, Tooltip, Marker, Circle } from 'react-l
 import L from 'leaflet';
 import { Target, Activity, Clock, Navigation, ShieldAlert } from 'lucide-react';
 import useStore from '../store';
+import * as mgrs from 'mgrs';
+
+// Helper to format MGRS
+const getMGRS = (lat, lng) => {
+  try {
+    let normalizedLng = ((lng + 180) % 360);
+    if (normalizedLng < 0) normalizedLng += 360;
+    normalizedLng -= 180;
+    const clampedLat = Math.max(-80, Math.min(84, lat));
+    const raw = mgrs.forward([normalizedLng, clampedLat], 5);
+    const match = raw.match(/^(\d{1,2}[A-Z])([A-Z]{2})(\d+)/);
+    if (match) {
+      const gzd = match[1];
+      const sq = match[2];
+      const num = match[3];
+      const half = num.length / 2;
+      const easting = num.substring(0, half);
+      const northing = num.substring(half);
+      return `${gzd} ${sq} ${easting} ${northing}`;
+    }
+    return raw;
+  } catch (err) {
+    return 'OUT OF GRID';
+  }
+};
 
 // 1. Cursor Telemetry
 export function CursorTelemetry() {
- const [pos, setPos] = useState({ lat: 0, lng: 0 });
- const map = useMapEvents({
- mousemove(e) {
- setPos({ lat: e.latlng.lat, lng: e.latlng.lng });
- }
- });
+  const [pos, setPos] = useState({ lat: 0, lng: 0 });
+  const map = useMapEvents({
+    mousemove(e) {
+      setPos({ lat: e.latlng.lat, lng: e.latlng.lng });
+    }
+  });
 
- // Hide on mobile screens
- if (window.innerWidth < 768) return null;
+  // Hide on mobile screens
+  if (window.innerWidth < 768) return null;
 
- return (
- <div className="absolute top-12 right-4 z-[2000] pointer-events-none flex flex-col gap-1 font-mono text-[9px] tracking-widest text-primary/80 bg-black/60 px-3 py-2 border border-primary/20 backdrop-blur-md shadow-[0_0_15px_rgba(255,184,0,0.15)]">
- <div>LAT: {pos.lat.toFixed(6)}°</div>
- <div>LNG: {pos.lng.toFixed(6)}°</div>
- <div>ELEV: {Math.floor(Math.random() * 50 + 10)}M (EST)</div>
- </div>
- );
+  return (
+    <div className="absolute top-12 right-4 z-[2000] pointer-events-none flex flex-col gap-1 font-mono text-[9px] tracking-widest text-primary/80 bg-black/60 px-3 py-2 border border-primary/20 backdrop-blur-md shadow-[0_0_15px_rgba(255,184,0,0.15)]">
+      <div>LAT: {pos.lat.toFixed(6)}°</div>
+      <div>LNG: {pos.lng.toFixed(6)}°</div>
+      <div>MGRS: {getMGRS(pos.lat, pos.lng)}</div>
+      <div>ELEV: {Math.floor(Math.random() * 50 + 10)}M (EST)</div>
+    </div>
+  );
 }
 
 // 2. Hex Grid Overlay (Visual Only)
