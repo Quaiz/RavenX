@@ -2,9 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Search, AlertTriangle, User, Globe, MapPin, Loader2, Fingerprint, ShieldAlert, ChevronRight, Scale, X, Target, Radio, Activity } from 'lucide-react';
 import useStore from '../store';
 import { streamAiResponse } from '../aiManager';
-import BiometricTracker from './BiometricTracker';
-import SecureComms from './SecureComms';
-import PersonnelStatus from './PersonnelStatus';
 
 const renderSafe = (val) => {
  if (!val) return '';
@@ -119,7 +116,6 @@ const WantedCriminals = () => {
  const setSelectedTarget = useStore(state => state.setSelectedTarget);
  const setTrackingActive = useStore(state => state.setTrackingActive);
  const isTrackingActive = useStore(state => state.isTrackingActive);
- const [activeDossierTab, setActiveDossierTab] = useState('DOSSIER');
 
  const [aiTranslation, setAiTranslation] = useState('');
  const [isTranslating, setIsTranslating] = useState(false);
@@ -339,7 +335,6 @@ Output ONLY the detailed dossier in a highly structured, immersive, cyber/milita
    setActiveImageIndex(-1);
    setSelectedTarget(null);
    setTrackingActive(false);
-   setActiveDossierTab('DOSSIER');
    };
 
  return (
@@ -487,19 +482,6 @@ Output ONLY the detailed dossier in a highly structured, immersive, cyber/milita
  >
  <Target size={10} /> ADD TO OP
  </button>
-  <button 
-  onClick={() => {
-    setTrackingActive(!isTrackingActive);
-    addNotification(isTrackingActive ? 'ABIS RADAR STANDBY' : 'ABIS BIOMETRIC SCAN ENGAGED', 'SUCCESS');
-  }}
-  className={`flex items-center gap-1 px-2 py-1 border text-[8px] font-bold tracking-widest transition-colors uppercase ${
-    isTrackingActive 
-      ? 'bg-red-500 text-black border-red-500 hover:bg-red-600' 
-      : 'bg-red-900/30 hover:bg-red-500/20 border-red-500/50 text-red-400'
-  }`}
-  >
-  <Fingerprint size={10} /> {isTrackingActive ? 'LOCK ACTIVE' : 'ENGAGE ABIS'}
-  </button>
  <button onClick={clearSelection} className="p-1 text-red-500/50 hover:text-red-500 hover:bg-red-950/50 transition-colors hidden md:block">
  <X size={14} />
  </button>
@@ -507,44 +489,8 @@ Output ONLY the detailed dossier in a highly structured, immersive, cyber/milita
  </div>
 
  {/* Dossier Content */}
-  {/* C2 TACTICAL TAB SELECTOR */}
-  <div className="shrink-0 flex border-b border-red-900/30 bg-[#0c0505] relative z-10">
-    <button 
-      onClick={() => setActiveDossierTab('DOSSIER')} 
-      className={`flex-1 py-2 text-[8px] font-bold tracking-widest border-r border-red-900/20 text-center uppercase transition-all ${
-        activeDossierTab === 'DOSSIER' ? 'bg-red-900/20 text-red-400 font-bold' : 'text-red-900/50 hover:text-red-500/80'
-      }`}
-    >
-      // 01. DOSSIER
-    </button>
-    <button 
-      onClick={() => setActiveDossierTab('ABIS')} 
-      className={`flex-1 py-2 text-[8px] font-bold tracking-widest border-r border-red-900/20 text-center uppercase transition-all ${
-        activeDossierTab === 'ABIS' ? 'bg-red-900/20 text-red-400 font-bold' : 'text-red-900/50 hover:text-red-500/80'
-      }`}
-    >
-      // 02. ABIS SCANNER
-    </button>
-    <button 
-      onClick={() => setActiveDossierTab('COMMS')} 
-      className={`flex-1 py-2 text-[8px] font-bold tracking-widest border-r border-red-900/20 text-center uppercase transition-all ${
-        activeDossierTab === 'COMMS' ? 'bg-red-900/20 text-red-400 font-bold' : 'text-red-900/50 hover:text-red-500/80'
-      }`}
-    >
-      // 03. SECURE COMMS
-    </button>
-    <button 
-      onClick={() => setActiveDossierTab('BLUE_FORCE')} 
-      className={`flex-1 py-2 text-[8px] font-bold tracking-widest text-center uppercase transition-all ${
-        activeDossierTab === 'BLUE_FORCE' ? 'bg-red-900/20 text-red-400 font-bold' : 'text-red-900/50 hover:text-red-500/80'
-      }`}
-    >
-      // 04. BLUE FORCE
-    </button>
-  </div>
  <div className="flex-1 overflow-y-auto custom-scrollbar p-4 relative z-10">
-  {activeDossierTab === 'DOSSIER' && (
-  isDetailsLoading ? (
+  {isDetailsLoading ? (
  <div className="flex flex-col items-center justify-center h-full gap-3 opacity-70">
  <div className="text-red-500 animate-pulse"><Fingerprint size={24} /></div>
  <span className="text-[9px] tracking-widest text-red-500/50 uppercase">DECRYPTING CLASSIFIED FILES...</span>
@@ -682,18 +628,6 @@ Output ONLY the detailed dossier in a highly structured, immersive, cyber/milita
  <ShieldAlert size={32} className="text-red-500" />
  <span className="text-[9px] tracking-widest text-red-500/50 uppercase">ERROR: DOSSIER CORRUPTED OR ACCESS DENIED BY INTERPOL.</span>
  </div>
-  ))}
-
-  {activeDossierTab === 'ABIS' && (
-    <BiometricTracker />
-  )}
-
-  {activeDossierTab === 'COMMS' && (
-    <SecureComms />
-  )}
-
-  {activeDossierTab === 'BLUE_FORCE' && (
-    <PersonnelStatus />
   )}
  </div>
  </div>
