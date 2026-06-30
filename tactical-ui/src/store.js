@@ -20,9 +20,6 @@ export const MODULE_CATEGORIES = {
  { id: 'LINK_ANALYSIS', name: 'ENTITY GRAPH', desc: 'Palantir-style node/link network analysis', status: 'ACTIVE' },
  { id: 'DISEASE_OUTBREAKS', name: 'DISEASE OUTBREAKS', desc: 'WHO global epidemic alerts and updates', status: 'ACTIVE' },
 	{ id: 'WANTED_CRIMINALS', name: 'WANTED CRIMINALS', desc: 'Interpol Red/Yellow Notices + FBI Wanted list integration', status: 'ACTIVE' },
-	{ id: 'ABIS_BIOMETRICS', name: 'ABIS FACIAL ENGINE', desc: 'Automated biometric interface and target tracking analysis', status: 'ACTIVE' },
-	{ id: 'SECURE_COMMS', name: 'SECURE COMMS LINK', desc: 'AES-256 secure tactical communication monitoring and static waveforms', status: 'ACTIVE' },
-	{ id: 'BLUE_FORCE', name: 'BLUE FORCE BOARD', desc: 'ATAK operator network status and NVG helmet camera feed', status: 'ACTIVE' },
  ],
 
  // ── Markets & Finance ────────────────────────────────────────────────────────
@@ -69,7 +66,7 @@ export const MODULE_CATEGORIES = {
 
 export const WORKSPACE_MODULES = {
  1: ['MAP_MODULE', 'WORLD_CLOCK', 'LOCAL_AIR_RADAR', 'ADSB_AIRCRAFT', 'AIS_VESSELS', 'WEATHER_ALERTS', 'SEISMIC', 'NASA_FIRES', 'SPACE_WEATHER', 'AIR_QUALITY', 'GPS_JAMMING', 'POWER_GRIDS', 'LIVE_WEBCAMS'],
- 2: ['LINK_ANALYSIS', 'AI_ANALYST', 'OSINT_FEED', 'GLOBAL_NEWS', 'PREDICTION_MARKETS', 'WANTED_CRIMINALS', 'ABIS_BIOMETRICS', 'SECURE_COMMS', 'BLUE_FORCE', 'COUNTRY_INTEL', 'CENSORSHIP', 'GOOGLE_TRENDS', 'HUMANITARIAN', 'DISEASE_OUTBREAKS'],
+ 2: ['LINK_ANALYSIS', 'AI_ANALYST', 'OSINT_FEED', 'GLOBAL_NEWS', 'PREDICTION_MARKETS', 'WANTED_CRIMINALS', 'COUNTRY_INTEL', 'CENSORSHIP', 'GOOGLE_TRENDS', 'HUMANITARIAN', 'DISEASE_OUTBREAKS'],
  3: ['MARKET_TERMINAL', 'CRYPTO', 'FOREX', 'MACRO_FEEDS', 'MONETARY_POLICY', 'CORPORATE_INTEL', 'MILITARY_BASES', 'NUCLEAR_FACILITIES', 'MARITIME_INTEL', 'MILITARY_HARDWARE']
 };
 
