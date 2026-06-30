@@ -145,56 +145,88 @@ const CryptoTracker = () => {
  })();
  }, []);
 
- useEffect(() => {
- const streams = COINS.map(s=>`${s.symbol.toLowerCase()}@ticker`).join('/');
- const connect = () => {
- const ws = new WebSocket(`wss://stream.binance.com:9443/stream?streams=${streams}`);
- wsRef.current = ws;
- ws.onopen = () => setWsOk(true);
- ws.onclose = () => { setWsOk(false); setTimeout(connect, 5000); };
- ws.onerror = () => ws.close();
- 
- let pendingUpdates = {};
- 
- ws.onmessage = (e) => {
- try {
- const d = JSON.parse(e.data).data;
- if (!d?.s) return;
- pendingUpdates[d.s] = { price: d.c, change: d.P, high: d.h, low: d.l, volume: d.q };
- } catch {}
- };
+  const reconnectTimeoutRef = useRef(null);
 
- // Batch state updates every 1 second to prevent massive re-renders
- const interval = setInterval(() => {
- if (document.hidden) return;
- if (Object.keys(pendingUpdates).length === 0) return;
- setData(prev => {
- const next = { ...prev };
- let changed = false;
- for (const [s, newData] of Object.entries(pendingUpdates)) {
- const old = prev[s];
- if (old && old.price !== newData.price) {
- flashRef.current[s] = parseFloat(newData.price) > parseFloat(old.price) ? 'up' : 'down';
- setTimeout(() => { flashRef.current[s] = null; forceRender(n=>n+1); }, 600);
- }
- next[s] = newData;
- changed = true;
- }
- pendingUpdates = {};
- return changed ? next : prev;
- });
- }, 1000);
+  useEffect(() => {
+    let isMounted = true;
+    const streams = COINS.map(s=>`${s.symbol.toLowerCase()}@ticker`).join('/');
 
- wsRef.current._interval = interval;
- };
- connect();
- return () => { 
- if(wsRef.current) {
- clearInterval(wsRef.current._interval);
- wsRef.current.close(); 
- }
- };
- }, []);
+    const connect = () => {
+      if (!isMounted) return;
+      
+      const ws = new WebSocket(`wss://stream.binance.com:9443/stream?streams=${streams}`);
+      wsRef.current = ws;
+      
+      ws.onopen = () => {
+        if (isMounted) setWsOk(true);
+      };
+      
+      ws.onclose = () => {
+        if (isMounted) {
+          setWsOk(false);
+          reconnectTimeoutRef.current = setTimeout(connect, 5000);
+        }
+      };
+      
+      ws.onerror = () => {
+        ws.close();
+      };
+      
+      let pendingUpdates = {};
+      
+      ws.onmessage = (e) => {
+        try {
+          const d = JSON.parse(e.data).data;
+          if (!d?.s) return;
+          pendingUpdates[d.s] = { price: d.c, change: d.P, high: d.h, low: d.l, volume: d.q };
+        } catch {}
+      };
+
+      // Batch state updates every 1 second to prevent massive re-renders
+      const interval = setInterval(() => {
+        if (!isMounted || document.hidden) return;
+        if (Object.keys(pendingUpdates).length === 0) return;
+        setData(prev => {
+          const next = { ...prev };
+          let changed = false;
+          for (const [s, newData] of Object.entries(pendingUpdates)) {
+            const old = prev[s];
+            if (old && old.price !== newData.price) {
+              flashRef.current[s] = parseFloat(newData.price) > parseFloat(old.price) ? 'up' : 'down';
+              setTimeout(() => { 
+                flashRef.current[s] = null; 
+                if (isMounted) forceRender(n=>n+1); 
+              }, 600);
+            }
+            next[s] = newData;
+            changed = true;
+          }
+          pendingUpdates = {};
+          return changed ? next : prev;
+        });
+      }, 1000);
+
+      ws._interval = interval;
+    };
+
+    connect();
+
+    return () => {
+      isMounted = false;
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+      }
+      if (wsRef.current) {
+        wsRef.current.onopen = null;
+        wsRef.current.onclose = null;
+        wsRef.current.onerror = null;
+        wsRef.current.onmessage = null;
+        clearInterval(wsRef.current._interval);
+        wsRef.current.close();
+        wsRef.current = null;
+      }
+    };
+  }, []);
 
  const coins = useMemo(() => {
  let list = COINS.map((s,i) => ({ ...s, rank:i+1, ...(data[s.symbol]||{}) }));

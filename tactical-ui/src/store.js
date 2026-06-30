@@ -146,7 +146,7 @@ const useStore = create(persist((set, get) => ({
  setTimeout(() => {
  get().dismissToast(id);
  }, 5000);
- return { notifications: [noti, ...state.notifications] };
+ return { notifications: [noti, ...state.notifications].slice(0, 100) };
  }),
  dismissToast: (id) => set(state => ({
  notifications: state.notifications.map(n => n.id === id ? { ...n, isToast: false } : n)
