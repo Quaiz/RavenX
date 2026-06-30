@@ -866,14 +866,7 @@ const useStore = create(persist((set, get) => ({
  setSelectedTarget: (target) => set({ selectedTarget: target }),
  isTrackingActive: false,
  setTrackingActive: (active) => set({ isTrackingActive: active }),
- c2Operators: [
-   { id: 'price', callsign: 'BRAVO 0-6', name: 'CPT. JOHN PRICE', status: 'ACTIVE', group: 'SAS / TF-141', lat: 34.555, lng: 69.203, alt: 1850 },
-   { id: 'ghost', callsign: 'BRAVO 0-7', name: 'LT. SIMON GHOST RILEY', status: 'ACTIVE', group: 'SAS / TF-141', lat: 31.628, lng: 65.737, alt: 1010 },
-   { id: 'soap', callsign: 'BRAVO 0-8', name: 'SGT. JOHN SOAP MACTAVISH', status: 'ACTIVE', group: 'SAS / TF-141', lat: 33.315, lng: 44.366, alt: 34 },
-   { id: 'gaz', callsign: 'BRAVO 0-9', name: 'SGT. KYLE GAZ GARRICK', status: 'ACTIVE', group: 'SAS / TF-141', lat: 35.689, lng: 51.389, alt: 1120 },
-   { id: 'laswell', callsign: 'WATCHER-1', name: 'KATE LASWELL', status: 'ACTIVE', group: 'CIA / Ops', lat: 38.907, lng: -77.036, alt: 22 }
- ],
- setOperatorStatus: (id, status) => set(state => ({ c2Operators: state.c2Operators.map(op => op.id === id ? { ...op, status } : op) })),
+ c2Operators: [],
  commsLink: { activeCall: null, isEncrypted: true, strength: -48, logs: [] },
  setCommsLink: (next) => set(state => ({ commsLink: { ...state.commsLink, ...next } })),
  addCommsLog: (log) => set(state => ({ commsLink: { ...state.commsLink, logs: [...state.commsLink.logs.slice(-20), log] } }))
