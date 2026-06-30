@@ -113,6 +113,9 @@ const WantedCriminals = () => {
  const activeOperationId = useStore(state => state.activeOperationId);
  const addNodeToOperation = useStore(state => state.addNodeToOperation);
  const addNotification = useStore(state => state.addNotification);
+ const setSelectedTarget = useStore(state => state.setSelectedTarget);
+ const setTrackingActive = useStore(state => state.setTrackingActive);
+ const isTrackingActive = useStore(state => state.isTrackingActive);
 
  const [aiTranslation, setAiTranslation] = useState('');
  const [isTranslating, setIsTranslating] = useState(false);
@@ -222,21 +225,41 @@ const WantedCriminals = () => {
  }
  }, []);
 
- const fetchDetails = async (suspect) => {
- setSelectedSuspect(suspect);
- setSuspectDetails(null);
- setSuspectImages([]);
- setActiveImageIndex(-1);
- setIsDetailsLoading(true);
- setAiTranslation('');
- setIsTranslating(false);
- if (abortRef.current) abortRef.current.abort();
- try {
+  const fetchDetails = async (suspect) => {
+  setSelectedSuspect(suspect);
+  setSuspectDetails(null);
+  setSuspectImages([]);
+  setActiveImageIndex(-1);
+  setIsDetailsLoading(true);
+  setAiTranslation('');
+  setIsTranslating(false);
+  if (abortRef.current) abortRef.current.abort();
+  setSelectedTarget({
+    id: suspect.entity_id,
+    name: `${suspect.forename || ''} ${suspect.name || ''}`.trim(),
+    nationality: suspect.nationalities?.[0] || 'UNKNOWN',
+    birthDate: suspect.date_of_birth || 'UNKNOWN',
+    placeOfBirth: suspect.place_of_birth || 'UNKNOWN',
+    sex: suspect.sex_id || 'UNKNOWN',
+    charge: 'WANTED BY INTERPOL',
+    thumb: suspect._links?.thumbnail?.href
+  });
+  try {
  const fetchUrl = suspect._links?.self?.href || `https://ws-public.interpol.int/notices/v1/red/${suspect.entity_id.replace('/', '-')}`;
  const res = await fetch(fetchUrl, { referrerPolicy: 'no-referrer' });
  if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
  const data = await res.json();
  setSuspectDetails(data);
+ setSelectedTarget({
+    id: suspect.entity_id,
+    name: `${suspect.forename || ''} ${suspect.name || ''}`.trim(),
+    nationality: suspect.nationalities?.[0] || 'UNKNOWN',
+    birthDate: suspect.date_of_birth || 'UNKNOWN',
+    placeOfBirth: suspect.place_of_birth || 'UNKNOWN',
+    sex: suspect.sex_id || 'UNKNOWN',
+    charge: data.arrest_warrants?.[0]?.charge || 'WANTED BY INTERPOL',
+    thumb: suspect._links?.thumbnail?.href
+  });
  
  // Fetch additional images if available
  if (data._links && data._links.images) {
@@ -305,12 +328,14 @@ Output ONLY the detailed dossier in a highly structured, immersive, cyber/milita
  }
  };
 
- const clearSelection = () => {
- setSelectedSuspect(null);
- setSuspectDetails(null);
- setSuspectImages([]);
- setActiveImageIndex(-1);
- };
+  const clearSelection = () => {
+  setSelectedSuspect(null);
+  setSuspectDetails(null);
+  setSuspectImages([]);
+  setActiveImageIndex(-1);
+  setSelectedTarget(null);
+  setTrackingActive(false);
+  };
 
  return (
  <div className="h-full flex flex-col bg-[#0a0000] border border-red-900/30 text-white font-mono">
@@ -457,6 +482,19 @@ Output ONLY the detailed dossier in a highly structured, immersive, cyber/milita
  >
  <Target size={10} /> ADD TO OP
  </button>
+  <button 
+  onClick={() => {
+    setTrackingActive(!isTrackingActive);
+    addNotification(isTrackingActive ? 'ABIS RADAR STANDBY' : 'ABIS BIOMETRIC SCAN ENGAGED', 'SUCCESS');
+  }}
+  className={`flex items-center gap-1 px-2 py-1 border text-[8px] font-bold tracking-widest transition-colors uppercase ${
+    isTrackingActive 
+      ? 'bg-red-500 text-black border-red-500 hover:bg-red-600' 
+      : 'bg-red-900/30 hover:bg-red-500/20 border-red-500/50 text-red-400'
+  }`}
+  >
+  <Fingerprint size={10} /> {isTrackingActive ? 'LOCK ACTIVE' : 'ENGAGE ABIS'}
+  </button>
  <button onClick={clearSelection} className="p-1 text-red-500/50 hover:text-red-500 hover:bg-red-950/50 transition-colors hidden md:block">
  <X size={14} />
  </button>
