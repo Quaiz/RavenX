@@ -40,9 +40,6 @@ import ProfileModal from './components/ProfileModal';
 import LinkAnalysis from './components/LinkAnalysis';
 import ScrambleText from './components/ScrambleText';
 import WantedCriminals from './components/WantedCriminals';
-import BiometricTracker from './components/BiometricTracker';
-import SecureComms from './components/SecureComms';
-import PersonnelStatus from './components/PersonnelStatus';
 import CommandPalette from './components/CommandPalette';
 import { saveLayout } from './auth';
 
@@ -513,12 +510,6 @@ const Layout = ({ user, showGreeting, onEnterDashboard, onLogout, onUsernameChan
  return <WantedCriminals />;
  case 'WANTED_CRIMINALS':
  return <WantedCriminals />;
- case 'ABIS_BIOMETRICS':
- return <BiometricTracker />;
- case 'SECURE_COMMS':
- return <SecureComms />;
- case 'BLUE_FORCE':
- return <PersonnelStatus />;
  default:
  const allModules = Object.values(MODULE_CATEGORIES).flat();
  const moduleInfo = allModules.find(m => m.id === id);
