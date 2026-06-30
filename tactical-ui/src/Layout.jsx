@@ -385,6 +385,20 @@ const Layout = ({ user, showGreeting, onEnterDashboard, onLogout, onUsernameChan
  return () => clearInterval(interval);
  }, []);
 
+  // 24-hour Auto-Reload Mechanism (seamless layout restoration via localStorage)
+  useEffect(() => {
+    const startTime = Date.now();
+    const checkInterval = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      // 24 hours = 86400000 ms. 25 hours = 90000000 ms (forced limit)
+      if (elapsed >= 90000000 || (elapsed >= 86400000 && document.hidden)) {
+        window.location.reload();
+      }
+    }, 60000); // Check once a minute
+
+    return () => clearInterval(checkInterval);
+  }, []);
+
  useEffect(() => {
  if (showGreeting && currentUser) {
  setBootReady(false);
