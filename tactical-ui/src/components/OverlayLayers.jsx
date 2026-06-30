@@ -152,7 +152,7 @@ function SingleSatellite({ sat }) {
  markerRef.current.setLatLng([lat, lon]);
  }
  } catch (e) {}
- }, 16); // 60 FPS JS update, buttery smooth
+ }, 2000); // 2-second update, high performance
  return () => clearInterval(iv);
  }, [sat]);
 
@@ -238,7 +238,7 @@ function SatelliteLayer() {
 }
 
 const DumbAircraft = React.memo(({ ac, registerMarker }) => {
- const staticIcon = useMemo(() => aircraftIcon(ac.heading), []);
+ const staticIcon = useMemo(() => aircraftIcon(ac.heading), [ac.heading]);
  return (
  <Marker 
   ref={(el) => registerMarker(ac.id, el)} 
@@ -262,113 +262,13 @@ const DumbAircraft = React.memo(({ ac, registerMarker }) => {
 });
 
 function CentralizedAircraftLayer({ aircraft }) {
-// ... existing CentralizedAircraftLayer code is unmodified, wait, I need to NOT replace it but insert after it. Let's use EndLine exactly where CentralizedAircraftLayer ends.
- const map = useMap();
- const markersRef = useRef(new Map());
- const animStates = useRef(new Map());
- const isZooming = useRef(false);
-
- useEffect(() => {
- const handleZoomStart = () => { isZooming.current = true; };
- const handleZoomEnd = () => { isZooming.current = false; };
- map.on('zoomstart', handleZoomStart);
- map.on('zoomend', handleZoomEnd);
- return () => {
-  map.off('zoomstart', handleZoomStart);
-  map.off('zoomend', handleZoomEnd);
- };
- }, [map]);
-
- useEffect(() => {
- const now = Date.now();
- aircraft.forEach(ac => {
-  const state = animStates.current.get(ac.id);
-  if (state) {
-  const marker = markersRef.current.get(ac.id);
-  const currentLat = marker ? marker.getLatLng().lat : state.targetLat;
-  const currentLon = marker ? marker.getLatLng().lng : state.targetLon;
-  
-  let dur = now - state.lastUpdate;
-  if (dur < 2000) dur = 10000;
-  if (dur > 65000) dur = 60000;
-  
-  animStates.current.set(ac.id, {
-   startLat: currentLat,
-   startLon: currentLon,
-   targetLat: ac.lat,
-   targetLon: ac.lon,
-   startTime: now,
-   duration: dur,
-   lastUpdate: now
-  });
-
-  if (marker) {
-   const el = marker.getElement();
-   if (el) {
-   const div = el.querySelector('div');
-   if (div) div.style.transform = `rotate(${ac.heading || 0}deg)`;
-   }
-  }
-  } else {
-  animStates.current.set(ac.id, {
-   startLat: ac.lat,
-   startLon: ac.lon,
-   targetLat: ac.lat,
-   targetLon: ac.lon,
-   startTime: now,
-   duration: 10000,
-   lastUpdate: now
-  });
-  }
- });
- }, [aircraft]);
-
- useEffect(() => {
- let frameId;
- const animate = () => {
-  if (!isZooming.current) {
-  const now = Date.now();
-  markersRef.current.forEach((marker, id) => {
-   const state = animStates.current.get(id);
-   if (state) {
-   const elapsed = now - state.startTime;
-   let progress = elapsed / state.duration;
-   if (progress > 1) progress = 1;
-   
-   const newLat = state.startLat + (state.targetLat - state.startLat) * progress;
-   const newLon = state.startLon + (state.targetLon - state.startLon) * progress;
-   
-   try { marker.setLatLng([newLat, newLon]); } catch (e) {}
-   }
-  });
-  }
-  frameId = requestAnimationFrame(animate);
- };
- frameId = requestAnimationFrame(animate);
- return () => cancelAnimationFrame(frameId);
- }, []);
-
- useEffect(() => {
- const validIds = new Set(aircraft.map(a => a.id));
- for (const id of markersRef.current.keys()) {
-  if (!validIds.has(id)) {
-  markersRef.current.delete(id);
-  animStates.current.delete(id);
-  }
- }
- }, [aircraft]);
-
- const registerMarker = (id, el) => {
- if (el) markersRef.current.set(id, el);
- };
-
- return (
- <>
-  {aircraft.map(ac => (
-  <DumbAircraft key={ac.id} ac={ac} registerMarker={registerMarker} />
-  ))}
- </>
- );
+  return (
+    <>
+      {aircraft.map(ac => (
+        <DumbAircraft key={ac.id} ac={ac} registerMarker={() => {}} />
+      ))}
+    </>
+  );
 }
 
 function PredictiveTrackingLayer() {
@@ -927,24 +827,6 @@ function TerminatorLayer() {
  </Popup>
  </CircleMarker>
  );
- })}
-
-  {/* ── C2 OPERATORS OVERLAY ── */}
-  {c2Operators.map(op => {
-    const isKIA = op.status === 'KIA';
-    const color = isKIA ? '#ef4444' : '#22c55e';
-    return (
-      <CircleMarker
-        key={`c2-op-${op.id}`}
-        center={[op.lat, op.lng]}
-        radius={7}
-        pathOptions={{ color, fillColor: color, fillOpacity: 0.8, weight: 2 }}
-      >
-        <Tooltip direction="top" permanent className={isKIA ? "tactical-tooltip-red" : "tactical-tooltip-cyan"}>
-          {op.callsign} {isKIA ? '[KIA]' : ''}
-        </Tooltip>
-      </CircleMarker>
-    );
   })}
 
   {/* ── TARGET LOCK TRACKING PULSAR ── */}
