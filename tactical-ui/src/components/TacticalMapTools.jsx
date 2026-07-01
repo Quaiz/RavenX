@@ -67,8 +67,12 @@ export function TacticalRangefinder({ active }) {
  const map = useMapEvents({
  mousedown(e) {
  if (!active) return;
-  const isMobile = window.innerWidth < 768 || L.Browser.touch;
-  const isTrigger = isMobile || e.originalEvent.button === 1;
+  const isMobileOrTouch = window.innerWidth < 768 || (e.originalEvent && (
+    e.originalEvent.pointerType === 'touch' ||
+    (window.TouchEvent && e.originalEvent instanceof TouchEvent) ||
+    (e.originalEvent.touches && e.originalEvent.touches.length > 0)
+  ));
+  const isTrigger = isMobileOrTouch || (e.originalEvent && e.originalEvent.button === 1);
   if (isTrigger) { // Middle mouse button (or tap on mobile)
   if (e.originalEvent.button === 1) e.originalEvent.preventDefault(); // Stop browser auto-scroll
  if (points.length >= 2) {
@@ -134,8 +138,12 @@ export function TacticalGeofence({ active, onToggle }) {
  const map = useMapEvents({
  mousedown(e) {
  if (!active) return;
-  const isMobile = window.innerWidth < 768 || L.Browser.touch;
-  const isTrigger = isMobile || e.originalEvent.button === 1;
+  const isMobileOrTouch = window.innerWidth < 768 || (e.originalEvent && (
+    e.originalEvent.pointerType === 'touch' ||
+    (window.TouchEvent && e.originalEvent instanceof TouchEvent) ||
+    (e.originalEvent.touches && e.originalEvent.touches.length > 0)
+  ));
+  const isTrigger = isMobileOrTouch || (e.originalEvent && e.originalEvent.button === 1);
   if (isTrigger) { // Middle click (or tap on mobile)
            if (e.originalEvent.button === 1) e.originalEvent.preventDefault();
  if (!center) {

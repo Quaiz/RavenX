@@ -279,8 +279,12 @@ function PredictiveTrackingLayer() {
 
  useMapEvents({
   mousedown: (e) => {
-  const isMobile = window.innerWidth < 768 || L.Browser.touch;
-  const isTrigger = isMobile || e.originalEvent.button === 1;
+  const isMobileOrTouch = window.innerWidth < 768 || (e.originalEvent && (
+    e.originalEvent.pointerType === 'touch' ||
+    (window.TouchEvent && e.originalEvent instanceof TouchEvent) ||
+    (e.originalEvent.touches && e.originalEvent.touches.length > 0)
+  ));
+  const isTrigger = isMobileOrTouch || (e.originalEvent && e.originalEvent.button === 1);
   if (isTrigger && predictiveTracking.active && predictiveTracking.points.length < 2) {
    if (e.originalEvent.button === 1) e.originalEvent.preventDefault();
    addPoint(e.latlng.lat, e.latlng.lng);
