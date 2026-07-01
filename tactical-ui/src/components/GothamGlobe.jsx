@@ -239,7 +239,7 @@ function TacticalLayers({ rangefinderActive, geofenceActive, predictiveTrackingA
  <>
  {geoData && (
  <GeoJSON
- ref={geoJsonRef}
+ key={`geojson-interactive-${!rangefinderActive && !geofenceActive && !predictiveTrackingActive}`} interactive={!rangefinderActive && !geofenceActive && !predictiveTrackingActive} ref={geoJsonRef}
  data={geoData}
  style={countryStyle}
  onEachFeature={onEachCountry}
