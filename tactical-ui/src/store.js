@@ -486,7 +486,9 @@ const useStore = create(persist((set, get) => ({
  { id: 'BONE', name: 'BONE', category: 'LIGHT', url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png' },
  { id: 'GRANITE', name: 'GRANITE', category: 'LIGHT', url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png' },
  // SATELLITE
- { id: 'RECON', name: 'RECON', category: 'SATELLITE', url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}' },
+   { id: 'RECON', name: 'RECON', category: 'SATELLITE', url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}' },
+  { id: 'SENTINEL_2', name: 'SENTINEL-2 (10m)', category: 'SATELLITE', url: 'https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless_3857/default/GoogleMapsCompatible/{z}/{y}/{x}.jpg' },
+  { id: 'NASA_DAILY', name: 'NASA DAILY (250m)', category: 'SATELLITE', url: 'https://gibs-a.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_CorrectedReflectance_TrueColor/default/default/GoogleMapsCompatible_Level9/{z}/{y}/{x}.jpg' },
  // TERRAIN
  { id: 'CONTOUR', name: 'CONTOUR', category: 'TERRAIN', url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png' },
  { id: 'ATLAS', name: 'ATLAS', category: 'TERRAIN', url: 'https://server.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/{z}/{y}/{x}' },
