@@ -111,7 +111,7 @@ export default function HumintIntel() {
   // Sync Backend Stats
   const fetchBackendStats = async () => {
     try {
-      const url = `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000'}/api/logs`;
+      const url = `${import.meta.env.VITE_BACKEND_URL || ''}/api/logs`;
       const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
