@@ -17,9 +17,10 @@ export const MODULE_CATEGORIES = {
  { id: 'CENSORSHIP', name: 'INTERNET CENSORSHIP', desc: 'OONI: Website blocks, shutdowns, and surveillance', status: 'ACTIVE' },
  { id: 'HUMANITARIAN', name: 'HUMANITARIAN INTEL', desc: 'GDACS disaster alerts, UNHCR refugee and NGO crisis data', status: 'ACTIVE' },
  { id: 'LIVE_WEBCAMS', name: 'LIVE WEBCAMS', desc: 'Global live street camera streams', status: 'ACTIVE' },
- { id: 'LINK_ANALYSIS', name: 'ENTITY GRAPH', desc: 'Palantir-style node/link network analysis', status: 'ACTIVE' },
- { id: 'DISEASE_OUTBREAKS', name: 'DISEASE OUTBREAKS', desc: 'WHO global epidemic alerts and updates', status: 'ACTIVE' },
+  { id: 'LINK_ANALYSIS', name: 'ENTITY GRAPH', desc: 'Palantir-style node/link network analysis', status: 'ACTIVE' },
+  { id: 'DISEASE_OUTBREAKS', name: 'DISEASE OUTBREAKS', desc: 'WHO global epidemic alerts and updates', status: 'ACTIVE' },
 	{ id: 'WANTED_CRIMINALS', name: 'WANTED CRIMINALS', desc: 'Interpol Red/Yellow Notices + FBI Wanted list integration', status: 'ACTIVE' },
+  { id: 'HUMINT', name: 'HUMINT OPERATIONS', desc: 'Real-time Operator telemetry and private Safehouse network monitoring', status: 'ACTIVE' },
  ],
 
  // ── Markets & Finance ────────────────────────────────────────────────────────
@@ -28,45 +29,45 @@ export const MODULE_CATEGORIES = {
  // OPEC + SUPPLY_CHAIN + DEBT_CLOCK + COT_REPORTS → MACRO_FEEDS
  // CENTRAL_BANKS + ECONOMIC_CALENDAR → MONETARY_POLICY
  MARKETS: [
- { id: 'FOREX', name: 'FOREX LIVE', desc: 'Global currency pairs and volatility indices', status: 'ACTIVE' },
- { id: 'CRYPTO', name: 'CRYPTO TRACKER', desc: 'Digital asset flows and whale movement monitoring', status: 'ACTIVE' },
- { id: 'MARKET_TERMINAL', name: 'MARKET TERMINAL', desc: 'Multi-asset charts, equities, commodities, and sector heatmaps', status: 'ACTIVE' },
- { id: 'CORPORATE_INTEL', name: 'CORPORATE INTEL', desc: 'SEC filings, insider trading, and corporate default alerts', status: 'ACTIVE' },
- { id: 'MACRO_FEEDS', name: 'MACRO FEEDS', desc: 'OPEC, supply chain, global debt clock, and COT reports', status: 'ACTIVE' },
- { id: 'MONETARY_POLICY', name: 'MONETARY POLICY', desc: 'Global interest rates and macroeconomic event calendar', status: 'ACTIVE' },
- { id: 'GOOGLE_TRENDS', name: 'SEARCH TRENDS', desc: 'Public attention and interest tracking via Google', status: 'ACTIVE' },
+  { id: 'FOREX', name: 'FOREX LIVE', desc: 'Global currency pairs and volatility indices', status: 'ACTIVE' },
+  { id: 'CRYPTO', name: 'CRYPTO TRACKER', desc: 'Digital asset flows and whale movement monitoring', status: 'ACTIVE' },
+  { id: 'MARKET_TERMINAL', name: 'MARKET TERMINAL', desc: 'Multi-asset charts, equities, commodities, and sector heatmaps', status: 'ACTIVE' },
+  { id: 'CORPORATE_INTEL', name: 'CORPORATE INTEL', desc: 'SEC filings, insider trading, and corporate default alerts', status: 'ACTIVE' },
+  { id: 'MACRO_FEEDS', name: 'MACRO FEEDS', desc: 'OPEC, supply chain, global debt clock, and COT reports', status: 'ACTIVE' },
+  { id: 'MONETARY_POLICY', name: 'MONETARY POLICY', desc: 'Global interest rates and macroeconomic event calendar', status: 'ACTIVE' },
+  { id: 'GOOGLE_TRENDS', name: 'SEARCH TRENDS', desc: 'Public attention and interest tracking via Google', status: 'ACTIVE' },
  ],
 
  // ── Strategic Infrastructure ─────────────────────────────────────────────────
  // CHOKEPOINTS + PORT_CONGESTION + PIPELINES + UNDERSEA_CABLES → MARITIME_INTEL
  STRATEGIC: [
- { id: 'NUCLEAR_FACILITIES', name: 'NUCLEAR STATUS', desc: 'Monitoring 370+ global nuclear facilities', status: 'ACTIVE' },
- { id: 'MARITIME_INTEL', name: 'MARITIME INTEL', desc: 'Chokepoints, port congestion, pipelines, and undersea cables', status: 'ACTIVE' },
- { id: 'GPS_JAMMING', name: 'GPS INTERFERENCE', desc: 'Jamming and spoofing zones monitoring', status: 'ACTIVE' },
- { id: 'POWER_GRIDS', name: 'POWER GRID STATUS', desc: 'Real-time national grid load and outage tracking', status: 'ACTIVE' },
- { id: 'MILITARY_BASES', name: 'MILITARY REGISTRY', desc: 'Database of global strategic military installations', status: 'ACTIVE' },
- { id: 'MILITARY_HARDWARE', name: 'MILITARY HARDWARE', desc: 'Tactical analysis of global weapon systems and vehicles', status: 'ACTIVE' },
+  { id: 'NUCLEAR_FACILITIES', name: 'NUCLEAR STATUS', desc: 'Monitoring 370+ global nuclear facilities', status: 'ACTIVE' },
+  { id: 'MARITIME_INTEL', name: 'MARITIME INTEL', desc: 'Chokepoints, port congestion, pipelines, and undersea cables', status: 'ACTIVE' },
+  { id: 'GPS_JAMMING', name: 'GPS INTERFERENCE', desc: 'Jamming and spoofing zones monitoring', status: 'ACTIVE' },
+  { id: 'POWER_GRIDS', name: 'POWER GRID STATUS', desc: 'Real-time national grid load and outage tracking', status: 'ACTIVE' },
+  { id: 'MILITARY_BASES', name: 'MILITARY REGISTRY', desc: 'Database of global strategic military installations', status: 'ACTIVE' },
+  { id: 'MILITARY_HARDWARE', name: 'MILITARY HARDWARE', desc: 'Tactical analysis of global weapon systems and vehicles', status: 'ACTIVE' },
  ],
 
  // ── Environmental & Tracking ─────────────────────────────────────────────────
  // EARTHQUAKES + VOLCANOES → SEISMIC
  // SPACE_WEATHER + SOLAR_STORMS → SPACE_WEATHER
  ENVIRONMENTAL: [
- { id: 'NASA_FIRES', name: 'NASA FIRMS FIRES', desc: 'Real-time global fire detection and hotspots', status: 'ACTIVE' },
- { id: 'SEISMIC', name: 'SEISMIC MONITOR', desc: 'USGS live earthquakes and global volcanic activity', status: 'ACTIVE' },
- { id: 'WEATHER_ALERTS', name: 'WEATHER ALERTS', desc: 'NOAA global severe weather warnings', status: 'ACTIVE' },
- { id: 'SPACE_WEATHER', name: 'SPACE WEATHER', desc: 'NOAA geomagnetic index, solar flares, and radiation storms', status: 'ACTIVE' },
- { id: 'AIS_VESSELS', name: 'VESSEL TRACKING', desc: 'Real-time maritime AIS ship movements', status: 'ACTIVE' },
- { id: 'LOCAL_AIR_RADAR', name: 'TACTICAL AIR RADAR', desc: 'Live local airspace scanner', status: 'ACTIVE' },
-    { id: 'ADSB_AIRCRAFT', name: 'FLIGHT TRACKING', desc: 'Real-time ADSB aircraft movement monitoring', status: 'ACTIVE' },
- { id: 'WORLD_CLOCK', name: 'WORLD CLOCK', desc: 'Multi-timezone chronometers and selectors', status: 'ACTIVE' },
- { id: 'AIR_QUALITY', name: 'AIR QUALITY (AQI)', desc: 'Real-time global air quality and pollutants', status: 'ACTIVE' },
+  { id: 'NASA_FIRES', name: 'NASA FIRMS FIRES', desc: 'Real-time global fire detection and hotspots', status: 'ACTIVE' },
+  { id: 'SEISMIC', name: 'SEISMIC MONITOR', desc: 'USGS live earthquakes and global volcanic activity', status: 'ACTIVE' },
+  { id: 'WEATHER_ALERTS', name: 'WEATHER ALERTS', desc: 'NOAA global severe weather warnings', status: 'ACTIVE' },
+  { id: 'SPACE_WEATHER', name: 'SPACE WEATHER', desc: 'NOAA geomagnetic index, solar flares, and radiation storms', status: 'ACTIVE' },
+  { id: 'AIS_VESSELS', name: 'VESSEL TRACKING', desc: 'Real-time maritime AIS ship movements', status: 'ACTIVE' },
+  { id: 'LOCAL_AIR_RADAR', name: 'TACTICAL AIR RADAR', desc: 'Live local airspace scanner', status: 'ACTIVE' },
+  { id: 'ADSB_AIRCRAFT', name: 'FLIGHT TRACKING', desc: 'Real-time ADSB aircraft movement monitoring', status: 'ACTIVE' },
+  { id: 'WORLD_CLOCK', name: 'WORLD CLOCK', desc: 'Multi-timezone chronometers and selectors', status: 'ACTIVE' },
+  { id: 'AIR_QUALITY', name: 'AIR QUALITY (AQI)', desc: 'Real-time global air quality and pollutants', status: 'ACTIVE' },
  ],
 };
 
 export const WORKSPACE_MODULES = {
  1: ['MAP_MODULE', 'WORLD_CLOCK', 'LOCAL_AIR_RADAR', 'ADSB_AIRCRAFT', 'AIS_VESSELS', 'WEATHER_ALERTS', 'SEISMIC', 'NASA_FIRES', 'SPACE_WEATHER', 'AIR_QUALITY', 'GPS_JAMMING', 'POWER_GRIDS', 'LIVE_WEBCAMS'],
- 2: ['LINK_ANALYSIS', 'AI_ANALYST', 'OSINT_FEED', 'GLOBAL_NEWS', 'PREDICTION_MARKETS', 'WANTED_CRIMINALS', 'COUNTRY_INTEL', 'CENSORSHIP', 'GOOGLE_TRENDS', 'HUMANITARIAN', 'DISEASE_OUTBREAKS'],
+ 2: ['LINK_ANALYSIS', 'AI_ANALYST', 'OSINT_FEED', 'GLOBAL_NEWS', 'PREDICTION_MARKETS', 'WANTED_CRIMINALS', 'COUNTRY_INTEL', 'CENSORSHIP', 'GOOGLE_TRENDS', 'HUMANITARIAN', 'DISEASE_OUTBREAKS', 'HUMINT'],
  3: ['MARKET_TERMINAL', 'CRYPTO', 'FOREX', 'MACRO_FEEDS', 'MONETARY_POLICY', 'CORPORATE_INTEL', 'MILITARY_BASES', 'NUCLEAR_FACILITIES', 'MARITIME_INTEL', 'MILITARY_HARDWARE']
 };
 
@@ -330,6 +331,11 @@ const useStore = create(persist((set, get) => ({
  else if (!nextOverlays.includes('SATELLITES')) nextOverlays = [...nextOverlays, 'SATELLITES'];
  }
 
+ if (id === 'HUMINT') {
+ if (isActive) nextOverlays = nextOverlays.filter(o => o !== 'HUMINT_OPS');
+ else if (!nextOverlays.includes('HUMINT_OPS')) nextOverlays = [...nextOverlays, 'HUMINT_OPS'];
+ }
+
  if (isActive) {
  return { 
  activeModules: state.activeModules.filter(m => m !== id),
@@ -363,6 +369,10 @@ const useStore = create(persist((set, get) => ({
 
  if (id === 'SATELLITE_TRACKING' && !nextOverlays.includes('SATELLITES')) {
  nextOverlays = [...nextOverlays, 'SATELLITES'];
+ }
+
+ if (id === 'HUMINT' && !nextOverlays.includes('HUMINT_OPS')) {
+ nextOverlays = [...nextOverlays, 'HUMINT_OPS'];
  }
 
  if (isActive) {
@@ -477,6 +487,45 @@ const useStore = create(persist((set, get) => ({
  }
  })),
 
+ // ── Operator Command & Safehouses State ──
+ operatorCoords: { lat: 21.0285, lon: 105.8542 },
+ operatorSafehouses: [
+    {
+      id: 'SFH-01',
+      codename: 'HOME BASE',
+      location: 'Hanoi, Vietnam',
+      lat: 21.0278,
+      lon: 105.8523,
+      status: 'SECURE',
+      rating: 'A',
+      capacity: '1/2',
+      features: ['Comms Link', 'Secure Storage', 'Backup Power']
+    },
+    {
+      id: 'SFH-02',
+      codename: 'OFFICE NODE',
+      location: 'Ho Chi Minh City, Vietnam',
+      lat: 10.7626,
+      lon: 106.6602,
+      status: 'SECURE',
+      rating: 'B',
+      capacity: '3/5',
+      features: ['High-speed Fiber', 'Meeting Room']
+    },
+    {
+      id: 'SFH-03',
+      codename: 'BACKUP VAULT',
+      location: 'Singapore',
+      lat: 1.3521,
+      lon: 103.8198,
+      status: 'SECURE',
+      rating: 'A',
+      capacity: '0/2',
+      features: ['Off-grid Server', 'Biometric Security']
+    }
+  ],
+  setOperatorCoords: (lat, lon) => set({ operatorCoords: { lat, lon } }),
+
  baseMaps: [
  // DARK
  { id: 'BLACKOUT', name: 'BLACKOUT', category: 'DARK', url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' },
@@ -506,6 +555,7 @@ const useStore = create(persist((set, get) => ({
  { id: 'GPS_INTERFERENCE', name: 'GPS INTERFERENCE', category: 'CONFLICT' },
  // MILITARY
  { id: 'MILITARY_BASES', name: 'MILITARY BASES', category: 'MILITARY' },
+ { id: 'HUMINT_OPS', name: 'HUMINT OPERATIONS', category: 'MILITARY' },
  { id: 'DAY_NIGHT', name: 'DAY / NIGHT', category: 'MILITARY' },
  // ENVIRO
  { id: 'EARTHQUAKES', name: 'EARTHQUAKES', category: 'ENVIRO' },

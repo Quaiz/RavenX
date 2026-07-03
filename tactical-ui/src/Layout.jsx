@@ -41,6 +41,7 @@ import LinkAnalysis from './components/LinkAnalysis';
 import ScrambleText from './components/ScrambleText';
 import WantedCriminals from './components/WantedCriminals';
 import CommandPalette from './components/CommandPalette';
+import HumintIntel from './components/HumintIntel';
 import { saveLayout } from './auth';
 
 const HEX_DUMP = Array.from({length: 15000}).map(() => Math.random().toString(16).substr(2, 8).toUpperCase() + " ").join('');
@@ -524,6 +525,8 @@ const Layout = ({ user, showGreeting, onEnterDashboard, onLogout, onUsernameChan
  return <WantedCriminals />;
  case 'WANTED_CRIMINALS':
  return <WantedCriminals />;
+ case 'HUMINT':
+ return <HumintIntel />;
  default:
  const allModules = Object.values(MODULE_CATEGORIES).flat();
  const moduleInfo = allModules.find(m => m.id === id);
@@ -567,6 +570,7 @@ const Layout = ({ user, showGreeting, onEnterDashboard, onLogout, onUsernameChan
  case 'PREDICTION_MARKETS': return '// Prediction Odds';
  case 'MONETARY_POLICY': return '// Monetary Policy';
  case 'GOOGLE_TRENDS': return '// Search Trends';
+ case 'HUMINT': return '// HUMINT';
  default: return `// ${id}`;
  }
  };
@@ -594,6 +598,7 @@ const Layout = ({ user, showGreeting, onEnterDashboard, onLogout, onUsernameChan
  case 'AI_ANALYST': return Bot;
  case 'GLOBAL_NEWS': return Tv;
  case 'LINK_ANALYSIS': return Grid;
+ case 'HUMINT': return User;
  default: return Activity;
  }
  };

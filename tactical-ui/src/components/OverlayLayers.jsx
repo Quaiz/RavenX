@@ -396,10 +396,12 @@ function TerminatorLayer() {
 // ─── Main Component ───────────────────────────────────────────────────────────
 
  function OverlayLayers() {
- const active = useStore(state => state.mapConfig.activeOverlays);
- const gdelt = useStore(state => state.feeds.gdelt);
- const aircraft = useStore(state => state.feeds.aircraft);
- const fires = useStore(state => state.feeds.fires);
+  const active = useStore(state => state.mapConfig.activeOverlays);
+  const operatorCoords = useStore(state => state.operatorCoords);
+  const operatorSafehouses = useStore(state => state.operatorSafehouses);
+  const gdelt = useStore(state => state.feeds.gdelt);
+  const aircraft = useStore(state => state.feeds.aircraft);
+  const fires = useStore(state => state.feeds.fires);
  const selectedTarget = useStore(state => state.selectedTarget);
  const isTrackingActive = useStore(state => state.isTrackingActive);
  const c2Operators = useStore(state => state.c2Operators);
@@ -869,6 +871,38 @@ function TerminatorLayer() {
       </React.Fragment>
     );
   })()}
+
+  {/* ── HUMINT OPERATIONS (Operator & Safehouses) ── */}
+  {active.includes('HUMINT_OPS') && (
+    <React.Fragment key="humint-ops-layers">
+      {/* Operator Marker */}
+      <Marker position={[operatorCoords.lat, operatorCoords.lon]} icon={mkDot('#ffb800', 14)}>
+        <Popup className="tactical-popup" closeButton={false}>
+          <TacticalPopup lines={[
+            'OPERATOR // YOU',
+            `STATUS: ACTIVE`,
+            `LAT/LON: ${operatorCoords.lat.toFixed(4)}°, ${operatorCoords.lon.toFixed(4)}°`
+          ]} accentColor={'#ffb800'} />
+        </Popup>
+      </Marker>
+      <Marker position={[operatorCoords.lat, operatorCoords.lon]} icon={mkPulse('#ffb800', 50)} />
+
+      {/* Safehouse Markers */}
+      {operatorSafehouses.map((sfh, idx) => (
+        <Marker key={`sfh-${sfh.id}-${idx}`} position={[sfh.lat, sfh.lon]} icon={mkDot('#22d3ee', 12)}>
+          <Popup className="tactical-popup" closeButton={false}>
+            <TacticalPopup lines={[
+              sfh.codename,
+              `LOCATION: ${sfh.location}`,
+              `STATUS: ${sfh.status}`,
+              `CAPACITY: ${sfh.capacity}`,
+              `LAT/LON: ${sfh.lat.toFixed(4)}°, ${sfh.lon.toFixed(4)}°`
+            ]} accentColor={'#22d3ee'} />
+          </Popup>
+        </Marker>
+      ))}
+    </React.Fragment>
+  )}
 
  </>
  );
