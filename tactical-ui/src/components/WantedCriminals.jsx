@@ -19,6 +19,52 @@ const forceHttps = (url) => {
   return url;
 };
 
+const TacticalHudPlaceholder = ({ type, theme }) => {
+  const isApt = type === 'APT';
+  const colorClass = isApt ? 'text-emerald-400' : type === 'un' ? 'text-cyan-400' : type === 'yellow' ? 'text-yellow-400' : 'text-red-500';
+  const strokeColor = isApt ? '#34d399' : type === 'un' ? '#22d3ee' : type === 'yellow' ? '#facc15' : '#ef4444';
+  
+  return (
+    <div className="relative w-full h-full bg-black/90 flex flex-col items-center justify-center overflow-hidden font-mono">
+      {/* Grid background */}
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.015)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.015)_1px,transparent_1px)] bg-[size:6px_6px]" />
+      
+      {/* Scope crosshair */}
+      <svg className="absolute w-full h-full opacity-20 animate-pulse" viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r="38" fill="none" stroke={strokeColor} strokeWidth="0.5" strokeDasharray="2, 2" />
+        <circle cx="50" cy="50" r="28" fill="none" stroke={strokeColor} strokeWidth="0.25" />
+        <path d="M 50 5 L 50 95 M 5 50 L 95 50" stroke={strokeColor} strokeWidth="0.25" />
+      </svg>
+
+      {/* Rotating radar line */}
+      <div className="absolute w-[200%] h-[200%] rounded-full animate-[spin_6s_linear_infinite] pointer-events-none" style={{
+        backgroundImage: `conic-gradient(from 0deg, transparent 50%, ${strokeColor}18 100%)`
+      }} />
+
+      {/* Moving scanning line */}
+      <div className="absolute left-0 w-full h-[1px] opacity-40 pointer-events-none animate-[scan_3s_ease-in-out_infinite]" style={{
+        backgroundColor: strokeColor,
+        boxShadow: `0 0 4px ${strokeColor}`
+      }} />
+      
+      {/* Biometric graphic or laptop icon */}
+      <div className="relative z-10 flex flex-col items-center gap-1 text-center select-none scale-[0.85]">
+        {isApt ? (
+          <Laptop className={`${colorClass} animate-pulse`} style={{ width: '22px', height: '22px' }} />
+        ) : (
+          <Fingerprint className={`${colorClass} animate-pulse`} style={{ width: '22px', height: '22px' }} />
+        )}
+        <div className={`text-[6px] ${colorClass} tracking-[0.15em] font-bold uppercase`}>
+          {isApt ? 'CYBER LOCK' : 'BIOMETRIC'}
+        </div>
+        <div className="text-[5px] text-white/30 tracking-wider">
+          {isApt ? 'ACTIVE MONITOR' : 'NO RECORD'}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const COUNTRY_MAP = {
   'RUSSIA': 'RU', 'RUSSIAN FEDERATION': 'RU',
   'USA': 'US', 'UNITED STATES': 'US', 'AMERICA': 'US',
@@ -702,6 +748,12 @@ Output ONLY the detailed dossier in a highly structured, immersive, cyber/milita
 
   return (
     <div className={`h-full flex flex-col ${theme.baseBg} border ${theme.borderCard} text-white font-mono transition-colors duration-300`}>
+      <style>{`
+        @keyframes scan {
+          0%, 100% { top: 0%; }
+          50% { top: 100%; }
+        }
+      `}</style>
       
       {/* Primary Tabs */}
       <div className="shrink-0 flex border-b border-white/5 bg-black/40">
@@ -840,17 +892,19 @@ Output ONLY the detailed dossier in a highly structured, immersive, cyber/milita
                             : `bg-black/60 ${theme.borderCard} ${theme.bgCardHover}`
                         }`}
                       >
-                        <div className={`shrink-0 w-12 h-14 bg-black/50 border ${theme.borderCard} flex items-center justify-center overflow-hidden`}>
+                        <div className={`relative shrink-0 w-12 h-14 bg-black/50 border ${theme.borderCard} flex items-center justify-center overflow-hidden`}>
                           {thumb ? (
                             <img 
                               src={thumb} 
                               alt="Suspect"
                               referrerPolicy="no-referrer"
                               onError={(e) => { e.target.style.display = 'none'; e.target.nextElementSibling.style.display = 'block'; }}
-                              className="w-full h-full object-cover grayscale opacity-80 group-hover:grayscale-0 group-hover:opacity-100 transition-all"
+                              className="w-full h-full object-cover transition-all"
                             />
                           ) : null}
-                          <User size={16} className={`${theme.textAccentMuted}`} style={{ display: thumb ? 'none' : 'block' }}/>
+                          <div className="absolute inset-0" style={{ display: thumb ? 'none' : 'block' }}>
+                            <TacticalHudPlaceholder type={noticeType} theme={theme} />
+                          </div>
                         </div>
                         <div className="flex-1 min-w-0 py-0.5 font-mono">
                           <div className={`text-[10px] font-bold text-white/90 truncate group-hover:${theme.textAccent} transition-colors uppercase`}>
@@ -886,8 +940,8 @@ Output ONLY the detailed dossier in a highly structured, immersive, cyber/milita
                             : `bg-black/60 ${theme.borderCard} ${theme.bgCardHover}`
                         }`}
                       >
-                        <div className={`shrink-0 w-11 h-11 bg-black/50 border ${theme.borderCard} flex items-center justify-center overflow-hidden`}>
-                          <Fingerprint size={20} className={`${isSelected ? 'text-emerald-400' : 'text-emerald-700/60 group-hover:text-emerald-400'} transition-colors`} />
+                        <div className={`relative shrink-0 w-11 h-11 bg-black/50 border ${theme.borderCard} flex items-center justify-center overflow-hidden`}>
+                          <TacticalHudPlaceholder type="APT" theme={theme} />
                         </div>
                         <div className="flex-1 min-w-0 font-mono">
                           <div className={`text-[10px] font-bold text-white/90 truncate group-hover:${theme.textAccent} transition-colors`}>
@@ -989,20 +1043,16 @@ Output ONLY the detailed dossier in a highly structured, immersive, cyber/milita
                         <div className={`absolute -bottom-1 -right-1 w-2 h-2 border-b-2 border-r-2`} style={{ borderColor: theme.glowColor }}></div>
                         
                         {activeTab === 'APT' ? (
-                          <div className="flex flex-col items-center gap-2 text-center p-3">
-                            <Laptop size={36} className={`${theme.textAccent} animate-pulse`} />
-                            <div className="text-[7px] text-white/30 tracking-widest mt-1">CYBER TARGET LOCK</div>
-                            <Activity size={12} className="text-emerald-500/50 mt-1" />
-                          </div>
+                          <TacticalHudPlaceholder type="APT" theme={theme} />
                         ) : (
                           <>
                             {activeImageIndex >= 0 && suspectImages[activeImageIndex] ? (
-                              <img src={forceHttps(suspectImages[activeImageIndex]._links?.self?.href || suspectImages[activeImageIndex]._links?.thumbnail?.href)} referrerPolicy="no-referrer" className="w-full h-full object-cover grayscale opacity-90" alt="Mugshot" onError={(e) => { e.target.style.display='none'; e.target.nextElementSibling.style.display='flex'; }}/>
+                              <img src={forceHttps(suspectImages[activeImageIndex]._links?.self?.href || suspectImages[activeImageIndex]._links?.thumbnail?.href)} referrerPolicy="no-referrer" className="w-full h-full object-cover" alt="Mugshot" onError={(e) => { e.target.style.display='none'; e.target.nextElementSibling.style.display='block'; }}/>
                             ) : suspectDetails._links?.thumbnail?.href ? (
-                              <img src={forceHttps(suspectDetails._links.thumbnail.href)} referrerPolicy="no-referrer" className="w-full h-full object-cover grayscale opacity-90" alt="Mugshot" onError={(e) => { e.target.style.display='none'; e.target.nextElementSibling.style.display='flex'; }}/>
+                              <img src={forceHttps(suspectDetails._links.thumbnail.href)} referrerPolicy="no-referrer" className="w-full h-full object-cover" alt="Mugshot" onError={(e) => { e.target.style.display='none'; e.target.nextElementSibling.style.display='block'; }}/>
                             ) : null}
-                            <div className={`w-full h-full flex items-center justify-center ${theme.textAccentMuted}`} style={{ display: (suspectDetails._links?.thumbnail?.href || (activeImageIndex >= 0 && suspectImages[activeImageIndex])) ? 'none' : 'flex' }}>
-                              <User size={40}/>
+                            <div className="absolute inset-0" style={{ display: (suspectDetails._links?.thumbnail?.href || (activeImageIndex >= 0 && suspectImages[activeImageIndex])) ? 'none' : 'block' }}>
+                              <TacticalHudPlaceholder type={noticeType} theme={theme} />
                             </div>
                           </>
                         )}
@@ -1013,12 +1063,12 @@ Output ONLY the detailed dossier in a highly structured, immersive, cyber/milita
                         <div className="grid grid-cols-3 gap-1 w-40">
                           {suspectDetails._links?.thumbnail?.href && (
                             <button onClick={() => setActiveImageIndex(-1)} className={`block w-full h-12 border transition-all bg-black/40 ${activeImageIndex === -1 ? `border-${theme.baseThemeColor}-500 opacity-100` : `border-white/10 opacity-40 hover:opacity-100`}`}>
-                              <img src={forceHttps(suspectDetails._links.thumbnail.href)} referrerPolicy="no-referrer" className="w-full h-full object-cover grayscale" alt="Default Thumbnail"/>
+                              <img src={forceHttps(suspectDetails._links.thumbnail.href)} referrerPolicy="no-referrer" className="w-full h-full object-cover" alt="Default Thumbnail"/>
                             </button>
                           )}
                           {suspectImages.map((img, i) => (
                             <button key={i} onClick={() => setActiveImageIndex(i)} className={`block w-full h-12 border transition-all bg-black/40 ${activeImageIndex === i ? `border-${theme.baseThemeColor}-500 opacity-100` : `border-white/10 opacity-40 hover:opacity-100`}`}>
-                              <img src={forceHttps(img._links?.thumbnail?.href || img._links?.self?.href)} referrerPolicy="no-referrer" className="w-full h-full object-cover grayscale" alt={`Alias Image ${i}`} />
+                              <img src={forceHttps(img._links?.thumbnail?.href || img._links?.self?.href)} referrerPolicy="no-referrer" className="w-full h-full object-cover" alt={`Alias Image ${i}`} />
                             </button>
                           ))}
                         </div>
