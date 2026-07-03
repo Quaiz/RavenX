@@ -4,7 +4,8 @@ import useStore from '../store';
 import { audio } from '../utils/audioEngine';
 import { 
   User, Shield, Compass, Cpu, Battery, Activity, 
-  MapPin, Focus, Globe, Wifi, RefreshCw, Terminal 
+  MapPin, Focus, Globe, Wifi, RefreshCw, Terminal, 
+  Plus, Edit2, Trash2, Check, X, Navigation
 } from 'lucide-react';
 
 function MiniMapController({ center }) {
@@ -22,10 +23,27 @@ export default function HumintIntel() {
   const operatorSafehouses = useStore(s => s.operatorSafehouses);
   const setOperatorCoords = useStore(s => s.setOperatorCoords);
   const setMapTarget = useStore(s => s.setMapTarget);
+  const addSafehouse = useStore(s => s.addSafehouse);
+  const updateSafehouse = useStore(s => s.updateSafehouse);
+  const deleteSafehouse = useStore(s => s.deleteSafehouse);
 
   const [activeTab, setActiveTab] = useState('operator'); // 'operator' | 'safehouses'
   const [selectedSafehouse, setSelectedSafehouse] = useState(null);
   
+  // Safehouse editing & adding states
+  const [isAdding, setIsAdding] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [formState, setFormState] = useState({
+    codename: '',
+    location: '',
+    lat: 0,
+    lon: 0,
+    status: 'SECURE',
+    rating: 'A',
+    capacity: '1/2',
+    features: ''
+  });
+
   // Browser & Geolocation Telemetry
   const [battery, setBattery] = useState({ level: null, charging: false });
   const [connection, setConnection] = useState({ online: navigator.onLine, type: 'N/A' });
@@ -125,6 +143,8 @@ export default function HumintIntel() {
   const selectTab = (tab) => {
     audio.playClick();
     setActiveTab(tab);
+    setIsAdding(false);
+    setIsEditing(false);
     if (tab === 'safehouses' && operatorSafehouses.length > 0 && !selectedSafehouse) {
       setSelectedSafehouse(operatorSafehouses[0]);
     }
@@ -133,6 +153,93 @@ export default function HumintIntel() {
   const selectSafehouse = (sfh) => {
     audio.playClick();
     setSelectedSafehouse(sfh);
+    setIsEditing(false);
+    setIsAdding(false);
+  };
+
+  // Safehouse Mutations Handling
+  const handleStartAdd = () => {
+    audio.playClick();
+    setIsAdding(true);
+    setIsEditing(false);
+    setFormState({
+      codename: '',
+      location: '',
+      lat: operatorCoords.lat,
+      lon: operatorCoords.lon,
+      status: 'SECURE',
+      rating: 'A',
+      capacity: '1/2',
+      features: 'High-speed Fiber, Backup Power'
+    });
+  };
+
+  const handleStartEdit = () => {
+    if (!selectedSafehouse) return;
+    audio.playClick();
+    setIsEditing(true);
+    setIsAdding(false);
+    setFormState({
+      codename: selectedSafehouse.codename,
+      location: selectedSafehouse.location,
+      lat: selectedSafehouse.lat,
+      lon: selectedSafehouse.lon,
+      status: selectedSafehouse.status,
+      rating: selectedSafehouse.rating,
+      capacity: selectedSafehouse.capacity,
+      features: selectedSafehouse.features.join(', ')
+    });
+  };
+
+  const handleSaveAdd = (e) => {
+    e.preventDefault();
+    audio.playNotification();
+    const newId = `SFH-${Date.now().toString().slice(-4)}`;
+    const sfh = {
+      id: newId,
+      codename: formState.codename.toUpperCase() || 'NEW NODE',
+      location: formState.location || 'Unknown',
+      lat: parseFloat(formState.lat) || 0,
+      lon: parseFloat(formState.lon) || 0,
+      status: formState.status,
+      rating: formState.rating.toUpperCase(),
+      capacity: formState.capacity,
+      features: formState.features.split(',').map(f => f.trim()).filter(Boolean)
+    };
+    addSafehouse(sfh);
+    setSelectedSafehouse(sfh);
+    setIsAdding(false);
+  };
+
+  const handleSaveEdit = (e) => {
+    e.preventDefault();
+    if (!selectedSafehouse) return;
+    audio.playNotification();
+    const fields = {
+      codename: formState.codename.toUpperCase(),
+      location: formState.location,
+      lat: parseFloat(formState.lat) || 0,
+      lon: parseFloat(formState.lon) || 0,
+      status: formState.status,
+      rating: formState.rating.toUpperCase(),
+      capacity: formState.capacity,
+      features: formState.features.split(',').map(f => f.trim()).filter(Boolean)
+    };
+    updateSafehouse(selectedSafehouse.id, fields);
+    setSelectedSafehouse(prev => ({ ...prev, ...fields }));
+    setIsEditing(false);
+  };
+
+  const handleDelete = () => {
+    if (!selectedSafehouse) return;
+    if (confirm(`Are you sure you want to delete safehouse: ${selectedSafehouse.codename}?`)) {
+      audio.playNotification();
+      deleteSafehouse(selectedSafehouse.id);
+      const remaining = operatorSafehouses.filter(s => s.id !== selectedSafehouse.id);
+      setSelectedSafehouse(remaining.length > 0 ? remaining[0] : null);
+      setIsEditing(false);
+      setIsAdding(false);
+    }
   };
 
   return (
@@ -282,32 +389,156 @@ export default function HumintIntel() {
             )}
 
             {activeTab === 'safehouses' && (
-              <div className="space-y-2">
-                <div className="text-[9px] font-bold text-primary/70 tracking-[0.15em] mb-2 uppercase">// DEPLOYED SAFEHOUSES ({operatorSafehouses.length})</div>
-                {operatorSafehouses.map(sfh => {
-                  const isSelected = selectedSafehouse?.id === sfh.id;
-                  return (
-                    <button
-                      key={sfh.id}
-                      onClick={() => selectSafehouse(sfh)}
-                      className={`w-full text-left p-3 border transition-all flex flex-col gap-1 relative ${
-                        isSelected 
-                          ? 'bg-primary/10 border-primary shadow-[0_0_10px_rgba(255,184,0,0.15)]' 
-                          : 'bg-black/30 border-white/5 hover:border-white/15'
-                      }`}
-                    >
-                      {isSelected && <div className="absolute left-0 top-2 bottom-2 w-[2.5px] bg-primary rounded-full shadow-[0_0_4px_#ffb800]" />}
-                      <div className="flex justify-between items-center">
-                        <span className={`font-bold tracking-wider ${isSelected ? 'text-primary' : 'text-white/80'}`}>{sfh.codename}</span>
-                        <span className="text-[8px] px-1.5 py-0.5 bg-green-500/10 text-green-400 border border-green-500/20 font-bold">{sfh.status}</span>
+              <div className="space-y-4">
+                
+                {/* Header with Add Button */}
+                <div className="flex justify-between items-center">
+                  <div className="text-[9px] font-bold text-primary/70 tracking-[0.15em] uppercase">
+                    // DEPLOYED SAFEHOUSES ({operatorSafehouses.length})
+                  </div>
+                  <button
+                    onClick={handleStartAdd}
+                    className="flex items-center gap-1 text-[8px] font-bold text-primary bg-primary/10 border border-primary/30 px-2 py-0.5 hover:bg-primary/20 transition-all uppercase tracking-widest"
+                  >
+                    <Plus size={10} />
+                    ADD NODE
+                  </button>
+                </div>
+
+                {/* Add Safehouse Form Inline */}
+                {isAdding && (
+                  <form onSubmit={handleSaveAdd} className="border border-primary/30 bg-[#0d121c]/60 p-3 space-y-2">
+                    <div className="text-[9px] font-bold text-primary uppercase">// CREATE NEW NODE</div>
+                    
+                    <div className="space-y-1.5 text-[10px]">
+                      <div>
+                        <label className="text-white/40 block text-[8px] uppercase">CODENAME</label>
+                        <input
+                          type="text"
+                          required
+                          value={formState.codename}
+                          onChange={e => setFormState({ ...formState, codename: e.target.value })}
+                          className="w-full bg-black/40 border border-white/10 px-2 py-1 text-white font-mono text-[9px] focus:outline-none focus:border-primary/50"
+                          placeholder="e.g. ALPHA STORAGE"
+                        />
                       </div>
-                      <div className="flex justify-between text-[9px] text-white/40">
-                        <span>{sfh.location}</span>
-                        <span>CAPACITY: {sfh.capacity}</span>
+                      <div>
+                        <label className="text-white/40 block text-[8px] uppercase">LOCATION DESCRIPTION</label>
+                        <input
+                          type="text"
+                          required
+                          value={formState.location}
+                          onChange={e => setFormState({ ...formState, location: e.target.value })}
+                          className="w-full bg-black/40 border border-white/10 px-2 py-1 text-white font-mono text-[9px] focus:outline-none focus:border-primary/50"
+                          placeholder="e.g. Berlin, Germany"
+                        />
                       </div>
-                    </button>
-                  );
-                })}
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="text-white/40 block text-[8px] uppercase">LATITUDE</label>
+                          <input
+                            type="number"
+                            step="any"
+                            required
+                            value={formState.lat}
+                            onChange={e => setFormState({ ...formState, lat: e.target.value })}
+                            className="w-full bg-black/40 border border-white/10 px-2 py-1 text-white font-mono text-[9px] focus:outline-none focus:border-primary/50"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-white/40 block text-[8px] uppercase">LONGITUDE</label>
+                          <input
+                            type="number"
+                            step="any"
+                            required
+                            value={formState.lon}
+                            onChange={e => setFormState({ ...formState, lon: e.target.value })}
+                            className="w-full bg-black/40 border border-white/10 px-2 py-1 text-white font-mono text-[9px] focus:outline-none focus:border-primary/50"
+                          />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="text-white/40 block text-[8px] uppercase">SECURITY RATING</label>
+                          <input
+                            type="text"
+                            required
+                            value={formState.rating}
+                            onChange={e => setFormState({ ...formState, rating: e.target.value })}
+                            className="w-full bg-black/40 border border-white/10 px-2 py-1 text-white font-mono text-[9px] focus:outline-none focus:border-primary/50"
+                            placeholder="A / B / S"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-white/40 block text-[8px] uppercase">CAPACITY STATUS</label>
+                          <input
+                            type="text"
+                            required
+                            value={formState.capacity}
+                            onChange={e => setFormState({ ...formState, capacity: e.target.value })}
+                            className="w-full bg-black/40 border border-white/10 px-2 py-1 text-white font-mono text-[9px] focus:outline-none focus:border-primary/50"
+                            placeholder="0/2"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-white/40 block text-[8px] uppercase">FEATURES (COMMA SEPARATED)</label>
+                        <input
+                          type="text"
+                          value={formState.features}
+                          onChange={e => setFormState({ ...formState, features: e.target.value })}
+                          className="w-full bg-black/40 border border-white/10 px-2 py-1 text-white font-mono text-[9px] focus:outline-none focus:border-primary/50"
+                          placeholder="Satellite Comms, Off-Grid Power"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="pt-2 flex gap-2 justify-end">
+                      <button
+                        type="button"
+                        onClick={() => setIsAdding(false)}
+                        className="px-3 py-1 bg-white/5 hover:bg-white/15 border border-white/10 text-[9px] font-bold uppercase"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        className="px-3 py-1 bg-primary text-black hover:bg-primary/80 text-[9px] font-bold uppercase"
+                      >
+                        Save Node
+                      </button>
+                    </div>
+                  </form>
+                )}
+
+                {/* Safehouse List Cards */}
+                <div className="space-y-2">
+                  {operatorSafehouses.map(sfh => {
+                    const isSelected = selectedSafehouse?.id === sfh.id;
+                    return (
+                      <button
+                        key={sfh.id}
+                        onClick={() => selectSafehouse(sfh)}
+                        className={`w-full text-left p-3 border transition-all flex flex-col gap-1 relative ${
+                          isSelected 
+                            ? 'bg-primary/10 border-primary shadow-[0_0_10px_rgba(255,184,0,0.15)]' 
+                            : 'bg-black/30 border-white/5 hover:border-white/15'
+                        }`}
+                      >
+                        {isSelected && <div className="absolute left-0 top-2 bottom-2 w-[2.5px] bg-primary rounded-full shadow-[0_0_4px_#ffb800]" />}
+                        <div className="flex justify-between items-center">
+                          <span className={`font-bold tracking-wider ${isSelected ? 'text-primary' : 'text-white/80'}`}>{sfh.codename}</span>
+                          <span className="text-[8px] px-1.5 py-0.5 bg-green-500/10 text-green-400 border border-green-500/20 font-bold">{sfh.status}</span>
+                        </div>
+                        <div className="flex justify-between text-[9px] text-white/40">
+                          <span>{sfh.location}</span>
+                          <span>CAPACITY: {sfh.capacity}</span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+
               </div>
             )}
           </div>
@@ -321,7 +552,7 @@ export default function HumintIntel() {
             <div className="flex items-center gap-2">
               <Compass size={11} className="text-white/40" />
               <span className="text-[9px] font-bold tracking-widest text-white/60 uppercase">
-                {activeTab === 'operator' ? 'LIVE SATELLITE HUD // OPERATOR' : `LIVE SATELLITE HUD // ${selectedSafehouse?.codename}`}
+                {activeTab === 'operator' ? 'LIVE SATELLITE HUD // OPERATOR' : `LIVE SATELLITE HUD // ${selectedSafehouse?.codename || 'NONE'}`}
               </span>
             </div>
             <button
@@ -389,34 +620,157 @@ export default function HumintIntel() {
               </div>
             ) : selectedSafehouse ? (
               <div className="space-y-2">
+                
+                {/* Safehouse Detail Headers */}
                 <div className="flex justify-between items-center">
                   <span className="text-[9px] font-bold text-white/50 tracking-widest uppercase">// SECURE POINT METADATA</span>
-                  <span className="text-[9px] text-primary/80 font-bold">ID: {selectedSafehouse.id}</span>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <div>
-                      <span className="text-white/30 text-[9px] block">SECURITY RATING</span>
-                      <span className="text-white font-bold">LEVEL {selectedSafehouse.rating} CLASSIFIED</span>
-                    </div>
-                    <div>
-                      <span className="text-white/30 text-[9px] block">CURRENT CAPACITY</span>
-                      <span className="text-white font-bold">{selectedSafehouse.capacity} DEPLOYED</span>
-                    </div>
-                  </div>
-                  <div>
-                    <span className="text-white/30 text-[9px] block mb-1">FACILITY FEATURES</span>
-                    <div className="flex flex-wrap gap-1">
-                      {selectedSafehouse.features.map((feat, i) => (
-                        <span key={i} className="text-[8px] bg-white/5 border border-white/10 px-1.5 py-0.5 rounded text-white/80">
-                          {feat.toUpperCase()}
-                        </span>
-                      ))}
-                    </div>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={handleStartEdit}
+                      className="flex items-center gap-1 text-[8px] font-bold text-primary bg-primary/10 border border-primary/30 px-2 py-0.5 hover:bg-primary/20 transition-all uppercase"
+                    >
+                      <Edit2 size={9} />
+                      EDIT
+                    </button>
+                    <button
+                      onClick={handleDelete}
+                      className="flex items-center gap-1 text-[8px] font-bold text-red-400 bg-red-400/10 border border-red-400/30 px-2 py-0.5 hover:bg-red-400/20 transition-all uppercase"
+                    >
+                      <Trash2 size={9} />
+                      DELETE
+                    </button>
                   </div>
                 </div>
+
+                {isEditing ? (
+                  <form onSubmit={handleSaveEdit} className="border border-white/5 bg-black/20 p-3 space-y-2 text-[10px]">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-white/40 block text-[8px] uppercase">CODENAME</label>
+                        <input
+                          type="text"
+                          required
+                          value={formState.codename}
+                          onChange={e => setFormState({ ...formState, codename: e.target.value })}
+                          className="w-full bg-black/40 border border-white/10 px-2 py-1 text-white font-mono text-[9px] focus:outline-none focus:border-primary/50"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-white/40 block text-[8px] uppercase">LOCATION</label>
+                        <input
+                          type="text"
+                          required
+                          value={formState.location}
+                          onChange={e => setFormState({ ...formState, location: e.target.value })}
+                          className="w-full bg-black/40 border border-white/10 px-2 py-1 text-white font-mono text-[9px] focus:outline-none focus:border-primary/50"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-white/40 block text-[8px] uppercase">LATITUDE</label>
+                        <input
+                          type="number"
+                          step="any"
+                          required
+                          value={formState.lat}
+                          onChange={e => setFormState({ ...formState, lat: e.target.value })}
+                          className="w-full bg-black/40 border border-white/10 px-2 py-1 text-white font-mono text-[9px] focus:outline-none focus:border-primary/50"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-white/40 block text-[8px] uppercase">LONGITUDE</label>
+                        <input
+                          type="number"
+                          step="any"
+                          required
+                          value={formState.lon}
+                          onChange={e => setFormState({ ...formState, lon: e.target.value })}
+                          className="w-full bg-black/40 border border-white/10 px-2 py-1 text-white font-mono text-[9px] focus:outline-none focus:border-primary/50"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-white/40 block text-[8px] uppercase">SECURITY RATING</label>
+                        <input
+                          type="text"
+                          required
+                          value={formState.rating}
+                          onChange={e => setFormState({ ...formState, rating: e.target.value })}
+                          className="w-full bg-black/40 border border-white/10 px-2 py-1 text-white font-mono text-[9px] focus:outline-none focus:border-primary/50"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-white/40 block text-[8px] uppercase">CAPACITY</label>
+                        <input
+                          type="text"
+                          required
+                          value={formState.capacity}
+                          onChange={e => setFormState({ ...formState, capacity: e.target.value })}
+                          className="w-full bg-black/40 border border-white/10 px-2 py-1 text-white font-mono text-[9px] focus:outline-none focus:border-primary/50"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-white/40 block text-[8px] uppercase">FEATURES (COMMA SEPARATED)</label>
+                      <input
+                        type="text"
+                        value={formState.features}
+                        onChange={e => setFormState({ ...formState, features: e.target.value })}
+                        className="w-full bg-black/40 border border-white/10 px-2 py-1 text-white font-mono text-[9px] focus:outline-none focus:border-primary/50"
+                      />
+                    </div>
+                    <div className="pt-1 flex gap-2 justify-end">
+                      <button
+                        type="button"
+                        onClick={() => setIsEditing(false)}
+                        className="px-3 py-1 bg-white/5 hover:bg-white/15 border border-white/10 text-[9px] font-bold uppercase"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        className="px-3 py-1 bg-primary text-black hover:bg-primary/80 text-[9px] font-bold uppercase"
+                      >
+                        Save
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <div>
+                        <span className="text-white/30 text-[9px] block">SECURITY RATING</span>
+                        <span className="text-white font-bold">LEVEL {selectedSafehouse.rating} CLASSIFIED</span>
+                      </div>
+                      <div>
+                        <span className="text-white/30 text-[9px] block">CURRENT CAPACITY</span>
+                        <span className="text-white font-bold">{selectedSafehouse.capacity} DEPLOYED</span>
+                      </div>
+                      <div>
+                        <span className="text-white/30 text-[9px] block">COORDINATES</span>
+                        <span className="text-primary font-bold">{selectedSafehouse.lat.toFixed(5)}, {selectedSafehouse.lon.toFixed(5)}</span>
+                      </div>
+                    </div>
+                    <div>
+                      <span className="text-white/30 text-[9px] block mb-1">FACILITY FEATURES</span>
+                      <div className="flex flex-wrap gap-1">
+                        {selectedSafehouse.features.map((feat, i) => (
+                          <span key={i} className="text-[8px] bg-white/5 border border-white/10 px-1.5 py-0.5 rounded text-white/80">
+                            {feat.toUpperCase()}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
-            ) : null}
+            ) : (
+              <div className="text-white/30 text-center py-4 uppercase tracking-widest text-[9px]">
+                No safehouse selected. Use the left panel to add one.
+              </div>
+            )}
           </div>
 
         </div>

@@ -525,6 +525,9 @@ const useStore = create(persist((set, get) => ({
     }
   ],
   setOperatorCoords: (lat, lon) => set({ operatorCoords: { lat, lon } }),
+  addSafehouse: (sfh) => set(state => ({ operatorSafehouses: [...state.operatorSafehouses, sfh] })),
+  updateSafehouse: (id, fields) => set(state => ({ operatorSafehouses: state.operatorSafehouses.map(sfh => sfh.id === id ? { ...sfh, ...fields } : sfh) })),
+  deleteSafehouse: (id) => set(state => ({ operatorSafehouses: state.operatorSafehouses.filter(sfh => sfh.id !== id) })),
 
  baseMaps: [
  // DARK
