@@ -10,6 +10,15 @@ const renderSafe = (val) => {
   return String(val);
 };
 
+const forceHttps = (url) => {
+  if (!url) return '';
+  if (typeof url !== 'string') return url;
+  if (url.startsWith('http://')) {
+    return url.replace('http://', 'https://');
+  }
+  return url;
+};
+
 const COUNTRY_MAP = {
   'RUSSIA': 'RU', 'RUSSIAN FEDERATION': 'RU',
   'USA': 'US', 'UNITED STATES': 'US', 'AMERICA': 'US',
@@ -507,11 +516,11 @@ const WantedCriminals = () => {
       placeOfBirth: suspect.place_of_birth || 'UNKNOWN',
       sex: suspect.sex_id || 'UNKNOWN',
       charge: noticeType === 'yellow' ? 'MISSING PERSON ALERT' : noticeType === 'un' ? 'UN SANCTIONS LIST' : 'WANTED BY INTERPOL',
-      thumb: suspect._links?.thumbnail?.href
+      thumb: forceHttps(suspect._links?.thumbnail?.href)
     });
 
     try {
-      const fetchUrl = suspect._links?.self?.href || `https://ws-public.interpol.int/notices/v1/${noticeType}/${suspect.entity_id.replace('/', '-')}`;
+      const fetchUrl = forceHttps(suspect._links?.self?.href || `https://ws-public.interpol.int/notices/v1/${noticeType}/${suspect.entity_id.replace('/', '-')}`);
       const res = await fetch(fetchUrl, { referrerPolicy: 'no-referrer' });
       if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
       const data = await res.json();
@@ -524,12 +533,12 @@ const WantedCriminals = () => {
         placeOfBirth: suspect.place_of_birth || 'UNKNOWN',
         sex: suspect.sex_id || 'UNKNOWN',
         charge: data.arrest_warrants?.[0]?.charge || (noticeType === 'yellow' ? 'MISSING PERSON ALERT' : noticeType === 'un' ? 'UN SANCTIONS LIST' : 'WANTED BY INTERPOL'),
-        thumb: suspect._links?.thumbnail?.href
+        thumb: forceHttps(suspect._links?.thumbnail?.href)
       });
       
       if (data._links && data._links.images) {
         try {
-          const imgRes = await fetch(data._links.images.href, { referrerPolicy: 'no-referrer' });
+          const imgRes = await fetch(forceHttps(data._links.images.href), { referrerPolicy: 'no-referrer' });
           const imgData = await imgRes.json();
           if (imgData && imgData._embedded && imgData._embedded.images) {
             setSuspectImages(imgData._embedded.images);
@@ -819,7 +828,7 @@ Output ONLY the detailed dossier in a highly structured, immersive, cyber/milita
                 <div className={`grid gap-2 ${selectedSuspect ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'}`}>
                   {suspects.map((suspect, idx) => {
                     const isSelected = selectedSuspect?.entity_id === suspect.entity_id;
-                    const thumb = suspect._links?.thumbnail?.href;
+                    const thumb = forceHttps(suspect._links?.thumbnail?.href);
                     
                     return (
                       <div 
@@ -988,9 +997,9 @@ Output ONLY the detailed dossier in a highly structured, immersive, cyber/milita
                         ) : (
                           <>
                             {activeImageIndex >= 0 && suspectImages[activeImageIndex] ? (
-                              <img src={suspectImages[activeImageIndex]._links?.self?.href || suspectImages[activeImageIndex]._links?.thumbnail?.href} referrerPolicy="no-referrer" className="w-full h-full object-cover grayscale opacity-90" alt="Mugshot" onError={(e) => { e.target.style.display='none'; e.target.nextElementSibling.style.display='flex'; }}/>
+                              <img src={forceHttps(suspectImages[activeImageIndex]._links?.self?.href || suspectImages[activeImageIndex]._links?.thumbnail?.href)} referrerPolicy="no-referrer" className="w-full h-full object-cover grayscale opacity-90" alt="Mugshot" onError={(e) => { e.target.style.display='none'; e.target.nextElementSibling.style.display='flex'; }}/>
                             ) : suspectDetails._links?.thumbnail?.href ? (
-                              <img src={suspectDetails._links.thumbnail.href} referrerPolicy="no-referrer" className="w-full h-full object-cover grayscale opacity-90" alt="Mugshot" onError={(e) => { e.target.style.display='none'; e.target.nextElementSibling.style.display='flex'; }}/>
+                              <img src={forceHttps(suspectDetails._links.thumbnail.href)} referrerPolicy="no-referrer" className="w-full h-full object-cover grayscale opacity-90" alt="Mugshot" onError={(e) => { e.target.style.display='none'; e.target.nextElementSibling.style.display='flex'; }}/>
                             ) : null}
                             <div className={`w-full h-full flex items-center justify-center ${theme.textAccentMuted}`} style={{ display: (suspectDetails._links?.thumbnail?.href || (activeImageIndex >= 0 && suspectImages[activeImageIndex])) ? 'none' : 'flex' }}>
                               <User size={40}/>
@@ -1004,12 +1013,12 @@ Output ONLY the detailed dossier in a highly structured, immersive, cyber/milita
                         <div className="grid grid-cols-3 gap-1 w-40">
                           {suspectDetails._links?.thumbnail?.href && (
                             <button onClick={() => setActiveImageIndex(-1)} className={`block w-full h-12 border transition-all bg-black/40 ${activeImageIndex === -1 ? `border-${theme.baseThemeColor}-500 opacity-100` : `border-white/10 opacity-40 hover:opacity-100`}`}>
-                              <img src={suspectDetails._links.thumbnail.href} referrerPolicy="no-referrer" className="w-full h-full object-cover grayscale" alt="Default Thumbnail"/>
+                              <img src={forceHttps(suspectDetails._links.thumbnail.href)} referrerPolicy="no-referrer" className="w-full h-full object-cover grayscale" alt="Default Thumbnail"/>
                             </button>
                           )}
                           {suspectImages.map((img, i) => (
                             <button key={i} onClick={() => setActiveImageIndex(i)} className={`block w-full h-12 border transition-all bg-black/40 ${activeImageIndex === i ? `border-${theme.baseThemeColor}-500 opacity-100` : `border-white/10 opacity-40 hover:opacity-100`}`}>
-                              <img src={img._links?.thumbnail?.href || img._links?.self?.href} referrerPolicy="no-referrer" className="w-full h-full object-cover grayscale" alt={`Alias Image ${i}`} />
+                              <img src={forceHttps(img._links?.thumbnail?.href || img._links?.self?.href)} referrerPolicy="no-referrer" className="w-full h-full object-cover grayscale" alt={`Alias Image ${i}`} />
                             </button>
                           ))}
                         </div>
