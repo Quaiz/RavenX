@@ -488,29 +488,29 @@ const useStore = create(persist((set, get) => ({
  })),
 
  // ── Operator Command & Safehouses State ──
- operatorCoords: { lat: 21.0285, lon: 105.8542 },
- operatorSafehouses: [
+  operatorCoords: { lat: 21.0285, lon: 105.8542 },
+  operatorSafehouses: [
     {
       id: 'SFH-01',
-      codename: 'HOME BASE',
-      location: 'Hanoi, Vietnam',
-      lat: 21.0278,
-      lon: 105.8523,
+      codename: 'CURRENT BASE',
+      location: 'Current Operator Position',
+      lat: 21.0285,
+      lon: 105.8542,
       status: 'SECURE',
-      rating: 'A',
-      capacity: '1/2',
-      features: ['Comms Link', 'Secure Storage', 'Backup Power']
+      rating: 'S',
+      capacity: '1/1',
+      features: ['Live Telemetry', 'Mobile Comms']
     },
     {
       id: 'SFH-02',
-      codename: 'OFFICE NODE',
-      location: 'Ho Chi Minh City, Vietnam',
-      lat: 10.7626,
-      lon: 106.6602,
+      codename: 'HOME',
+      location: '155 Xô Viết Nghệ Tĩnh, Đà Lạt, Lâm Đồng',
+      lat: 11.9678,
+      lon: 108.4357,
       status: 'SECURE',
-      rating: 'B',
-      capacity: '3/5',
-      features: ['High-speed Fiber', 'Meeting Room']
+      rating: 'A',
+      capacity: '1/2',
+      features: ['Fiber Broadband', 'Backup Power', 'Armory']
     },
     {
       id: 'SFH-03',
@@ -524,7 +524,15 @@ const useStore = create(persist((set, get) => ({
       features: ['Off-grid Server', 'Biometric Security']
     }
   ],
-  setOperatorCoords: (lat, lon) => set({ operatorCoords: { lat, lon } }),
+  setOperatorCoords: (lat, lon) => set(state => {
+    const updatedSafehouses = state.operatorSafehouses.map(sfh => 
+      sfh.codename === 'CURRENT BASE' ? { ...sfh, lat, lon } : sfh
+    );
+    return { 
+      operatorCoords: { lat, lon },
+      operatorSafehouses: updatedSafehouses
+    };
+  }),
   addSafehouse: (sfh) => set(state => ({ operatorSafehouses: [...state.operatorSafehouses, sfh] })),
   updateSafehouse: (id, fields) => set(state => ({ operatorSafehouses: state.operatorSafehouses.map(sfh => sfh.id === id ? { ...sfh, ...fields } : sfh) })),
   deleteSafehouse: (id) => set(state => ({ operatorSafehouses: state.operatorSafehouses.filter(sfh => sfh.id !== id) })),
@@ -939,6 +947,8 @@ const useStore = create(persist((set, get) => ({
  preMaxStates: state.preMaxStates,
  mobileActiveTab: state.mobileActiveTab,
  mapConfig: state.mapConfig,
+ operatorCoords: state.operatorCoords,
+ operatorSafehouses: state.operatorSafehouses,
  })
 }));
 
