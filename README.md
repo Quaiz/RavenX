@@ -14,7 +14,7 @@
 ## 🧠 CÁC TRỤ CỘT AI & KHOA HỌC DỮ LIỆU (AI & DATA SCIENCE PILLARS)
 
 ### 1. Tác Tử Phân Tích Chiến Lược (Agentic Intel Analyst)
-Hệ thống tích hợp một **AI Agent** sử dụng mô hình **Gemini 2.5 Flash** làm nòng cốt để tự động hóa quy trình phân tích và viết Báo cáo Tình hình Chiến dịch (SITREP - Situation Report):
+Hệ thống tích hợp một **AI Agent** chạy trên hạ tầng **Groq API** (với lõi mô hình siêu lớn **Llama-3.3-70b-versatile**, hỗ trợ chế độ fallback động tự phục hồi sang **Llama-3.1-8b-instant** và **Gemma2-9b-it** khi gặp quota rate limits) để tự động hóa quy trình phân tích và viết Báo cáo Tình hình Chiến dịch (SITREP - Situation Report):
 *   **Context-Injection Pipeline:** Tự động gom toàn bộ trạng thái viễn trắc (telemetry) của hệ thống bao gồm: vị trí Operator (GPS), danh sách safehouses, các đám cháy vệ tinh lớn, sự cố Internet, nhiễu GPS và lệnh truy nã Interpol hoạt động.
 *   **Prompt Engineering & Agentic Reasoning:** Ép AI phân tích chéo (cross-reference) mối tương quan giữa các sự kiện địa chính trị và thiên tai để đưa ra cảnh báo sớm về các mối đe dọa tiềm ẩn (Threat Matrix).
 
@@ -49,7 +49,7 @@ graph TD
         ADSB[ADS-B Flight Data API]
         USGS[USGS Earthquakes GeoJSON]
         RSS[Google News RSS Feed]
-        Gemini[Google Gemini 2.5 Flash API]
+        Groq[Groq Llama-3/Gemma-2 API]
     end
 
     UI -->|HTTPS Request| Nginx
