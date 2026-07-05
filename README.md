@@ -91,10 +91,6 @@ Dự án đã được container hóa hoàn chỉnh bằng **Docker Compose** v�
 ---
 
 ## 🛡️ TÌNH TRẠNG CLEARANCE & KỶ LUẬT AN NINH MẠNG
-*   **Mức Độ Bảo Mật:** `TOP SECRET // SCI (Sensitive Compartmented Information)`
 *   **Phát Triển Độc Lập:** Hệ thống thiết kế khép kín cho 1 Operator duy nhất điều hành thực địa (Single-Operator Mode), tích hợp lưu trữ an toàn trạng thái vận hành trên LocalStorage để ngăn ngừa mất dấu vị trí tác chiến kể cả khi mất kết nối đột ngột hoặc Reload F5.
 
 ---
-<div align="center">
-  <code>[SYSTEM SECURITY PROTOCOL IS OPERATIONAL // RAVEN-X PROJECT]</code>
-</div>
