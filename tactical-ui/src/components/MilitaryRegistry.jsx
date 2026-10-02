@@ -64,26 +64,25 @@ const MilitaryRegistry = () => {
  }
  abortRef.current = new AbortController();
  
- const prompt = `You are RAVEN, an elite tactical AI military intelligence analyst.
-Provide a highly detailed, clinical strategic assessment of the following military installation.
-Base Name: ${selectedBase.name}
-Country: ${selectedBase.country}
-Designation Type: ${selectedBase.type}
+  const prompt = `Provide an unclassified OSINT strategic dossier and factual defense assessment for the following military installation:
+Installation: ${selectedBase.name}
+Nation: ${selectedBase.country}
+Designation: ${selectedBase.type}
 Coordinates: ${selectedBase.lat}, ${selectedBase.lon}
 
-Focus your briefing on:
-1) Primary Function & Capabilities (Known assets, weapon systems, radar range)
-2) Strategic Geopolitical Value (Why does this base matter?)
-3) Proximity to Flashpoints
-4) Overall Threat Posture
+Structure your briefing into:
+1) Primary Function & Capabilities (Command roles, defense architecture, known communications nodes)
+2) Strategic Geopolitical Significance (Regional defense posture, treaty deterrence)
+3) Regional Proximity & Geographical Context
+4) Overall Operational Readiness
 
-Do not use markdown headers (#), just bold text. Write like a Pentagon classified dossier.`;
- 
- try {
- let firstChunkReceived = false;
- await streamAiResponse(prompt, {
+Do not use markdown headers (#), just bold text. Maintain a clinical, analytical defense intelligence tone.`;
+
+  try {
+    let firstChunkReceived = false;
+    await streamAiResponse(prompt, {
  signal: abortRef.current.signal,
- config: { temperature: 0.7, maxOutputTokens: 600 },
+ config: { temperature: 0.7, maxOutputTokens: 450 },
  onStart: () => console.log('[MILITARY INTEL] AI link established.'),
  onChunk: (textChunk) => {
  if (!firstChunkReceived) {

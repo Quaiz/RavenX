@@ -1,9 +1,9 @@
 
 
 const MODELS = [
+  'qwen/qwen3.8-27b',
   'openai/gpt-oss-120b',
-  'openai/gpt-oss-20b',
-  'qwen/qwen3.8-27b'
+  'openai/gpt-oss-20b'
 ];
 
 let currentModelIndex = 0;
@@ -53,7 +53,7 @@ export const streamAiResponse = async (contents, options = {}) => {
  model: model,
  messages: messages,
  temperature: config.temperature || 0.6,
- max_tokens: config.maxOutputTokens ? Math.min(config.maxOutputTokens, 8192) : 2048,
+ max_tokens: config.maxOutputTokens ? Math.min(config.maxOutputTokens, 450) : 450,
  stream: true
  };
 
@@ -91,6 +91,7 @@ export const streamAiResponse = async (contents, options = {}) => {
  const reader = response.body.getReader();
  const decoder = new TextDecoder();
  let buffer = '';
+    let streamText = '';
 
  while (true) {
  const { done, value } = await reader.read();

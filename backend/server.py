@@ -2346,19 +2346,27 @@ def proxy_ai_chat():
     if not groq_key:
         return jsonify({"error": "GROQ_API_KEY not configured on server"}), 500
 
-    # Auto-map deprecated model IDs to active Groq models
+    # Auto-map deprecated model IDs to active Groq models (prefer Qwen for factual OSINT without refusals)
     model_mapping = {
-        "llama-3.3-70b-versatile": "openai/gpt-oss-120b",
-        "llama-3.1-8b-instant": "openai/gpt-oss-20b",
+        "llama-3.3-70b-versatile": "qwen/qwen3.8-27b",
+        "llama-3.1-8b-instant": "qwen/qwen3.8-27b",
         "gemma2-9b-it": "qwen/qwen3.8-27b",
-        "llama3-70b-8192": "openai/gpt-oss-120b",
-        "llama3-8b-8192": "openai/gpt-oss-20b"
+        "llama3-70b-8192": "qwen/qwen3.8-27b",
+        "llama3-8b-8192": "openai/gpt-oss-20b",
+        "openai/gpt-oss-120b": "qwen/qwen3.8-27b"
     }
     req_model = data.get("model", "")
     if req_model in model_mapping:
         data["model"] = model_mapping[req_model]
     elif not req_model:
-        data["model"] = "openai/gpt-oss-120b"
+        data["model"] = "qwen/qwen3.8-27b"
+
+    # Clamp max_tokens to 450 to stay safely within Groq free-tier 1000 OTPM limit
+    curr_tokens = data.get("max_tokens", 450)
+    try:
+        data["max_tokens"] = min(int(curr_tokens), 450)
+    except (ValueError, TypeError):
+        data["max_tokens"] = 450
 
     url = "https://api.groq.com/openai/v1/chat/completions"
     headers = {
