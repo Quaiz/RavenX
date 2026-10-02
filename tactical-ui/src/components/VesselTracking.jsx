@@ -20,7 +20,8 @@ const VesselTracking = () => {
  // but React might re-render it anyway.
  };
 
- const iframeSrc = `https://www.vesselfinder.com/aismap?zoom=${activePoint.zoom}&lat=${activePoint.lat}&lon=${activePoint.lon}&width=100%25&height=100%25&names=false&mmsi=0&track=true&fleet=false&fleet_name=false&fleet_hide_old_positions=false&clicktoact=false&id=0&color=1&maptype=3`;
+ const ra = encodeURIComponent(typeof window !== 'undefined' ? window.location.href : 'https://ravenx-protocol.duckdns.org/');
+ const iframeSrc = `https://www.vesselfinder.com/aismap?zoom=${activePoint.zoom}&lat=${activePoint.lat}&lon=${activePoint.lon}&width=100%25&height=100%25&names=false&mmsi=0&track=true&fleet=false&fleet_name=false&fleet_hide_old_positions=false&clicktoact=false&id=0&color=1&maptype=3&ra=${ra}`;
 
  return (
  <div className="h-full flex flex-col font-military text-white bg-black/40">

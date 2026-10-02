@@ -1,0 +1,233 @@
+[
+  {
+    "endpoint": "/api/health",
+    "status": 200,
+    "latency_ms": 552.2,
+    "size": 48,
+    "ok": true
+  },
+  {
+    "endpoint": "/api/news?country=Vietnam&limit=10",
+    "status": 200,
+    "latency_ms": 2373.2,
+    "size": 5627,
+    "ok": true
+  },
+  {
+    "endpoint": "/api/gdelt",
+    "status": 200,
+    "latency_ms": 359.6,
+    "size": 14230,
+    "ok": true
+  },
+  {
+    "endpoint": "/api/proxy/gdelt",
+    "status": 200,
+    "latency_ms": 5618.5,
+    "size": 874,
+    "ok": true
+  },
+  {
+    "endpoint": "/api/forex/history?base=USD&target=EUR&start=2026-09-01&end=2026-10-01",
+    "status": 200,
+    "latency_ms": 583.2,
+    "size": 676,
+    "ok": true
+  },
+  {
+    "endpoint": "/api/market-terminal",
+    "status": 200,
+    "latency_ms": 404.1,
+    "size": 903,
+    "ok": true
+  },
+  {
+    "endpoint": "/api/radiation",
+    "status": 200,
+    "latency_ms": 1018.6,
+    "size": 65,
+    "ok": true
+  },
+  {
+    "endpoint": "/api/censorship",
+    "status": 200,
+    "latency_ms": 448.4,
+    "size": 4014,
+    "ok": true
+  },
+  {
+    "endpoint": "/api/chokepoints",
+    "status": 200,
+    "latency_ms": 2733.3,
+    "size": 417,
+    "ok": true
+  },
+  {
+    "endpoint": "/api/webcam/search?city=Tokyo",
+    "status": 200,
+    "latency_ms": 6117.6,
+    "size": 221,
+    "ok": true
+  },
+  {
+    "endpoint": "/api/tv/search?query=CNN",
+    "status": 200,
+    "latency_ms": 828.8,
+    "size": 295,
+    "ok": true
+  },
+  {
+    "endpoint": "/api/corporate/filings",
+    "status": 200,
+    "latency_ms": 983.1,
+    "size": 11632,
+    "ok": true
+  },
+  {
+    "endpoint": "/api/humanitarian",
+    "status": 200,
+    "latency_ms": 7780.4,
+    "size": 25682,
+    "ok": true
+  },
+  {
+    "endpoint": "/api/monetary",
+    "status": 200,
+    "latency_ms": 2494.0,
+    "size": 11764,
+    "ok": true
+  },
+  {
+    "endpoint": "/api/trends",
+    "status": 200,
+    "latency_ms": 562.1,
+    "size": 2868,
+    "ok": true
+  },
+  {
+    "endpoint": "/api/macro",
+    "status": 200,
+    "latency_ms": 1563.9,
+    "size": 12039,
+    "ok": true
+  },
+  {
+    "endpoint": "/api/polymarket",
+    "status": 200,
+    "latency_ms": 1058.2,
+    "size": 2634,
+    "ok": true
+  },
+  {
+    "endpoint": "/api/space-weather",
+    "status": 200,
+    "latency_ms": 288.4,
+    "size": 2483,
+    "ok": true
+  },
+  {
+    "endpoint": "/api/weather-alerts",
+    "status": 200,
+    "latency_ms": 9625.2,
+    "size": 14236,
+    "ok": true
+  },
+  {
+    "endpoint": "/api/seismic",
+    "status": 200,
+    "latency_ms": 276.3,
+    "size": 7166,
+    "ok": true
+  },
+  {
+    "endpoint": "/api/cables",
+    "status": 200,
+    "latency_ms": 4068.8,
+    "size": 3025,
+    "ok": true
+  },
+  {
+    "endpoint": "/api/fires",
+    "status": 200,
+    "latency_ms": 586.0,
+    "size": 34208,
+    "ok": true
+  },
+  {
+    "endpoint": "/api/proxy/fires",
+    "status": 200,
+    "latency_ms": 2598.9,
+    "size": 331071,
+    "ok": true
+  },
+  {
+    "endpoint": "/api/aqi",
+    "status": 200,
+    "latency_ms": 603.4,
+    "size": 2969,
+    "ok": true
+  },
+  {
+    "endpoint": "/api/nuclear",
+    "status": 200,
+    "latency_ms": 2967.4,
+    "size": 4194,
+    "ok": true
+  },
+  {
+    "endpoint": "/api/proxy/aircraft",
+    "status": 200,
+    "latency_ms": 1669.8,
+    "size": 21033,
+    "ok": true
+  },
+  {
+    "endpoint": "/api/proxy/satellites",
+    "status": 200,
+    "latency_ms": 4545.1,
+    "size": 262031,
+    "ok": true
+  },
+  {
+    "endpoint": "/api/outbreaks",
+    "status": 200,
+    "latency_ms": 1025.1,
+    "size": 17312,
+    "ok": true
+  },
+  {
+    "endpoint": "/api/ew-jamming",
+    "status": 200,
+    "latency_ms": 3354.1,
+    "size": 4162,
+    "ok": true
+  },
+  {
+    "endpoint": "/api/military-bases",
+    "status": 200,
+    "latency_ms": 864.7,
+    "size": 232378,
+    "ok": true
+  },
+  {
+    "endpoint": "/api/logs",
+    "status": 200,
+    "latency_ms": 327.8,
+    "size": 127,
+    "ok": true
+  },
+  {
+    "endpoint": "/api/trace?q=8.8.8.8",
+    "status": 200,
+    "latency_ms": 2308.2,
+    "size": 278,
+    "ok": true
+  },
+  {
+    "endpoint": "/api/layout",
+    "status": 401,
+    "latency_ms": 490.5,
+    "error": "HTTP Error 401: UNAUTHORIZED",
+    "ok": false
+  }
+]

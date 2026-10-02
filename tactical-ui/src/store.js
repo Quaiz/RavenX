@@ -538,27 +538,27 @@ const useStore = create(persist((set, get) => ({
   deleteSafehouse: (id) => set(state => ({ operatorSafehouses: state.operatorSafehouses.filter(sfh => sfh.id !== id) })),
 
  baseMaps: [
- // DARK
- { id: 'BLACKOUT', name: 'BLACKOUT', category: 'DARK', url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' },
- { id: 'STEALTH', name: 'STEALTH', category: 'DARK', url: 'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png' },
- // LIGHT
- { id: 'GHOST', name: 'GHOST', category: 'LIGHT', url: 'https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png' },
- { id: 'BONE', name: 'BONE', category: 'LIGHT', url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png' },
- { id: 'GRANITE', name: 'GRANITE', category: 'LIGHT', url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png' },
- // SATELLITE
-   { id: 'RECON', name: 'RECON', category: 'SATELLITE', url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}' },
+  // DARK
+  { id: 'BLACKOUT', name: 'BLACKOUT', category: 'DARK', url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}' },
+  { id: 'STEALTH', name: 'STEALTH', category: 'DARK', url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}' },
+  // LIGHT
+  { id: 'GHOST', name: 'GHOST', category: 'LIGHT', url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}' },
+  { id: 'BONE', name: 'BONE', category: 'LIGHT', url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png' },
+  { id: 'GRANITE', name: 'GRANITE', category: 'LIGHT', url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}' },
+  // SATELLITE
+  { id: 'RECON', name: 'RECON', category: 'SATELLITE', url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}' },
   { id: 'SENTINEL_2', name: 'SENTINEL-2 (10m)', category: 'SATELLITE', url: 'https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless_3857/default/GoogleMapsCompatible/{z}/{y}/{x}.jpg' },
   { id: 'NASA_DAILY', name: 'NASA DAILY (250m)', category: 'SATELLITE', url: 'https://gibs-a.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_CorrectedReflectance_TrueColor/default/default/GoogleMapsCompatible_Level9/{z}/{y}/{x}.jpg' },
- // TERRAIN
- { id: 'CONTOUR', name: 'CONTOUR', category: 'TERRAIN', url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png' },
- { id: 'ATLAS', name: 'ATLAS', category: 'TERRAIN', url: 'https://server.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/{z}/{y}/{x}' },
- { id: 'TOPO', name: 'TOPO', category: 'TERRAIN', url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}' },
- // STYLISED
- { id: 'TRAVERSE', name: 'TRAVERSE', category: 'STYLISED', url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png' },
- { id: 'OVERLAND', name: 'OVERLAND', category: 'STYLISED', url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Physical_Map/MapServer/tile/{z}/{y}/{x}' },
- { id: 'MARITIME', name: 'MARITIME', category: 'STYLISED', url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}' },
- { id: 'FIELDWORK', name: 'FIELDWORK', category: 'STYLISED', url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}' },
- ],
+  // TERRAIN
+  { id: 'CONTOUR', name: 'CONTOUR', category: 'TERRAIN', url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png' },
+  { id: 'ATLAS', name: 'ATLAS', category: 'TERRAIN', url: 'https://server.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/{z}/{y}/{x}' },
+  { id: 'TOPO', name: 'TOPO', category: 'TERRAIN', url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}' },
+  // STYLISED
+  { id: 'TRAVERSE', name: 'TRAVERSE', category: 'STYLISED', url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}' },
+  { id: 'OVERLAND', name: 'OVERLAND', category: 'STYLISED', url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Physical_Map/MapServer/tile/{z}/{y}/{x}' },
+  { id: 'MARITIME', name: 'MARITIME', category: 'STYLISED', url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}' },
+  { id: 'FIELDWORK', name: 'FIELDWORK', category: 'STYLISED', url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}' },
+  ],
 
  overlayLayers: [
  // CONFLICT
