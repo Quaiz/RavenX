@@ -2346,10 +2346,25 @@ def proxy_ai_chat():
     if not groq_key:
         return jsonify({"error": "GROQ_API_KEY not configured on server"}), 500
 
+    # Auto-map deprecated model IDs to active Groq models
+    model_mapping = {
+        "llama-3.3-70b-versatile": "openai/gpt-oss-120b",
+        "llama-3.1-8b-instant": "openai/gpt-oss-20b",
+        "gemma2-9b-it": "qwen/qwen3.8-27b",
+        "llama3-70b-8192": "openai/gpt-oss-120b",
+        "llama3-8b-8192": "openai/gpt-oss-20b"
+    }
+    req_model = data.get("model", "")
+    if req_model in model_mapping:
+        data["model"] = model_mapping[req_model]
+    elif not req_model:
+        data["model"] = "openai/gpt-oss-120b"
+
     url = "https://api.groq.com/openai/v1/chat/completions"
     headers = {
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {groq_key}"
+        "Authorization": f"Bearer {groq_key}",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
     }
 
     try:
