@@ -33,8 +33,12 @@ function MapController() {
   const map = useMap();
   const mapTarget = useStore(s => s.mapTarget);
   useEffect(() => {
-    if (mapTarget && mapTarget.lat !== undefined && mapTarget.lng !== undefined) {
-      map.flyTo([mapTarget.lat, mapTarget.lng], mapTarget.zoom || 14, { duration: 2.5 });
+    if (mapTarget) {
+      const lat = Number(mapTarget.lat ?? mapTarget.latitude);
+      const lng = Number(mapTarget.lng ?? mapTarget.lon ?? mapTarget.longitude);
+      if (!isNaN(lat) && !isNaN(lng)) {
+        map.flyTo([lat, lng], mapTarget.zoom || 14, { duration: 2.5 });
+      }
     }
   }, [mapTarget, map]);
 

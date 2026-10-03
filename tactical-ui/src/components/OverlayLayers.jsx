@@ -1,4 +1,26 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
+
+const OSINT_COUNTRY_COORDS = {
+  'Russia': [55.7558, 37.6173],
+  'Ukraine': [50.4501, 30.5234],
+  'Israel': [31.7683, 35.2137],
+  'Iran': [35.6892, 51.3890],
+  'China': [39.9042, 116.4074],
+  'Taiwan': [25.0330, 121.5654],
+  'USA': [38.9072, -77.0369],
+  'UK': [51.5074, -0.1278],
+  'France': [48.8566, 2.3522],
+  'Germany': [52.5200, 13.4050],
+  'Syria': [33.5138, 36.2765],
+  'Lebanon': [33.8938, 35.5018],
+  'Yemen': [15.3694, 44.1910],
+  'Korea': [37.5665, 126.9780],
+  'Sudan': [15.5007, 32.5599],
+  'Mali': [12.6392, -8.0029],
+  'Myanmar': [19.7633, 96.0785],
+  'Mexico': [19.4326, -99.1332]
+};
+
 import { CircleMarker, Marker, Tooltip, GeoJSON, TileLayer, Polyline, useMap, Popup, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 window.L = L;
@@ -156,8 +178,11 @@ function SingleSatellite({ sat }) {
  return () => clearInterval(iv);
  }, [sat]);
 
- return (
- <Marker ref={markerRef} position={[sat.lat, sat.lon]} icon={SAT_ICON}>
+  const satLat = Number(sat?.lat);
+  const satLon = Number(sat?.lon);
+  if (isNaN(satLat) || isNaN(satLon)) return null;
+  return (
+ <Marker ref={markerRef} position={[satLat, satLon]} icon={SAT_ICON}>
  <Popup className="tactical-popup"closeButton={false}>
  <TacticalPopup lines={[
  sat.name,
@@ -238,13 +263,16 @@ function SatelliteLayer() {
 }
 
 const DumbAircraft = React.memo(({ ac, registerMarker }) => {
- const staticIcon = useMemo(() => aircraftIcon(ac.heading), [ac.heading]);
- return (
- <Marker 
-  ref={(el) => registerMarker(ac.id, el)} 
-  position={[ac.lat, ac.lon]} 
-  icon={staticIcon}
- >
+  const lat = Number(ac?.lat);
+  const lon = Number(ac?.lon);
+  if (isNaN(lat) || isNaN(lon)) return null;
+  const staticIcon = useMemo(() => aircraftIcon(ac.heading), [ac.heading]);
+  return (
+  <Marker 
+   ref={(el) => registerMarker(ac.id, el)} 
+   position={[lat, lon]} 
+   icon={staticIcon}
+  >
   <Popup className="tactical-popup" closeButton={false}>
   <TacticalPopup lines={[
    ac.callsign || ac.id || 'UNKNOWN FLIGHT',
@@ -575,7 +603,7 @@ function TerminatorLayer() {
  {active.includes('DAY_NIGHT') && <TerminatorLayer />}
 
  {/* ── MILITARY BASES ── */}
- {active.includes('MILITARY_BASES') && MILITARY_BASES.map((b, i) => (
+ {active.includes('MILITARY_BASES') && MILITARY_BASES.filter(b => !isNaN(Number(b?.lat)) && !isNaN(Number(b?.lon))).map((b, i) => (
  <Marker key={i} position={[b.lat, b.lon]} icon={BASE_ICON}>
  <Popup className="tactical-popup"closeButton={false}>
  <TacticalPopup lines={[b.name.toUpperCase(), `TYPE: ${b.type}`, b.desc]} accentColor={'#a855f7'} />
@@ -584,7 +612,7 @@ function TerminatorLayer() {
  ))}
 
  {/* ── GPS INTERFERENCE ── */}
- {active.includes('GPS_INTERFERENCE') && GPS_INTERFERENCE.map((g, i) => (
+ {active.includes('GPS_INTERFERENCE') && GPS_INTERFERENCE.filter(g => !isNaN(Number(g?.lat)) && !isNaN(Number(g?.lon))).map((g, i) => (
  <Marker key={i} position={[g.lat, g.lon]} icon={GPS_ICON}>
  <Popup className="tactical-popup"closeButton={false}>
  <TacticalPopup lines={['GPS ANOMALY DETECTED', `SEVERITY: ${g.severity}`, g.desc]} accentColor={'#ef4444'} />
@@ -593,7 +621,7 @@ function TerminatorLayer() {
  ))}
 
  {/* ── DISPLACEMENT EVENTS ── */}
- {active.includes('DISPLACEMENT') && DISPLACEMENT_EVENTS.map((d, i) => (
+ {active.includes('DISPLACEMENT') && DISPLACEMENT_EVENTS.filter(d => !isNaN(Number(d?.lat)) && !isNaN(Number(d?.lon))).map((d, i) => (
  <Marker key={i} position={[d.lat, d.lon]} icon={mkTriangle('#f97316', 16)}>
  <Popup className="tactical-popup"closeButton={false}>
  <TacticalPopup lines={['MASS DISPLACEMENT', `IMPACT: ${d.people}`, d.desc]} accentColor={'#f97316'} />
@@ -602,7 +630,7 @@ function TerminatorLayer() {
  ))}
 
  {/* ── LIVE VESSELS ── */}
- {active.includes('LIVE_VESSELS') && LIVE_VESSELS.map((v, i) => (
+ {active.includes('LIVE_VESSELS') && LIVE_VESSELS.filter(v => !isNaN(Number(v?.lat)) && !isNaN(Number(v?.lon))).map((v, i) => (
  <Marker key={i} position={[v.lat, v.lon]} icon={mkShip(v.type === 'MILITARY' ? '#a855f7' : '#38bdf8')}>
  <Popup className="tactical-popup"closeButton={false}>
  <TacticalPopup lines={[v.name, `TYPE: ${v.type}`, `SPEED: ${v.speed} KTS`, `HDG: ${v.heading}°`]} accentColor={v.type === 'MILITARY' ? '#a855f7' : '#38bdf8'} />
@@ -611,7 +639,7 @@ function TerminatorLayer() {
  ))}
 
  {/* ── INTERNET OUTAGES ── */}
- {active.includes('INTERNET_OUTAGES') && INTERNET_OUTAGES.map((o, i) => (
+ {active.includes('INTERNET_OUTAGES') && INTERNET_OUTAGES.filter(o => !isNaN(Number(o?.lat)) && !isNaN(Number(o?.lon))).map((o, i) => (
  <Marker key={i} position={[o.lat, o.lon]} icon={OUTAGE_ICON}>
  <Popup className="tactical-popup"closeButton={false}>
  <TacticalPopup lines={['NETWORK DISRUPTION', `STATUS: ${o.status}`, o.target]} accentColor={'#ef4444'} />
@@ -620,14 +648,14 @@ function TerminatorLayer() {
  ))}
 
  {/* ── HAM REPEATERS & MESHTASTIC ── */}
- {active.includes('HAM_REPEATERS') && HAM_REPEATERS.map((h, i) => (
+ {active.includes('HAM_REPEATERS') && HAM_REPEATERS.filter(h => !isNaN(Number(h?.lat)) && !isNaN(Number(h?.lon))).map((h, i) => (
  <Marker key={i} position={[h.lat, h.lon]} icon={NODE_ICON}>
  <Popup className="tactical-popup"closeButton={false}>
  <TacticalPopup lines={[`HAM: ${h.callsign}`, `FREQ: ${h.freq} MHz`, h.desc]} accentColor={'#22c55e'} />
  </Popup>
  </Marker>
  ))}
- {active.includes('MESHTASTIC') && MESHTASTIC_NODES.map((m, i) => (
+ {active.includes('MESHTASTIC') && MESHTASTIC_NODES.filter(m => !isNaN(Number(m?.lat)) && !isNaN(Number(m?.lon))).map((m, i) => (
  <Marker key={i} position={[m.lat, m.lon]} icon={NODE_ICON}>
  <Popup className="tactical-popup"closeButton={false}>
  <TacticalPopup lines={[`MESH: ${m.name}`, `BATTERY: ${m.battery}`, `SNR: ${m.snr} dB`]} accentColor={'#22c55e'} />
@@ -654,18 +682,32 @@ function TerminatorLayer() {
  ))}
 
  {/* ── OSINT EVENTS ── */}
- {active.includes('OSINT_EVENTS') && [...(gdelt || []), ...STATIC_OSINT].map((ev, i) => (
- <Marker key={`osint-${i}`} position={[ev.lat, ev.lon]} icon={ev.severity === 'HIGH' ? OSINT_ICON_HIGH : ev.severity === 'MEDIUM' ? OSINT_ICON_MED : OSINT_ICON_LOW}>
- <Popup className="tactical-popup"closeButton={false}>
- <TacticalPopup lines={[`OSINT: ${ev.title.substring(0, 40)}`,
- `SOURCE: ${ev.source}`,
- `SEVERITY: ${ev.severity || 'UNKNOWN'}`,]} accentColor={ev.severity === 'HIGH' ? '#ef4444' : ev.severity === 'MEDIUM' ? '#ffb800' : '#22c55e'} />
- </Popup>
- </Marker>
- ))}
-
+  {/* ── OSINT EVENTS ── */}
+  {active.includes('OSINT_EVENTS') && [...(gdelt || []), ...STATIC_OSINT].map((ev, i) => {
+    let lat = Number(ev.lat);
+    let lon = Number(ev.lon);
+    if (isNaN(lat) || isNaN(lon)) {
+      if (ev.country && OSINT_COUNTRY_COORDS[ev.country]) {
+        const [cLat, cLon] = OSINT_COUNTRY_COORDS[ev.country];
+        lat = cLat + (((i % 5) - 2) * 0.35);
+        lon = cLon + ((((i * 3) % 5) - 2) * 0.35);
+      } else {
+        return null;
+      }
+    }
+    const titleStr = String(ev.title || 'OSINT UPDATE');
+    return (
+      <Marker key={`osint-${i}`} position={[lat, lon]} icon={ev.severity === 'HIGH' ? OSINT_ICON_HIGH : ev.severity === 'MEDIUM' ? OSINT_ICON_MED : OSINT_ICON_LOW}>
+        <Popup className="tactical-popup" closeButton={false}>
+          <TacticalPopup lines={[`OSINT: ${titleStr.substring(0, 40)}`,
+          `SOURCE: ${ev.source || 'GDELT'}`,
+          `SEVERITY: ${ev.severity || 'UNKNOWN'}`,]} accentColor={ev.severity === 'HIGH' ? '#ef4444' : ev.severity === 'MEDIUM' ? '#ffb800' : '#22c55e'} />
+        </Popup>
+      </Marker>
+    );
+  })}
  {/* ── US BORDER WAIT TIMES ── */}
- {active.includes('US_BORDER') && US_BORDER_WAIT_TIMES.map((b, i) => (
+ {active.includes('US_BORDER') && US_BORDER_WAIT_TIMES.filter(b => !isNaN(Number(b?.lat)) && !isNaN(Number(b?.lon))).map((b, i) => (
  <Marker key={i} position={[b.lat, b.lon]} icon={BORDER_ICON}>
  <Popup className="tactical-popup"closeButton={false}>
  <TacticalPopup lines={[`CBP: ${b.port.toUpperCase()}`, `TYPE: ${b.type}`, `WAIT: ${b.time}`]} accentColor={'#eab308'} />
@@ -674,7 +716,7 @@ function TerminatorLayer() {
  ))}
 
  {/* ── VOLCANOES ── */}
- {active.includes('VOLCANOES') && VOLCANOES.map((v, i) => (
+ {active.includes('VOLCANOES') && VOLCANOES.filter(v => !isNaN(Number(v?.lat)) && !isNaN(Number(v?.lon))).map((v, i) => (
  <Marker key={i} position={[v.lat, v.lon]} icon={v.status === 'ERUPTING' ? VOLCANO_ICON_ERUPTING : VOLCANO_ICON_NORMAL}>
  <Popup className="tactical-popup"closeButton={false}>
  <TacticalPopup lines={[v.name.toUpperCase(), `TYPE: ${v.type}`, `STATUS: ${v.status}`]} accentColor={v.status === 'ERUPTING' ? '#ef4444' : '#f97316'} />
@@ -690,7 +732,7 @@ function TerminatorLayer() {
  <PredictiveTrackingLayer />
 
  {/* ── FIRMS FIRES ── */}
- {active.includes('FIRMS_FIRES') && fires.map((f, i) => (
+ {active.includes('FIRMS_FIRES') && (fires || []).filter(f => !isNaN(Number(f?.lat)) && !isNaN(Number(f?.lon))).map((f, i) => (
  <CircleMarker key={i} center={[f.lat, f.lon]} radius={2} pathOptions={{ color: '#ff4400', fillColor: '#ff4400', fillOpacity: 0.6, weight: 1 }}>
  <Tooltip className="tactical-tooltip">
  <div className="bg-black/80 p-1 text-[8px] text-red-500 font-mono">FIRE_ANOMALY // {f.confidence}</div>
@@ -873,37 +915,36 @@ function TerminatorLayer() {
   })()}
 
   {/* ── HUMINT OPERATIONS (Operator & Safehouses) ── */}
-  {active.includes('HUMINT_OPS') && (
+  {active.includes('HUMINT_OPS') && operatorCoords && !isNaN(Number(operatorCoords.lat)) && !isNaN(Number(operatorCoords.lon)) && (
     <React.Fragment key="humint-ops-layers">
       {/* Operator Marker */}
-      <Marker position={[operatorCoords.lat, operatorCoords.lon]} icon={mkDot('#ffb800', 14)}>
+      <Marker position={[Number(operatorCoords.lat), Number(operatorCoords.lon)]} icon={mkDot('#ffb800', 14)}>
         <Popup className="tactical-popup" closeButton={false}>
           <TacticalPopup lines={[
             'OPERATOR // YOU',
             `STATUS: ACTIVE`,
-            `LAT/LON: ${operatorCoords.lat.toFixed(4)}°, ${operatorCoords.lon.toFixed(4)}°`
+            `LAT/LON: ${Number(operatorCoords.lat).toFixed(4)}°, ${Number(operatorCoords.lon).toFixed(4)}°`
           ]} accentColor={'#ffb800'} />
         </Popup>
       </Marker>
-      <Marker position={[operatorCoords.lat, operatorCoords.lon]} icon={mkPulse('#ffb800', 50)} />
+      <Marker position={[Number(operatorCoords.lat), Number(operatorCoords.lon)]} icon={mkPulse('#ffb800', 50)} />
 
       {/* Safehouse Markers */}
-      {operatorSafehouses.map((sfh, idx) => (
-        <Marker key={`sfh-${sfh.id}-${idx}`} position={[sfh.lat, sfh.lon]} icon={mkDot('#22d3ee', 12)}>
+      {(operatorSafehouses || []).filter(sfh => !isNaN(Number(sfh?.lat)) && !isNaN(Number(sfh?.lon))).map((sfh, idx) => (
+        <Marker key={`sfh-${sfh.id}-${idx}`} position={[Number(sfh.lat), Number(sfh.lon)]} icon={mkDot('#22d3ee', 12)}>
           <Popup className="tactical-popup" closeButton={false}>
             <TacticalPopup lines={[
               sfh.codename,
               `LOCATION: ${sfh.location}`,
               `STATUS: ${sfh.status}`,
               `CAPACITY: ${sfh.capacity}`,
-              `LAT/LON: ${sfh.lat.toFixed(4)}°, ${sfh.lon.toFixed(4)}°`
+              `LAT/LON: ${Number(sfh.lat).toFixed(4)}°, ${Number(sfh.lon).toFixed(4)}°`
             ]} accentColor={'#22d3ee'} />
           </Popup>
         </Marker>
       ))}
     </React.Fragment>
   )}
-
  </>
  );
 }
