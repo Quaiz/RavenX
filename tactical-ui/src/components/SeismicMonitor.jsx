@@ -70,7 +70,7 @@ const SeismicMonitor = () => {
  <span className="text-[9px] text-white/50 tracking-widest uppercase">Max Magnitude</span>
  <div className="flex items-center justify-end gap-2">
  <span className={`text-[14px] font-bold font-mono ${getMagColor(data.max_mag).text}`}>
- M {data.max_mag.toFixed(1)}
+ M {Number(data.max_mag || 0).toFixed(1)}
  </span>
  {data.max_quake && (
  <span className="text-[9px] text-white/40 max-w-[120px] truncate">{data.max_quake.place}</span>
@@ -114,7 +114,7 @@ const SeismicMonitor = () => {
  <span className="text-[8px] text-white/40 uppercase tracking-widest mb-0.5">MAG</span>
  <span className={`text-[18px] font-bold font-mono leading-none ${meta.text}`} 
  style={{ textShadow: meta.pulse ? '0 0 10px rgba(239,68,68,0.5)' : 'none' }}>
- {q.mag.toFixed(1)}
+ {Number(q?.mag || 0).toFixed(1)}
  </span>
  </div>
 
@@ -127,7 +127,7 @@ const SeismicMonitor = () => {
  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[9px]">
  <div className="flex items-center gap-1 text-white/50">
  <MapPin size={10} className="text-blue-400"/>
- <span className="font-mono">{q.depth.toFixed(1)} km depth</span>
+ <span className="font-mono">{Number(q?.depth || 0).toFixed(1)} km depth</span>
  </div>
  <div className="text-white/40 font-mono">
  {date.toLocaleTimeString()}

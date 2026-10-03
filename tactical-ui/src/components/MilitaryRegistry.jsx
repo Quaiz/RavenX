@@ -256,13 +256,13 @@ Do not use markdown headers (#), just bold text. Maintain a clinical, analytical
  <div className="flex items-center gap-1 text-[8px] text-[#4a5240] tracking-widest mb-1">
  <MapPin size={8} /> LATITUDE
  </div>
- <div className="text-[10px] text-[#8B9B7B] font-mono">{selectedBase.lat.toFixed(4)}°</div>
+ <div className="text-[10px] text-[#8B9B7B] font-mono">{Number(selectedBase?.lat || 0).toFixed(4)}°</div>
  </div>
  <div className="p-2 bg-black/40 border border-[#2a2d24]">
  <div className="flex items-center gap-1 text-[8px] text-[#4a5240] tracking-widest mb-1">
  <MapPin size={8} /> LONGITUDE
  </div>
- <div className="text-[10px] text-[#8B9B7B] font-mono">{selectedBase.lon.toFixed(4)}°</div>
+ <div className="text-[10px] text-[#8B9B7B] font-mono">{Number(selectedBase?.lon || 0).toFixed(4)}°</div>
  </div>
  </div>
 
