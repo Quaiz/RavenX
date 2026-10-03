@@ -12,8 +12,6 @@ const DiseaseOutbreaks = () => {
  if (!outbreaksData || outbreaksData.length === 0) {
  fetchOutbreaks();
  }
- const interval = setInterval(() => { if (!document.hidden) fetchOutbreaks(); }, 120000);
- return () => clearInterval(interval);
  }, [fetchOutbreaks, outbreaksData]);
 
  useEffect(() => {

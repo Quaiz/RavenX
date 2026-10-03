@@ -60,31 +60,42 @@ const KpChart = ({ history }) => {
  );
 };
 
+import useStore from '../store';
+
 const SpaceWeather = () => {
- const [data, setData] = useState(null);
- const [loading, setLoading] = useState(true);
- const [lastUpdate, setLastUpdate] = useState(new Date());
+  const hubSpace = useStore(state => state.feeds.spaceWeather);
+  const [data, setData] = useState(() => hubSpace || null);
+  const [loading, setLoading] = useState(!hubSpace);
+  const [lastUpdate, setLastUpdate] = useState(new Date());
 
- const fetchData = async () => {
- setLoading(true);
- try {
- const res = await fetch(import.meta.env.VITE_BACKEND_URL + '/api/space-weather');
- const json = await res.json();
- if (json && !json.error) {
- setData(json);
- setLastUpdate(new Date());
- }
- } catch (err) {
- console.error("Failed to fetch space weather:", err);
- }
- setLoading(false);
- };
+  useEffect(() => {
+    if (hubSpace) {
+      setData(hubSpace);
+      setLoading(false);
+      setLastUpdate(new Date());
+    }
+  }, [hubSpace]);
 
- useEffect(() => {
- fetchData();
- const interval = setInterval(() => { if (!document.hidden) fetchData(); }, 300000);
- return () => clearInterval(interval);
- }, []);
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(import.meta.env.VITE_BACKEND_URL + '/api/space-weather');
+      const json = await res.json();
+      if (json && !json.error) {
+        setData(json);
+        setLastUpdate(new Date());
+      }
+    } catch (err) {
+      console.error("Failed to fetch space weather:", err);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    if (!data) {
+      fetchData();
+    }
+  }, []);
 
  const kpVal = Number(data?.kp?.current ?? 0);
  const kpMeta = getKpMeta(kpVal);

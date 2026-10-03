@@ -17,31 +17,42 @@ const getEventIcon = (type) => {
  return <AlertTriangle size={16} />;
 };
 
+import useStore from '../store';
+
 const WeatherAlerts = () => {
- const [data, setData] = useState(null);
- const [loading, setLoading] = useState(true);
- const [lastUpdate, setLastUpdate] = useState(new Date());
+  const hubAlerts = useStore(state => state.feeds.weatherAlerts);
+  const [data, setData] = useState(() => Array.isArray(hubAlerts) && hubAlerts.length > 0 ? hubAlerts : null);
+  const [loading, setLoading] = useState(!hubAlerts || hubAlerts.length === 0);
+  const [lastUpdate, setLastUpdate] = useState(new Date());
 
- const fetchData = async () => {
- setLoading(true);
- try {
- const res = await fetch(import.meta.env.VITE_BACKEND_URL + '/api/weather-alerts');
- const json = await res.json();
- if (!json.error) {
- setData(json.alerts || []);
- setLastUpdate(new Date());
- }
- } catch (err) {
- console.error("Failed to fetch weather alerts:", err);
- }
- setLoading(false);
- };
+  useEffect(() => {
+    if (Array.isArray(hubAlerts) && hubAlerts.length > 0) {
+      setData(hubAlerts);
+      setLoading(false);
+      setLastUpdate(new Date());
+    }
+  }, [hubAlerts]);
 
- useEffect(() => {
- fetchData();
- const interval = setInterval(() => { if (!document.hidden) fetchData(); }, 120000); // 2 min
- return () => clearInterval(interval);
- }, []);
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(import.meta.env.VITE_BACKEND_URL + '/api/weather-alerts');
+      const json = await res.json();
+      if (!json.error) {
+        setData(json.alerts || []);
+        setLastUpdate(new Date());
+      }
+    } catch (err) {
+      console.error("Failed to fetch weather alerts:", err);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    if (!data) {
+      fetchData();
+    }
+  }, []);
 
  const criticalCount = data ? data.filter(a => a.severity === 'CRITICAL').length : 0;
  const severeCount = data ? data.filter(a => a.severity === 'SEVERE').length : 0;
