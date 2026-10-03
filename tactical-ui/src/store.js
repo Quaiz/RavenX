@@ -652,7 +652,7 @@ const useStore = create(persist((set, get) => ({
  .slice(0, 1500)
  .map(s => ({
  id: s[0],
- callsign: (s[1] || 'UNK').trim(),
+ callsign: String(s[1] || 'UNK').trim(),
  origin: s[2] || 'UNKNOWN',
  lat: s[6],
  lon: s[5],
@@ -706,7 +706,7 @@ const useStore = create(persist((set, get) => ({
 
  fetchAircraft: async (lat, lon) => { try { let url = import.meta.env.VITE_BACKEND_URL + '/api/proxy/aircraft'; if (lat && lon) url += `?lat=${lat}&lon=${lon}`; const res = await fetch(url); const data = await res.json(); const mapped = (data.states || []).filter(s => s[5] !== null && s[6] !== null).slice(0, 1500).map(s => ({
  id: s[0],
- callsign: (s[1] || 'UNK').trim(),
+ callsign: String(s[1] || 'UNK').trim(),
  origin: s[2] || 'UNKNOWN',
  lat: s[6],
  lon: s[5],

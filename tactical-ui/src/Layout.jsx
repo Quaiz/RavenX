@@ -42,6 +42,7 @@ import ScrambleText from './components/ScrambleText';
 import WantedCriminals from './components/WantedCriminals';
 import CommandPalette from './components/CommandPalette';
 import HumintIntel from './components/HumintIntel';
+import { WindowErrorBoundary } from './components/ErrorBoundary';
 import { saveLayout } from './auth';
 
 const HEX_DUMP = Array.from({length: 15000}).map(() => Math.random().toString(16).substr(2, 8).toUpperCase() + " ").join('');
@@ -303,16 +304,25 @@ const MarketTerminal = () => {
   return (
     <div className="p-4 md:p-6 space-y-3 md:space-y-4 overflow-y-auto h-full custom-scrollbar">
       {marketData.map(m => {
-        const isUp = m.changePercent > 0;
+        if (!m || typeof m !== 'object') return null;
+        const priceNum = Number(m.price || 0);
+        const changeNum = Number(m.changePercent || 0);
+        const isUp = changeNum > 0;
+        const formattedPrice = m.symbol === '^TNX' 
+          ? priceNum.toFixed(3) + '%' 
+          : priceNum > 1000 
+            ? priceNum.toLocaleString(undefined, {minimumFractionDigits: 2}) 
+            : priceNum.toFixed(4);
+
         return (
-        <div key={m.symbol} className="flex justify-between items-end border-b border-white/5 pb-2">
+        <div key={m.symbol || Math.random()} className="flex justify-between items-end border-b border-white/5 pb-2">
           <div className="text-[9px] md:text-[10px] text-white/40 font-bold uppercase tracking-widest">{getLabel(m.symbol)}</div>
           <div className="text-right">
             <div className={`text-[12px] md:text-sm font-bold font-mono ${getColor(m.symbol)}`}>
-              {m.symbol === '^TNX' ? m.price.toFixed(3) + '%' : m.price > 1000 ? m.price.toLocaleString(undefined, {minimumFractionDigits: 2}) : m.price.toFixed(4)}
+              {formattedPrice}
             </div>
             <div className={`text-[7px] md:text-[8px] font-mono tracking-wider ${isUp ? 'text-green-500' : 'text-red-500'}`}>
-              {isUp ? '+' : ''}{m.changePercent.toFixed(2)}%
+              {isUp ? '+' : ''}{changeNum.toFixed(2)}%
             </div>
           </div>
         </div>
@@ -812,7 +822,7 @@ const Layout = ({ user, showGreeting, onEnterDashboard, onLogout, onUsernameChan
  isMobile={true}
  layoutScale={1}
  >
- <ModuleContent id={mobileActiveTab} activeCountry={mobileActiveTab === 'COUNTRY_INTEL' ? activeCountry : null} />
+ <WindowErrorBoundary moduleId={mobileActiveTab}><ModuleContent id={mobileActiveTab} activeCountry={mobileActiveTab === 'COUNTRY_INTEL' ? activeCountry : null} /></WindowErrorBoundary>
  </Window>
  )
  ) : (
@@ -852,7 +862,7 @@ const Layout = ({ user, showGreeting, onEnterDashboard, onLogout, onUsernameChan
  onMaximize={toggleMaximize}
  layoutScale={layoutScale}
  >
- <ModuleContent id={id} activeCountry={id === 'COUNTRY_INTEL' ? activeCountry : null} />
+ <WindowErrorBoundary moduleId={id}><ModuleContent id={id} activeCountry={id === 'COUNTRY_INTEL' ? activeCountry : null} /></WindowErrorBoundary>
  </Window>
  );
  })}
