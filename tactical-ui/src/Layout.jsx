@@ -130,12 +130,12 @@ const NewsTicker = ({ minimizedModules, restoreModule, getModuleIcon }) => {
 // ═══ MODULE CONTAINER FOR GRID ═══
 const MODULES_NO_ZOOM = ['MAP_MODULE', 'LINK_ANALYSIS', 'GLOBAL_NEWS', 'LIVE_WEBCAMS', 'AIS_VESSELS'];
 
-const ModuleContainer = React.forwardRef(({ id, title, icon: Icon, children, onClose, onMinimize, onMaximize, ...props }, ref) => {
+const ModuleContainer = React.memo(React.forwardRef(({ id, title, icon: Icon, children, onClose, onMinimize, onMaximize, ...props }, ref) => {
  const uiScale = useStore(state => state.uiScale);
  const shouldZoom = !MODULES_NO_ZOOM.includes(id);
  
  return (
- <div ref={ref} {...props} className={`flex flex-col w-full h-full tactical-glass overflow-hidden relative shadow-2xl ${props.className || ''}`}>
+ <div ref={ref} {...props} className={`flex flex-col w-full h-full tactical-glass overflow-hidden relative shadow-2xl ${props.className || ''}`} style={{ contain: 'layout style', ...(props.style || {}) }}>
  {/* HUD Corner Brackets */}
  {['top-[-2px] left-[-2px] border-t-4 border-l-4', 'top-[-2px] right-[-2px] border-t-4 border-r-4',
  'bottom-[-2px] left-[-2px] border-b-4 border-l-4', 'bottom-[-2px] right-[-2px] border-b-4 border-r-4'].map((cls, i) => (
@@ -148,17 +148,17 @@ const ModuleContainer = React.forwardRef(({ id, title, icon: Icon, children, onC
  <div className="flex items-center gap-1.5 mr-3">
  <button
  onMouseDown={(e) => e.stopPropagation()}
- onClick={(e) => { e.stopPropagation(); onClose(id); }}
+ onClick={(e) => { e.stopPropagation(); onClose?.(id); }}
  className="w-3 h-3 rounded-full bg-[#ff5f57] hover:brightness-110 transition-all flex items-center justify-center group/close"
  />
  <button
  onMouseDown={(e) => e.stopPropagation()}
- onClick={(e) => { e.stopPropagation(); onMinimize(id); }}
+ onClick={(e) => { e.stopPropagation(); onMinimize?.(id); }}
  className="w-3 h-3 rounded-full bg-[#febc2e] hover:brightness-110 transition-all flex items-center justify-center group/min"
  />
  <button
  onMouseDown={(e) => e.stopPropagation()}
- onClick={(e) => { e.stopPropagation(); onMaximize(id); }}
+ onClick={(e) => { e.stopPropagation(); onMaximize?.(id); }}
  className="w-3 h-3 rounded-full bg-[#28c840] hover:brightness-110 transition-all flex items-center justify-center group/max"
  />
  </div>
@@ -175,10 +175,39 @@ const ModuleContainer = React.forwardRef(({ id, title, icon: Icon, children, onC
  </div>
  </div>
  );
-});
+}));
 
-// ═══ ABSOLUTE FREE-FLOATING WINDOW ═══
-const Window = ({ id, title, icon, state = {}, isMaximized, onDrag, onResize, onFocus, onClose, onMinimize, onMaximize, children, isMobile, layoutScale = 1 }) => {
+// ═══ ABSOLUTE FREE-FLOATING WINDOW (60FPS HARDWARE ACCELERATED) ═══
+const Window = React.memo(({ id, title, icon, state = {}, isMaximized, onDrag, onResize, onFocus, onClose, onMinimize, onMaximize, children, isMobile, layoutScale = 1 }) => {
+ const handleFocus = useCallback(() => {
+ onFocus?.(id);
+ }, [onFocus, id]);
+
+ const handleClose = useCallback(() => {
+ onClose?.(id);
+ }, [onClose, id]);
+
+ const handleMinimize = useCallback(() => {
+ onMinimize?.(id);
+ }, [onMinimize, id]);
+
+ const handleMaximize = useCallback(() => {
+ onMaximize?.(id);
+ }, [onMaximize, id]);
+
+ const handleDragStop = useCallback((e, d) => {
+ onDrag?.(id, { x: d.x, y: Math.max(0, d.y) });
+ }, [onDrag, id]);
+
+ const handleResizeStop = useCallback((e, direction, ref, delta, position) => {
+ onResize?.(id, {
+ w: parseInt(ref.style.width, 10) || state.w,
+ h: parseInt(ref.style.height, 10) || state.h,
+ x: position.x,
+ y: position.y
+ });
+ }, [onResize, id, state.w, state.h]);
+
  if (isMobile) {
  return (
  <div className="absolute inset-0 z-50 flex flex-col pointer-events-auto bg-[#05070a]" style={{ paddingBottom: 'calc(3.5rem + env(safe-area-inset-bottom))' }}>
@@ -186,7 +215,7 @@ const Window = ({ id, title, icon, state = {}, isMaximized, onDrag, onResize, on
  id={id}
  title={title}
  icon={icon}
- onClose={onClose}
+ onClose={handleClose}
  onMinimize={() => {}} // Disabled on mobile
  onMaximize={() => {}} // Disabled on mobile
  >
@@ -202,38 +231,31 @@ const Window = ({ id, title, icon, state = {}, isMaximized, onDrag, onResize, on
  size={{ width: state.w, height: state.h }}
  position={{ x: state.x, y: state.y }}
  bounds="parent"
- onDragStop={(e, d) => onDrag(id, { x: d.x, y: Math.max(0, d.y) })}
- onResizeStop={(e, direction, ref, delta, position) => {
- onResize(id, {
- w: parseInt(ref.style.width, 10) || state.w,
- h: parseInt(ref.style.height, 10) || state.h,
- x: position.x,
- y: position.y
- });
- }}
- onMouseDownCapture={onFocus}
+ onDragStop={handleDragStop}
+ onResizeStop={handleResizeStop}
+ onMouseDownCapture={handleFocus}
  disableDragging={isMaximized}
  enableResizing={!isMaximized}
  minWidth={300}
  minHeight={200}
  dragHandleClassName="window-header"
  cancel=".no-drag"
- style={{ zIndex: state.z, position: 'absolute' }}
+ style={{ zIndex: state.z, position: 'absolute', willChange: 'transform' }}
  className="pointer-events-auto flex flex-col"
  >
  <ModuleContainer
  id={id}
  title={title}
  icon={icon}
- onClose={onClose}
- onMinimize={onMinimize}
- onMaximize={onMaximize}
+ onClose={handleClose}
+ onMinimize={handleMinimize}
+ onMaximize={handleMaximize}
  >
  {children}
  </ModuleContainer>
  </Rnd>
  );
-};
+});
 
 // ═══ MARKET TERMINAL COMPONENT ═══
 const MarketTerminal = () => {
@@ -318,6 +340,123 @@ const SplashScreen = ({ onOpenRegistry }) => (
  </div>
  </div>
 );
+
+// ═══ MODULE HELPER FUNCTIONS & MEMOIZED CONTENT RENDERER ═══
+const getModuleIcon = (id) => {
+  switch (id) {
+    case 'MAP_MODULE': return Map;
+    case 'ATMOSPHERIC_INTEL': return Activity;
+    case 'COUNTRY_INTEL': return Globe;
+    case 'LIVE_WEBCAMS': return Video;
+    case 'MARKET_TERMINAL': return BarChart3;
+    case 'WORLD_CLOCK': return Clock;
+    case 'MARITIME_INTEL': return Radio;
+    case 'SEISMIC': return Activity;
+    case 'CORPORATE_INTEL': return Database;
+    case 'MACRO_FEEDS': return BarChart3;
+    case 'MONETARY_POLICY': return BarChart3;
+    case 'GOOGLE_TRENDS': return Globe;
+    case 'OSINT_FEED': return Radio;
+    case 'DISEASE_OUTBREAKS': return Activity;
+    case 'NUCLEAR_FACILITIES': return Shield;
+    case 'GPS_JAMMING': return Radio;
+    case 'MILITARY_BASES': return Shield;
+    case 'POWER_GRIDS': return Activity;
+    case 'AI_ANALYST': return Bot;
+    case 'GLOBAL_NEWS': return Tv;
+    case 'LINK_ANALYSIS': return Grid;
+    case 'HUMINT': return User;
+    default: return Activity;
+  }
+};
+
+const getModuleTitle = (id, activeCountry) => {
+  const allModules = Object.values(MODULE_CATEGORIES).flat();
+  const moduleInfo = allModules.find(m => m.id === id);
+  if (moduleInfo) return `// ${moduleInfo.name}`;
+  switch (id) {
+    case 'MAP_MODULE': return '// MAP';
+    case 'ATMOSPHERIC_INTEL': return '// Atmospheric Intel';
+    case 'COUNTRY_INTEL': return `// Country Intel: ${activeCountry || ''}`;
+    case 'LIVE_WEBCAMS': return '// Live Webcams';
+    case 'MARKET_TELEMETRY': return '// Market Telemetry';
+    case 'WORLD_CLOCK': return '// Strategic Chrono';
+    case 'CORPORATE_INTEL': return '// Corporate Intel';
+    case 'HUMANITARIAN': return '// Humanitarian Intel';
+    case 'MACRO_FEEDS': return '// Macro Feeds';
+    case 'PREDICTION_MARKETS': return '// Prediction Odds';
+    case 'MONETARY_POLICY': return '// Monetary Policy';
+    case 'GOOGLE_TRENDS': return '// Search Trends';
+    case 'HUMINT': return '// HUMINT';
+    default: return `// ${id}`;
+  }
+};
+
+const ModuleContent = React.memo(({ id, activeCountry }) => {
+  switch (id) {
+    case 'MAP_MODULE': return <GothamGlobe />;
+    case 'ATMOSPHERIC_INTEL': return <AtmosphericIntelModule />;
+    case 'COUNTRY_INTEL': return <CountryIntel country={activeCountry} />;
+    case 'LIVE_WEBCAMS': return <LiveWebcams />;
+    case 'NUCLEAR_FACILITIES': return <NuclearStatus />;
+    case 'CENSORSHIP': return <InternetCensorship />;
+    case 'CORPORATE_INTEL': return <CorporateIntel />;
+    case 'HUMANITARIAN': return <HumanitarianIntel />;
+    case 'MACRO_FEEDS': return <MacroFeeds />;
+    case 'PREDICTION_MARKETS': return <PredictionMarkets />;
+    case 'SPACE_WEATHER': return <SpaceWeather />;
+    case 'WEATHER_ALERTS': return <WeatherAlerts />;
+    case 'NASA_FIRES': return <ThermalAnomalies />;
+    case 'AIR_QUALITY': return <AirQuality />;
+    case 'SEISMIC': return <SeismicMonitor />;
+    case 'AIS_VESSELS': return <VesselTracking />;
+    case 'MONETARY_POLICY': return <MonetaryPolicy />;
+    case 'GOOGLE_TRENDS': return <SearchTrends />;
+    case 'MARKET_TERMINAL': return <MarketTerminal />;
+    case 'WORLD_CLOCK': return <WorldClock />;
+    case 'CRYPTO': return <CryptoTracker />;
+    case 'FOREX': return <ForexLive />;
+    case 'ADSB_AIRCRAFT': return <FlightTracking />;
+    case 'LOCAL_AIR_RADAR': return <LocalAirRadar />;
+    case 'OSINT_FEED': return <OSINTFeed />;
+    case 'MARITIME_INTEL': return <MaritimeIntel />;
+    case 'POWER_GRIDS': return <PowerGridStatus />;
+    case 'GPS_JAMMING': return <GPSInterference />;
+    case 'MILITARY_BASES': return <MilitaryRegistry />;
+    case 'MILITARY_HARDWARE': return <MilitaryHardware />;
+    case 'DISEASE_OUTBREAKS': return <DiseaseOutbreaks />;
+    case 'AI_ANALYST': return <AIAnalyst />;
+    case 'GLOBAL_NEWS': return <GlobalNewsTV />;
+    case 'LINK_ANALYSIS': return <LinkAnalysis />;
+    case 'GLOBAL_TARGETS':
+    case 'WANTED_CRIMINALS': return <WantedCriminals />;
+    case 'HUMINT': return <HumintIntel />;
+    default: {
+      const allModules = Object.values(MODULE_CATEGORIES).flat();
+      const moduleInfo = allModules.find(m => m.id === id);
+      return (
+        <div className="h-full flex flex-col items-center justify-center p-8 text-center gap-4">
+          <div className="w-12 h-12 border border-white/5 bg-white/[0.02] flex items-center justify-center relative">
+            <Activity size={24} className="text-primary/20 animate-pulse"/>
+            <div className="absolute inset-0 border-t border-primary/40 animate-[shimmer_2s_infinite]" />
+          </div>
+          <div className="space-y-1">
+            <div className="text-[10px] font-bold text-white tracking-[0.2em] uppercase">{moduleInfo?.name || id}</div>
+            <div className="text-[8px] text-white/20 uppercase tracking-widest leading-relaxed max-w-[200px]">
+              {moduleInfo?.desc || 'Data stream initializing...'}
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <div className="w-1 h-1 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0s' }} />
+            <div className="w-1 h-1 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+            <div className="w-1 h-1 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.4s' }} />
+          </div>
+          <div className="text-[6px] text-primary/40 font-mono mt-4 uppercase tracking-[0.3em]">RAVEN_DEEP_SYNC_ACTIVE</div>
+        </div>
+      );
+    }
+  }
+});
 
 // ═══ TOP BAR CLOCK ═══
 const TopBarClock = () => {
@@ -468,139 +607,6 @@ const Layout = ({ user, showGreeting, onEnterDashboard, onLogout, onUsernameChan
  const handleLogout = () => {
  setIsProfileOpen(false);
  onLogout?.();
- };
-
- const renderModuleContent = (id) => {
- switch (id) {
- case 'MAP_MODULE': return <GothamGlobe />;
- case 'ATMOSPHERIC_INTEL': return <AtmosphericIntelModule />;
- case 'COUNTRY_INTEL': return <CountryIntel country={activeCountry} />;
- case 'LIVE_WEBCAMS': return <LiveWebcams />;
- case 'NUCLEAR_FACILITIES': return <NuclearStatus />;
- case 'CENSORSHIP': return <InternetCensorship />;
- case 'CORPORATE_INTEL': return <CorporateIntel />;
- case 'HUMANITARIAN': return <HumanitarianIntel />;
- case 'MACRO_FEEDS': return <MacroFeeds />;
- case 'PREDICTION_MARKETS': return <PredictionMarkets />;
- case 'SPACE_WEATHER': return <SpaceWeather />;
- case 'WEATHER_ALERTS': return <WeatherAlerts />;
- case 'NASA_FIRES': return <ThermalAnomalies />;
- case 'AIR_QUALITY': return <AirQuality />;
- case 'SEISMIC': return <SeismicMonitor />;
- case 'AIS_VESSELS': return <VesselTracking />;
- case 'MONETARY_POLICY': return <MonetaryPolicy />;
- case 'GOOGLE_TRENDS': return <SearchTrends />;
- case 'MARKET_TERMINAL': return <MarketTerminal />;
- case 'WORLD_CLOCK':
- return <WorldClock />;
- case 'CRYPTO':
- return <CryptoTracker />;
- case 'FOREX':
- return <ForexLive />;
- case 'ADSB_AIRCRAFT':
- return <FlightTracking />;
- case 'LOCAL_AIR_RADAR':
- return <LocalAirRadar />;
- case 'OSINT_FEED':
- return <OSINTFeed />;
- case 'MARITIME_INTEL':
- return <MaritimeIntel />;
- case 'POWER_GRIDS':
- return <PowerGridStatus />;
- case 'GPS_JAMMING':
- return <GPSInterference />;
- case 'MILITARY_BASES':
- return <MilitaryRegistry />;
- case 'MILITARY_HARDWARE':
- return <MilitaryHardware />;
- case 'DISEASE_OUTBREAKS':
- return <DiseaseOutbreaks />;
- case 'AI_ANALYST':
- return <AIAnalyst />;
- case 'GLOBAL_NEWS':
- return <GlobalNewsTV />;
- case 'LINK_ANALYSIS':
- return <LinkAnalysis />;
- case 'GLOBAL_TARGETS':
- return <WantedCriminals />;
- case 'WANTED_CRIMINALS':
- return <WantedCriminals />;
- case 'HUMINT':
- return <HumintIntel />;
- default:
- const allModules = Object.values(MODULE_CATEGORIES).flat();
- const moduleInfo = allModules.find(m => m.id === id);
- return (
- <div className="h-full flex flex-col items-center justify-center p-8 text-center gap-4">
- <div className="w-12 h-12 border border-white/5 bg-white/[0.02] flex items-center justify-center relative">
- <Activity size={24} className="text-primary/20 animate-pulse"/>
- <div className="absolute inset-0 border-t border-primary/40 animate-[shimmer_2s_infinite]" />
- </div>
- <div className="space-y-1">
- <div className="text-[10px] font-bold text-white tracking-[0.2em] uppercase">{moduleInfo?.name || id}</div>
- <div className="text-[8px] text-white/20 uppercase tracking-widest leading-relaxed max-w-[200px]">
- {moduleInfo?.desc || 'Data stream initializing...'}
- </div>
- </div>
- <div className="flex gap-2">
- <div className="w-1 h-1 bg-primary rounded-full animate-bounce"style={{ animationDelay: '0s' }} />
- <div className="w-1 h-1 bg-primary rounded-full animate-bounce"style={{ animationDelay: '0.2s' }} />
- <div className="w-1 h-1 bg-primary rounded-full animate-bounce"style={{ animationDelay: '0.4s' }} />
- </div>
- <div className="text-[6px] text-primary/40 font-mono mt-4 uppercase tracking-[0.3em]">RAVEN_DEEP_SYNC_ACTIVE</div>
- </div>
- );
- }
- };
-
- const getModuleTitle = (id) => {
- const allModules = Object.values(MODULE_CATEGORIES).flat();
- const moduleInfo = allModules.find(m => m.id === id);
- if (moduleInfo) return `// ${moduleInfo.name}`;
- switch (id) {
- case 'MAP_MODULE': return '// MAP';
- case 'ATMOSPHERIC_INTEL': return '// Atmospheric Intel';
- case 'COUNTRY_INTEL': return `// Country Intel: ${activeCountry}`;
- case 'LIVE_WEBCAMS': return '// Live Webcams';
- case 'MARKET_TELEMETRY': return '// Market Telemetry';
- case 'WORLD_CLOCK': return '// Strategic Chrono';
- case 'CORPORATE_INTEL': return '// Corporate Intel';
- case 'HUMANITARIAN': return '// Humanitarian Intel';
- case 'MACRO_FEEDS': return '// Macro Feeds';
- case 'PREDICTION_MARKETS': return '// Prediction Odds';
- case 'MONETARY_POLICY': return '// Monetary Policy';
- case 'GOOGLE_TRENDS': return '// Search Trends';
- case 'HUMINT': return '// HUMINT';
- default: return `// ${id}`;
- }
- };
-
- const getModuleIcon = (id) => {
- switch (id) {
- case 'MAP_MODULE': return Map;
- case 'ATMOSPHERIC_INTEL': return Activity;
- case 'COUNTRY_INTEL': return Globe;
- case 'LIVE_WEBCAMS': return Video;
- case 'MARKET_TERMINAL': return BarChart3;
- case 'WORLD_CLOCK': return Clock;
- case 'MARITIME_INTEL': return Radio;
- case 'SEISMIC': return Activity;
- case 'CORPORATE_INTEL': return Database;
- case 'MACRO_FEEDS': return BarChart3;
- case 'MONETARY_POLICY': return BarChart3;
- case 'GOOGLE_TRENDS': return Globe;
- case 'OSINT_FEED': return Radio;
- case 'DISEASE_OUTBREAKS': return Activity;
- case 'NUCLEAR_FACILITIES': return Shield;
- case 'GPS_JAMMING': return Radio;
- case 'MILITARY_BASES': return Shield;
- case 'POWER_GRIDS': return Activity;
- case 'AI_ANALYST': return Bot;
- case 'GLOBAL_NEWS': return Tv;
- case 'LINK_ANALYSIS': return Grid;
- case 'HUMINT': return User;
- default: return Activity;
- }
  };
 
  // Visible modules = active minus minimized
@@ -789,13 +795,13 @@ const Layout = ({ user, showGreeting, onEnterDashboard, onLogout, onUsernameChan
  <Window
  key={mobileActiveTab}
  id={mobileActiveTab}
- title={getModuleTitle(mobileActiveTab)}
+ title={getModuleTitle(mobileActiveTab, activeCountry)}
  icon={getModuleIcon(mobileActiveTab)}
  onClose={toggleModule}
  isMobile={true}
  layoutScale={1}
  >
- {renderModuleContent(mobileActiveTab)}
+ <ModuleContent id={mobileActiveTab} activeCountry={mobileActiveTab === 'COUNTRY_INTEL' ? activeCountry : null} />
  </Window>
  )
  ) : (
@@ -823,19 +829,19 @@ const Layout = ({ user, showGreeting, onEnterDashboard, onLogout, onUsernameChan
  <Window
  key={id}
  id={id}
- title={getModuleTitle(id)}
+ title={getModuleTitle(id, activeCountry)}
  icon={getModuleIcon(id)}
  state={isMaximized ? { ...defaultState, w: maxW, h: maxH, x: pad, y: pad } : defaultState}
  isMaximized={isMaximized}
  onDrag={setWindowPos}
  onResize={setWindowPos}
- onFocus={() => bringToFront(id)}
+ onFocus={bringToFront}
  onClose={toggleModule}
  onMinimize={minimizeModule}
  onMaximize={toggleMaximize}
  layoutScale={layoutScale}
  >
- {renderModuleContent(id)}
+ <ModuleContent id={id} activeCountry={id === 'COUNTRY_INTEL' ? activeCountry : null} />
  </Window>
  );
  })}

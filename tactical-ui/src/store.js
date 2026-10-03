@@ -244,7 +244,9 @@ const useStore = create(persist((set, get) => ({
  }),
 
  bringToFront: (id) => set((state) => {
+ const currentZ = state.windowStates[id]?.z || 0;
  const maxZ = Math.max(...Object.values(state.windowStates).map(w => w?.z || 0), 0);
+ if (currentZ === maxZ && currentZ > 0) return state;
  return {
  windowStates: { 
  ...state.windowStates, 
