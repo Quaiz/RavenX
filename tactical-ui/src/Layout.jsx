@@ -259,21 +259,26 @@ const Window = React.memo(({ id, title, icon, state = {}, isMaximized, onDrag, o
 
 // ═══ MARKET TERMINAL COMPONENT ═══
 const MarketTerminal = () => {
-  const [marketData, setMarketData] = useState([]);
+  const storeMarkets = useStore(state => state.feeds.markets);
+  const [marketData, setMarketData] = useState(() => Array.isArray(storeMarkets) && storeMarkets.length > 0 ? storeMarkets : []);
   
   useEffect(() => {
+    if (Array.isArray(storeMarkets) && storeMarkets.length > 0) {
+      setMarketData(storeMarkets);
+    }
+  }, [storeMarkets]);
+
+  // Initial fetch fallback if hub not yet populated
+  useEffect(() => {
+    if (marketData.length > 0) return;
     const fetchMarkets = async () => {
       try {
         const res = await fetch(import.meta.env.VITE_BACKEND_URL + '/api/market-terminal');
         const data = await res.json();
-        if (data.markets) {
-            setMarketData(data.markets);
-        }
+        if (data.markets) setMarketData(data.markets);
       } catch (err) {}
     };
     fetchMarkets();
-    const iv = setInterval(fetchMarkets, 60000);
-    return () => clearInterval(iv);
   }, []);
 
   const getLabel = (sym) => {
@@ -519,11 +524,17 @@ const Layout = ({ user, showGreeting, onEnterDashboard, onLogout, onUsernameChan
  return () => window.removeEventListener('resize', handleResize);
  }, []);
 
- useEffect(() => {
- fetchMarkets();
- const interval = setInterval(() => fetchMarkets(), 60000);
- return () => clearInterval(interval);
- }, []);
+  // ═══ MASTER TELEMETRY HUB HEARTBEAT (Single Coordinated Pulse Every 15s) ═══
+  useEffect(() => {
+    const syncHub = useStore.getState().syncTelemetryHub;
+    syncHub(); // Initial instant pulse
+    const interval = setInterval(() => {
+      if (!document.hidden) {
+        syncHub();
+      }
+    }, 15000);
+    return () => clearInterval(interval);
+  }, []);
 
   // 24-hour Auto-Reload Mechanism (seamless layout restoration via localStorage)
   useEffect(() => {

@@ -1,38 +1,49 @@
 import React, { useState, useEffect } from 'react';
 import { Activity, Waves, MapPin, RefreshCcw, AlertTriangle } from 'lucide-react';
 
+import useStore from '../store';
+
 const getMagColor = (mag) => {
- if (mag >= 6.0) return { border: 'border-red-500', text: 'text-red-500', bg: 'bg-red-950/40', pulse: true, label: 'CRITICAL' };
- if (mag >= 5.0) return { border: 'border-orange-500', text: 'text-orange-500', bg: 'bg-orange-950/30', pulse: false, label: 'SEVERE' };
- if (mag >= 4.0) return { border: 'border-yellow-500', text: 'text-yellow-500', bg: 'bg-yellow-950/20', pulse: false, label: 'MODERATE' };
- return { border: 'border-cyan-500/50', text: 'text-cyan-400', bg: 'bg-cyan-950/10', pulse: false, label: 'MINOR' };
+  if (mag >= 6.0) return { border: 'border-red-500', text: 'text-red-500', bg: 'bg-red-950/40', pulse: true, label: 'CRITICAL' };
+  if (mag >= 5.0) return { border: 'border-orange-500', text: 'text-orange-500', bg: 'bg-orange-950/30', pulse: false, label: 'SEVERE' };
+  if (mag >= 4.0) return { border: 'border-yellow-500', text: 'text-yellow-500', bg: 'bg-yellow-950/20', pulse: false, label: 'MODERATE' };
+  return { border: 'border-cyan-500/50', text: 'text-cyan-400', bg: 'bg-cyan-950/10', pulse: false, label: 'MINOR' };
 };
 
 const SeismicMonitor = () => {
- const [data, setData] = useState(null);
- const [loading, setLoading] = useState(true);
- const [lastUpdate, setLastUpdate] = useState(new Date());
+  const hubSeismic = useStore(state => state.feeds.seismic);
+  const [data, setData] = useState(() => hubSeismic || null);
+  const [loading, setLoading] = useState(!hubSeismic);
+  const [lastUpdate, setLastUpdate] = useState(new Date());
 
- const fetchData = async () => {
- setLoading(true);
- try {
- const res = await fetch(import.meta.env.VITE_BACKEND_URL + '/api/seismic');
- const json = await res.json();
- if (!json.error) {
- setData(json);
- setLastUpdate(new Date());
- }
- } catch (err) {
- console.error("Failed to fetch seismic data:", err);
- }
- setLoading(false);
- };
+  useEffect(() => {
+    if (hubSeismic) {
+      setData(hubSeismic);
+      setLoading(false);
+      setLastUpdate(new Date());
+    }
+  }, [hubSeismic]);
 
- useEffect(() => {
- fetchData();
- const interval = setInterval(() => { if (!document.hidden) fetchData(); }, 60000); // 1 min update (USGS updates often)
- return () => clearInterval(interval);
- }, []);
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(import.meta.env.VITE_BACKEND_URL + '/api/seismic');
+      const json = await res.json();
+      if (!json.error) {
+        setData(json);
+        setLastUpdate(new Date());
+      }
+    } catch (err) {
+      console.error("Failed to fetch seismic data:", err);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    if (!data) {
+      fetchData();
+    }
+  }, []);
 
  return (
  <div className="h-full flex flex-col font-military text-white bg-black/40">

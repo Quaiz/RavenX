@@ -43,75 +43,85 @@ const CustomBarLabel = (props) => {
  );
 };
 
-const RadiationSensor = () => {
- const [radiation, setRadiation] = useState('0.14');
- const [radBlink, setRadBlink] = useState(false);
+import useStore from '../store';
 
- useEffect(() => {
-  const fetchRadiation = async () => {
-    try {
-      const res = await fetch(import.meta.env.VITE_BACKEND_URL + '/api/radiation');
-      const data = await res.json();
-      if (data.nSv_h) {
+const RadiationSensor = () => {
+  const hubRadiation = useStore(state => state.feeds.radiation);
+  const [radiation, setRadiation] = useState(() => hubRadiation?.nSv_h ? hubRadiation.nSv_h.toFixed(2) : '0.14');
+  const [radBlink, setRadBlink] = useState(false);
+
+  useEffect(() => {
+    if (hubRadiation?.nSv_h) {
+      setRadiation(hubRadiation.nSv_h.toFixed(2));
+      setRadBlink(true);
+      setTimeout(() => setRadBlink(false), 200);
+    }
+  }, [hubRadiation]);
+
+  useEffect(() => {
+    if (hubRadiation) return;
+    const fetchRadiation = async () => {
+      try {
+        const res = await fetch(import.meta.env.VITE_BACKEND_URL + '/api/radiation');
+        const data = await res.json();
+        if (data.nSv_h) {
           setRadiation(data.nSv_h.toFixed(2));
-          setRadBlink(true);
-          setTimeout(() => setRadBlink(false), 200);
-      }
-    } catch(err) {}
-  };
-  fetchRadiation();
-  const radInterval = setInterval(fetchRadiation, 60000);
-  return () => clearInterval(radInterval);
+        }
+      } catch(err) {}
+    };
+    fetchRadiation();
   }, []);
 
- return (
- <div className="flex items-center gap-3 border border-white/10 bg-black/50 px-3 py-1 ">
- <Activity size={12} className={`${radBlink ? 'text-red-500 scale-125' : 'text-primary'} transition-all duration-100`} />
- <div className="flex flex-col">
- <span className="text-[6px] text-white/40 tracking-widest leading-none">RADIATION LEVEL</span>
- <span className={`text-[11px] font-bold tracking-wider leading-none mt-1 transition-colors duration-100 ${radBlink ? 'text-red-500' : 'text-white'}`}>
- {radiation} <span className="text-[8px] text-white/40 font-normal">nSv/h</span>
- </span>
- </div>
- </div>
- );
+  return (
+  <div className="flex items-center gap-3 border border-white/10 bg-black/50 px-3 py-1 ">
+  <Activity size={12} className={`${radBlink ? 'text-red-500 scale-125' : 'text-primary'} transition-all duration-100`} />
+  <div className="flex flex-col">
+  <span className="text-[6px] text-white/40 tracking-widest leading-none">RADIATION LEVEL</span>
+  <span className={`text-[11px] font-bold tracking-wider leading-none mt-1 transition-colors duration-100 ${radBlink ? 'text-red-500' : 'text-white'}`}>
+  {radiation} <span className="text-[8px] text-white/40 font-normal">nSv/h</span>
+  </span>
+  </div>
+  </div>
+  );
 };
 
 const NuclearStatus = () => {
- const [data, setData] = useState(null);
- const [loading, setLoading] = useState(true);
- const [error, setError] = useState(null);
- 
- const logContainerRef = useRef(null);
+  const hubNuclear = useStore(state => state.feeds.nuclear);
+  const [data, setData] = useState(() => hubNuclear || null);
+  const [loading, setLoading] = useState(!hubNuclear);
+  const [error, setError] = useState(null);
+  
+  const logContainerRef = useRef(null);
 
- useEffect(() => {
- let isMounted = true;
- const fetchData = async () => {
- try {
- const res = await fetch(import.meta.env.VITE_BACKEND_URL + '/api/nuclear');
- if (!res.ok) throw new Error('Failed to fetch nuclear intel');
- const json = await res.json();
- 
- if (isMounted) {
- setData(json);
- setLoading(false);
- }
- } catch (err) {
- if (isMounted) {
- setError(err.message);
- setLoading(false);
- }
- }
- };
- fetchData();
+  useEffect(() => {
+    if (hubNuclear) {
+      setData(hubNuclear);
+      setLoading(false);
+    }
+  }, [hubNuclear]);
 
- // Auto-refresh every 5 minutes
- const interval = setInterval(() => { if (!document.hidden) fetchData(); }, 300000);
- return () => {
- isMounted = false;
- clearInterval(interval);
- };
- }, []);
+  useEffect(() => {
+    if (data) return;
+    let isMounted = true;
+    const fetchData = async () => {
+      try {
+        const res = await fetch(import.meta.env.VITE_BACKEND_URL + '/api/nuclear');
+        if (!res.ok) throw new Error('Failed to fetch nuclear intel');
+        const json = await res.json();
+        if (isMounted) {
+          setData(json);
+          setLoading(false);
+        }
+      } catch (err) {
+        if (isMounted) {
+          setError(err.message);
+          setLoading(false);
+        }
+      }
+    };
+    fetchData();
+    return () => { isMounted = false; };
+  }, []);
 
  if (loading) {
  return (

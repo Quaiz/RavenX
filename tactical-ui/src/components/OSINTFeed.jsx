@@ -23,9 +23,6 @@ const OSINTFeed = () => {
  if (!gdeltData || gdeltData.length === 0) {
  fetchGdelt();
  }
- // Auto-refresh every 2 minutes
- const interval = setInterval(() => { if (!document.hidden) fetchGdelt(); }, 120000);
- return () => clearInterval(interval);
  }, [fetchGdelt, gdeltData]);
 
  // Handle first load selection

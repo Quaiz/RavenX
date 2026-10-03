@@ -2420,17 +2420,73 @@ def get_system_logs():
         return jsonify({"error": str(e)}), 500
 
 
-@app.route("/api/trace", methods=["GET"])
-def trace_ip():
-    target = request.args.get('q')
-    if not target:
-        return jsonify({"error": "Missing target"}), 400
-    try:
-        # Resolve hostname to IP using socket if it's a domain, but ip-api supports domains natively.
-        r = requests.get(f"http://ip-api.com/json/{target}", timeout=5)
-        return jsonify(r.json())
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+# ─── UNIFIED TELEMETRY HUB (Master Heartbeat Aggregator) ──────────────────────
+_telemetry_hub_cache = {
+    "timestamp": 0,
+    "payload": {}
+}
+
+@app.route("/api/hub/telemetry", methods=["GET"])
+def get_telemetry_hub():
+    now = time.time()
+    # Cache for 15 seconds: frontend only receives fresh coordinated pulses
+    if now - _telemetry_hub_cache["timestamp"] < 15 and _telemetry_hub_cache["payload"]:
+        return jsonify(_telemetry_hub_cache["payload"])
+
+    hub_data = {
+        "timestamp": now,
+        "markets": None,
+        "radiation": None,
+        "seismic": None,
+        "weather": None,
+        "space_weather": None,
+        "gdelt": None,
+        "aircraft": None,
+        "outbreaks": None,
+        "jamming": None,
+        "macro": None,
+        "nuclear": None,
+    }
+
+    def fetch_feed(key, fn):
+        try:
+            with app.test_request_context():
+                res = fn()
+                if hasattr(res, 'get_json'):
+                    return key, res.get_json()
+                elif isinstance(res, tuple) and hasattr(res[0], 'get_json'):
+                    return key, res[0].get_json()
+        except Exception as e:
+            print(f"Hub fetch error for {key}: {e}")
+        return key, None
+
+    targets = [
+        ('markets', get_market_terminal),
+        ('radiation', get_radiation),
+        ('seismic', get_seismic_data),
+        ('weather', get_weather_alerts),
+        ('space_weather', get_space_weather),
+        ('gdelt', get_gdelt),
+        ('aircraft', proxy_aircraft),
+        ('outbreaks', get_outbreaks),
+        ('jamming', get_ew_jamming),
+        ('macro', get_macro_feeds),
+        ('nuclear', get_nuclear_data),
+    ]
+
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        futures = [executor.submit(fetch_feed, k, fn) for k, fn in targets]
+        for f in as_completed(futures):
+            key, val = f.result()
+            if val is not None:
+                hub_data[key] = val
+            elif _telemetry_hub_cache["payload"].get(key):
+                hub_data[key] = _telemetry_hub_cache["payload"][key]
+
+    _telemetry_hub_cache["timestamp"] = now
+    _telemetry_hub_cache["payload"] = hub_data
+    return jsonify(hub_data)
+
 
 if __name__ == "__main__":
     print("=" * 50)

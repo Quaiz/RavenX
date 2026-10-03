@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import useStore from '../store';
 import { Globe, DollarSign, RefreshCcw, Ship, FileText, ExternalLink, Activity, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 
 const MacroFeeds = () => {
@@ -117,28 +118,38 @@ const MacroFeeds = () => {
  setLoading(false);
  };
 
- useEffect(() => {
- fetchMacro();
- const interval = setInterval(() => { if (!document.hidden) fetchMacro(); }, 60000); // Update every 1 minute
- return () => clearInterval(interval);
- }, []);
+  useEffect(() => {
+    fetchMacro();
+  }, []);
 
- // Debt Ticking Effect (Simulating the steady accrual of the REAL US Deficit)
- useEffect(() => {
- if (liveUsTotal === 0) return;
- 
-  // US Deficit is exactly $8 Billion/day = ~$92,592 per second = ~$4,629 per 50ms
-  // We use exact rigorous math instead of Math.random() for the real-time projection
-  const tickInterval = setInterval(() => {
-  const tickAmount = 4629.62;
-  setLiveUsTotal(prev => prev + tickAmount);
-  setLiveUsPublic(prev => prev + (tickAmount * 0.78));
-  setLiveUsIntragov(prev => prev + (tickAmount * 0.22));
-  }, 50);
+  // Update news when storeMacro arrives from unified hub
+  useEffect(() => {
+    if (storeMacro && storeMacro.news && storeMacro.news.length > 0) {
+      const newsItems = storeMacro.news.slice(0, 10).map(item => ({
+        title: item.title,
+        link: item.link,
+        updated: item.updated,
+        category: item.category === 'SUPPLY_CHAIN' ? 'SUPPLY_CHAIN' : 'MACRO'
+      }));
+      setData(prev => ({ ...prev, news: newsItems }));
+      setLastUpdate(new Date());
+    }
+  }, [storeMacro]);
 
- return () => clearInterval(tickInterval);
- }, [liveUsTotal === 0]); 
+  // Debt Ticking Effect: Throttled to 1000ms ($92,592.59/s) to eliminate GC thrashing
+  useEffect(() => {
+    if (liveUsTotal === 0) return;
+    
+    const tickInterval = setInterval(() => {
+      if (document.hidden) return;
+      const tickAmount = 92592.59;
+      setLiveUsTotal(prev => prev + tickAmount);
+      setLiveUsPublic(prev => prev + (tickAmount * 0.78));
+      setLiveUsIntragov(prev => prev + (tickAmount * 0.22));
+    }, 1000);
 
+    return () => clearInterval(tickInterval);
+  }, [liveUsTotal === 0]);
  const formatMoney = (val) => {
  return new Intl.NumberFormat('en-US', {
  style: 'currency',

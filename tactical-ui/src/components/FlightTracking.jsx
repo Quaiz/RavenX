@@ -88,14 +88,14 @@ const FlightTracking = () => {
  }, [fetchAircraft]);
 
  useEffect(() => {
+ if (aircraft.length === 0) {
  doFetch();
- timerRef.current = setInterval(() => { if (!document.hidden) doFetch(); }, REFRESH_SEC * 1000);
+ }
  cdRef.current = setInterval(() => setCountdown(c => Math.max(0, c - 1)), 1000);
  return () => {
- clearInterval(timerRef.current);
  clearInterval(cdRef.current);
  };
- }, [doFetch]);
+ }, [aircraft.length, doFetch]);
 
  // Stats
  const total = aircraft.length;

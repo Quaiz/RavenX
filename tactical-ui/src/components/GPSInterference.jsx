@@ -30,9 +30,6 @@ const GPSInterference = () => {
  if (!ewData || ewData.zones?.length === 0) {
  fetchEwData();
  }
- // Auto-refresh every 2 minutes
- const interval = setInterval(() => { if (!document.hidden) fetchEwData(); }, 120000);
- return () => clearInterval(interval);
  }, [fetchEwData, ewData]);
 
  // Handle first load selection

@@ -610,8 +610,87 @@ const useStore = create(persist((set, get) => ({
  ewData: { zones: [], flights: [], total_impacted: 0 },
  militaryBases: [],
  countryNews: [],
- markets: { btc: 64210, gold: 2341, oil: 82.5, audusd: 0.65 },
+ markets: [],
+ seismic: null,
+ weatherAlerts: [],
+ spaceWeather: null,
+ nuclear: null,
+ radiation: null,
+ macro: null,
  geoData: null,
+ },
+
+ telemetryHub: {
+ lastSync: null,
+ status: 'STANDBY',
+ },
+
+ syncTelemetryHub: async () => {
+ try {
+ const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/hub/telemetry`);
+ if (!res.ok) return;
+ const data = await res.json();
+ 
+ set(state => {
+ const nextFeeds = { ...state.feeds };
+
+ if (data.markets?.markets) {
+ nextFeeds.markets = data.markets.markets;
+ }
+ if (data.seismic?.quakes) {
+ nextFeeds.seismic = data.seismic;
+ }
+ if (data.weather?.alerts) {
+ nextFeeds.weatherAlerts = data.weather.alerts;
+ }
+ if (data.gdelt?.articles) {
+ nextFeeds.gdelt = data.gdelt.articles;
+ }
+ if (data.aircraft?.states) {
+ const mappedAircraft = (data.aircraft.states || [])
+ .filter(s => s[5] !== null && s[6] !== null)
+ .slice(0, 1500)
+ .map(s => ({
+ id: s[0],
+ callsign: (s[1] || 'UNK').trim(),
+ origin: s[2] || 'UNKNOWN',
+ lat: s[6],
+ lon: s[5],
+ alt: s[7],
+ vel: s[9],
+ heading: s[10],
+ vert_rate: s[11] || 0,
+ squawk: s[13] || null,
+ }));
+ nextFeeds.aircraft = mappedAircraft;
+ }
+ if (data.outbreaks?.alerts) {
+ nextFeeds.outbreaks = data.outbreaks.alerts;
+ }
+ if (data.jamming) {
+ nextFeeds.ewData = data.jamming;
+ }
+ if (data.nuclear) {
+ nextFeeds.nuclear = data.nuclear;
+ }
+ if (data.radiation) {
+ nextFeeds.radiation = data.radiation;
+ }
+ if (data.space_weather) {
+ nextFeeds.spaceWeather = data.space_weather;
+ }
+ if (data.macro) {
+ nextFeeds.macro = data.macro;
+ }
+
+ return {
+ feeds: nextFeeds,
+ telemetryHub: { lastSync: data.timestamp, status: 'ONLINE' }
+ };
+ });
+ } catch (err) {
+ console.warn('Unified Telemetry Hub sync error:', err);
+ }
  },
 
  setBaseMap: (id) => set(state => ({
