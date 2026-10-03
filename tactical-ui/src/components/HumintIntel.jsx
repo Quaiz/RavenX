@@ -11,7 +11,7 @@ import {
 function MiniMapController({ center }) {
   const map = useMap();
   useEffect(() => {
-    if (center) {
+    if (center && Array.isArray(center) && !isNaN(Number(center[0])) && !isNaN(Number(center[1]))) {
       map.setView(center, 16, { animate: true });
     }
   }, [center, map]);
@@ -136,9 +136,13 @@ export default function HumintIntel() {
     setMapTarget({ lat, lng: lon, zoom: 15 });
   };
 
+  const opLat = Number(operatorCoords?.lat ?? 21.0285);
+  const opLon = Number(operatorCoords?.lon ?? 105.8542);
+  const safeLat = Number(selectedSafehouse?.lat);
+  const safeLon = Number(selectedSafehouse?.lon);
   const activeCenter = activeTab === 'operator' 
-    ? [operatorCoords.lat, operatorCoords.lon]
-    : (selectedSafehouse ? [selectedSafehouse.lat, selectedSafehouse.lon] : [operatorCoords.lat, operatorCoords.lon]);
+    ? [opLat, opLon]
+    : (!isNaN(safeLat) && !isNaN(safeLon) ? [safeLat, safeLon] : [opLat, opLon]);
 
   const selectTab = (tab) => {
     audio.playClick();
@@ -598,7 +602,7 @@ export default function HumintIntel() {
               {/* Coordinates readouts in corners */}
               <div className="absolute top-2 left-2 text-[8px] text-primary/70 bg-black/70 px-1 font-bold">CAM // SAT-RECON-7</div>
               <div className="absolute top-2 right-2 text-[8px] text-primary/70 bg-black/70 px-1 font-bold">ZOOM // 16x</div>
-              <div className="absolute bottom-2 left-2 text-[8px] text-primary/70 bg-black/70 px-1 font-bold">COORDS: {activeCenter[0].toFixed(5)}, {activeCenter[1].toFixed(5)}</div>
+              <div className="absolute bottom-2 left-2 text-[8px] text-primary/70 bg-black/70 px-1 font-bold">COORDS: {Number(activeCenter[0] || 0).toFixed(5)}, {Number(activeCenter[1] || 0).toFixed(5)}</div>
               <div className="absolute bottom-2 right-2 text-[8px] text-primary/70 bg-black/70 px-1 font-bold">STATUS: STREAMING</div>
             </div>
           </div>

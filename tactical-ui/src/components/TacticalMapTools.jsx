@@ -109,11 +109,11 @@ export function TacticalRangefinder({ active }) {
 
  return (
  <>
- {active && points.length > 0 && (
+ {active && points.length > 0 && points[0] && !isNaN(Number(points[0].lat)) && !isNaN(Number(points[0].lng)) && (
  <Marker position={points[0]} icon={L.divIcon({ className: 'bg-red-500 w-2 h-2 rounded-full border border-black shadow-[0_0_8px_#ef4444]', iconSize: [8,8] })} />
  )}
  
- {active && points.length === 2 && (
+ {active && points.length === 2 && points[1] && !isNaN(Number(points[1].lat)) && !isNaN(Number(points[1].lng)) && (
  <>
  <Marker position={points[1]} icon={L.divIcon({ className: 'bg-red-500 w-2 h-2 rounded-full border border-black shadow-[0_0_8px_#ef4444]', iconSize: [8,8] })} />
  <Polyline positions={points} color="#ef4444"weight={2} dashArray="5, 5">
@@ -195,20 +195,25 @@ export function TacticalGeofence({ active, onToggle }) {
  )}
 
  {/* Render existing geofences */}
- {(geofences || []).map(gf => (
- <Circle key={gf.id} center={[gf.lat, gf.lng]} radius={gf.radius * 1000} pathOptions={{ color: '#ef4444', weight: 2, fillColor: '#ef4444', fillOpacity: 0.05, className: 'geofence-pulse' }}>
- <Tooltip permanent direction="bottom"className="bg-transparent border-none shadow-none text-red-500 font-bold font-mono text-[9px] tracking-widest mt-2">
- [ {gf.name} ]<br/>
- ACTIVE PERIMETER
- </Tooltip>
- <Marker position={[gf.lat, gf.lng]} icon={L.divIcon({
- className: 'custom-geofence-center',
- html: `<div style="display:flex; justify-content:center; align-items:center; width:20px; height:20px; cursor:pointer;" title="Click to remove"onclick="window.dispatchEvent(new CustomEvent('remove-geofence', {detail: '${gf.id}'}))"><div style="width:6px; height:6px; background:#ef4444; border-radius:50%; box-shadow:0 0 10px #ef4444;"></div></div>`,
- iconSize: [20,20],
- iconAnchor: [10,10]
- })} />
- </Circle>
- ))}
+ {(geofences || []).filter(gf => !isNaN(Number(gf?.lat ?? gf?.latitude)) && !isNaN(Number(gf?.lng ?? gf?.lon ?? gf?.longitude))).map(gf => {
+   const lat = Number(gf.lat ?? gf.latitude);
+   const lng = Number(gf.lng ?? gf.lon ?? gf.longitude);
+   const radius = (Number(gf.radius) || 1) * 1000;
+   return (
+     <Circle key={gf.id} center={[lat, lng]} radius={radius} pathOptions={{ color: '#ef4444', weight: 2, fillColor: '#ef4444', fillOpacity: 0.05, className: 'geofence-pulse' }}>
+       <Tooltip permanent direction="bottom" className="bg-transparent border-none shadow-none text-red-500 font-bold font-mono text-[9px] tracking-widest mt-2">
+         [ {gf.name || 'GEOFENCE'} ]<br/>
+         ACTIVE PERIMETER
+       </Tooltip>
+       <Marker position={[lat, lng]} icon={L.divIcon({
+         className: 'custom-geofence-center',
+         html: `<div style="display:flex; justify-content:center; align-items:center; width:20px; height:20px; cursor:pointer;" title="Click to remove" onclick="window.dispatchEvent(new CustomEvent('remove-geofence', {detail: '${gf.id}'}))"><div style="width:6px; height:6px; background:#ef4444; border-radius:50%; box-shadow:0 0 10px #ef4444;"></div></div>`,
+         iconSize: [20,20],
+         iconAnchor: [10,10]
+       })} />
+     </Circle>
+   );
+ })}
 
  <style dangerouslySetInnerHTML={{__html: `
  @keyframes geofenceSpin {

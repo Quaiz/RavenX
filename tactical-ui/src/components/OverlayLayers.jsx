@@ -367,18 +367,18 @@ function PredictiveTrackingLayer() {
 
  return (
   <>
-  {predictiveTracking.points[0] && (
-   <Marker position={[predictiveTracking.points[0].lat, predictiveTracking.points[0].lon]} icon={mkDot('#ef4444', 12)}>
+  {predictiveTracking.points[0] && !isNaN(Number(predictiveTracking.points[0].lat)) && !isNaN(Number(predictiveTracking.points[0].lon)) && (
+   <Marker position={[Number(predictiveTracking.points[0].lat), Number(predictiveTracking.points[0].lon)]} icon={mkDot('#ef4444', 12)}>
     <Tooltip direction="top" permanent className="tactical-tooltip-red">POINT A (PAST)</Tooltip>
    </Marker>
   )}
-  {predictiveTracking.points[1] && (
-   <Marker position={[predictiveTracking.points[1].lat, predictiveTracking.points[1].lon]} icon={GPS_ICON}>
+  {predictiveTracking.points[1] && !isNaN(Number(predictiveTracking.points[1].lat)) && !isNaN(Number(predictiveTracking.points[1].lon)) && (
+   <Marker position={[Number(predictiveTracking.points[1].lat), Number(predictiveTracking.points[1].lon)]} icon={GPS_ICON}>
     <Tooltip direction="top" permanent className="tactical-tooltip-red">POINT B (CURRENT)</Tooltip>
    </Marker>
   )}
-  {predictiveTracking.projectedPoint && (
-   <Marker position={[predictiveTracking.projectedPoint.lat, predictiveTracking.projectedPoint.lon]} icon={mkPulse('#f97316', 50)}>
+  {predictiveTracking.projectedPoint && !isNaN(Number(predictiveTracking.projectedPoint.lat)) && !isNaN(Number(predictiveTracking.projectedPoint.lon)) && (
+   <Marker position={[Number(predictiveTracking.projectedPoint.lat), Number(predictiveTracking.projectedPoint.lon)]} icon={mkPulse('#f97316', 50)}>
     <Tooltip direction="bottom" permanent className="tactical-tooltip-orange">PREDICTED DEST</Tooltip>
    </Marker>
   )}
@@ -741,7 +741,7 @@ function TerminatorLayer() {
  ))}
 
  {/* ── EARTHQUAKES ── */}
- {active.includes('EARTHQUAKES') && earthquakes.map((eq, i) => {
+ {active.includes('EARTHQUAKES') && (earthquakes || []).filter(eq => eq?.geometry?.coordinates && !isNaN(Number(eq.geometry.coordinates[1])) && !isNaN(Number(eq.geometry.coordinates[0]))).map((eq, i) => {
  const [lon, lat, depth] = eq.geometry.coordinates;
  const mag = eq.properties.mag || 0;
  const color = mag >= 6 ? '#ef4444' : mag >= 4.5 ? '#f97316' : '#ffb800';
@@ -759,7 +759,7 @@ function TerminatorLayer() {
  })}
 
  {/* ── ISS TRACKER ── */}
- {active.includes('ISS_TRACKER') && iss && (
+ {active.includes('ISS_TRACKER') && iss && !isNaN(Number(iss?.latitude)) && !isNaN(Number(iss?.longitude)) && (
  <Marker position={[iss.latitude, iss.longitude]} icon={ISS_ICON}>
  <Popup className="tactical-popup"closeButton={false}>
  <TacticalPopup lines={['ISS // LIVE POSITION',
