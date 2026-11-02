@@ -395,14 +395,14 @@ const getModuleTitle = (id, activeCountry) => {
     case 'COUNTRY_INTEL': return `// Country Intel: ${activeCountry || ''}`;
     case 'LIVE_WEBCAMS': return '// Live Webcams';
     case 'MARKET_TELEMETRY': return '// Market Telemetry';
-    case 'WORLD_CLOCK': return '// Strategic Chrono';
+    case 'WORLD_CLOCK': return '// THEATER CHRONO';
     case 'CORPORATE_INTEL': return '// Corporate Intel';
     case 'HUMANITARIAN': return '// Humanitarian Intel';
     case 'MACRO_FEEDS': return '// Macro Feeds';
     case 'PREDICTION_MARKETS': return '// Prediction Odds';
     case 'MONETARY_POLICY': return '// Monetary Policy';
     case 'GOOGLE_TRENDS': return '// Search Trends';
-    case 'HUMINT': return '// HUMINT';
+    case 'HUMINT': return '// DENIABLE ASSETS & SAFENET';
     default: return `// ${id}`;
   }
 };
@@ -653,14 +653,17 @@ const Layout = ({ user, showGreeting, onEnterDashboard, onLogout, onUsernameChan
  </div>
  <div className="flex flex-col leading-none">
  <span className="text-[12px] md:text-[14px] font-stencil font-bold tracking-[0.2em] md:tracking-[0.4em] text-white/90 text-glow">RAVEN-X</span>
- <span className="text-[6px] md:text-[8px] text-primary/80 font-bold tracking-widest uppercase mt-1 drop-shadow-[0_0_5px_rgba(var(--color-primary),0.8)] hidden sm:block">// RavenSystem v8.2</span>
+ <span className="text-[6px] md:text-[8px] text-primary/80 font-bold tracking-widest uppercase mt-1 drop-shadow-[0_0_5px_rgba(var(--color-primary),0.8)] hidden sm:block">// WATCHER PROGRAM // DIR-01</span>
  </div>
  </div>
  <div className="h-6 w-px bg-primary/20 hidden sm:block"/>
  <div className="flex gap-2 md:gap-4 shrink-0 overflow-hidden">
  <div className="flex items-center gap-1 md:gap-2 box-glow bg-green-500/10 px-1 md:px-2 py-1 shrink-0 whitespace-nowrap">
  <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.8)] animate-pulse"/>
- <span className="text-[7px] md:text-[9px] font-bold text-green-500 uppercase tracking-widest hidden sm:inline"style={{textShadow: '0 0 5px rgba(34,197,94,0.5)'}}>Operational</span>
+ <span className="text-[7px] md:text-[9px] font-bold text-green-500 uppercase tracking-widest hidden sm:inline"style={{textShadow: '0 0 5px rgba(34,197,94,0.5)'}}>GRID: ACTIVE</span>
+ </div>
+ <div className="hidden lg:flex items-center gap-1 border border-primary/20 bg-primary/5 px-2 py-1 text-[8px] font-mono text-primary/70 tracking-widest uppercase">
+   <span>CLEARANCE: EYES ONLY</span>
  <span className="text-[7px] font-bold text-green-500 uppercase tracking-widest sm:hidden"style={{textShadow: '0 0 5px rgba(34,197,94,0.5)'}}>SYS OK</span>
  </div>
  <TopBarClock />
