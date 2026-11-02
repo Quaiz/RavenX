@@ -9,7 +9,7 @@ export const MODULE_CATEGORIES = {
 
  // ── Intel & OSINT ────────────────────────────────────────────────────────────
  INTELLIGENCE: [
- { id: 'AI_ANALYST', name: 'AI INTEL ANALYST', desc: 'AI intelligence analyst with access to all dashboard data', status: 'ACTIVE' },
+ { id: 'AI_ANALYST', name: 'WATCHER-1 HANDLER', desc: 'Classified operational handler with live situational awareness and SITREP generation', status: 'ACTIVE' },
  { id: 'GLOBAL_NEWS', name: 'GLOBAL NEWS TV', desc: 'Real-time live news feeds from global broadcasters', status: 'ACTIVE' },
  { id: 'COUNTRY_INTEL', name: 'COUNTRY INTEL', desc: 'Strategic assessment: Stability, Economy, Security', status: 'ACTIVE' },
  { id: 'PREDICTION_MARKETS', name: 'PREDICTION ODDS', desc: 'Polymarket geopolitical event forecasting', status: 'ACTIVE' },
@@ -20,7 +20,7 @@ export const MODULE_CATEGORIES = {
   { id: 'LINK_ANALYSIS', name: 'ENTITY GRAPH', desc: 'Palantir-style node/link network analysis', status: 'ACTIVE' },
   { id: 'DISEASE_OUTBREAKS', name: 'DISEASE OUTBREAKS', desc: 'WHO global epidemic alerts and updates', status: 'ACTIVE' },
 	{ id: 'WANTED_CRIMINALS', name: 'WANTED CRIMINALS', desc: 'Interpol Red/Yellow Notices + FBI Wanted list integration', status: 'ACTIVE' },
-  { id: 'HUMINT', name: 'HUMINT OPERATIONS', desc: 'Real-time Operator telemetry and private Safehouse network monitoring', status: 'ACTIVE' },
+  { id: 'HUMINT', name: 'DENIABLE ASSETS & SAFENET', desc: 'Watcher ground asset telemetry and black-site safehouse grid', status: 'ACTIVE' },
  ],
 
  // ── Markets & Finance ────────────────────────────────────────────────────────
