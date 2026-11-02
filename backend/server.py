@@ -2268,10 +2268,10 @@ def get_military_bases():
     cache_key = "MILITARY_BASES"
     now = time.time()
     
-    # Cache for 24 hours since bases don't move often
+    # Cache for 24 hours since bases don't move often (only if valid count)
     if cache_key in _cache:
         cached_time, cached_data = _cache[cache_key]
-        if now - cached_time < 86400:
+        if now - cached_time < 86400 and cached_data.get('count', 0) > 0:
             return jsonify(cached_data)
 
     query = '''
@@ -2324,6 +2324,16 @@ def get_military_bases():
     except Exception as e:
         print(f"[Military Bases Fetch Error] {e}")
 
+    # Fallback to curated military bases if SPARQL timed out or returned empty
+    if not bases:
+        fallback_path = os.path.join(os.path.dirname(__file__), 'military_bases_fallback.json')
+        if os.path.exists(fallback_path):
+            try:
+                with open(fallback_path, 'r', encoding='utf-8') as f:
+                    bases = json.load(f)
+            except Exception as fe:
+                print(f"[Military Bases Fallback Load Error] {fe}")
+
     result = {
         "status": "success",
         "count": len(bases),
@@ -2331,7 +2341,8 @@ def get_military_bases():
         "timestamp": datetime.now().isoformat()
     }
     
-    _cache[cache_key] = (now, result)
+    if len(bases) > 0:
+        _cache[cache_key] = (now, result)
     return jsonify(result)
 
 

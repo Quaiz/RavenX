@@ -135,13 +135,12 @@ const ModuleContainer = React.memo(React.forwardRef(({ id, title, icon: Icon, ch
  const uiScale = useStore(state => state.uiScale);
  const shouldZoom = !MODULES_NO_ZOOM.includes(id);
  
-  const isWatcherHighThreat = id === 'MAP_MODULE' || id === 'AI_ANALYST';
   return (
-  <div ref={ref} {...props} className={`flex flex-col w-full h-full tactical-glass overflow-hidden relative shadow-2xl ${isWatcherHighThreat ? 'watcher-laser-border' : ''} ${props.className || ''}`} style={{ contain: 'layout style', ...(props.style || {}) }}>
-  {/* HUD Corner Brackets & Flowing Red Laser */}
-  {['top-[-2px] left-[-2px] border-t-2 border-l-2', 'top-[-2px] right-[-2px] border-t-2 border-r-2',
-  'bottom-[-2px] left-[-2px] border-b-2 border-l-2', 'bottom-[-2px] right-[-2px] border-b-2 border-r-2'].map((cls, i) => (
-  <div key={i} className={`absolute w-3.5 h-3.5 ${cls} ${isWatcherHighThreat ? 'border-red-500 shadow-[0_0_8px_#ef4444]' : 'border-primary/80 box-glow'} pointer-events-none transition-colors duration-300`} style={{ zIndex: 25 }} />
+  <div ref={ref} {...props} className={`flex flex-col w-full h-full tactical-glass overflow-hidden relative shadow-2xl ${props.className || ''}`} style={{ contain: 'layout style', ...(props.style || {}) }}>
+  {/* HUD Corner Brackets */}
+  {['top-[-2px] left-[-2px] border-t-4 border-l-4', 'top-[-2px] right-[-2px] border-t-4 border-r-4',
+  'bottom-[-2px] left-[-2px] border-b-4 border-l-4', 'bottom-[-2px] right-[-2px] border-b-4 border-r-4'].map((cls, i) => (
+  <div key={i} className={`absolute w-4 h-4 ${cls} border-primary/80 box-glow pointer-events-none`} style={{ zIndex: 10 }} />
   ))}
  
  {/* Header (Drag Handle) */}

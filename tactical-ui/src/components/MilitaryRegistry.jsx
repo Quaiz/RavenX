@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import useStore from '../store';
+import { MILITARY_BASES } from '../military_bases';
 import { Search, ShieldAlert, Cpu, Activity, MapPin, Anchor, Plane, Radio, Loader2, RefreshCw, X } from 'lucide-react';
 import { streamAiResponse } from '../aiManager';
 
