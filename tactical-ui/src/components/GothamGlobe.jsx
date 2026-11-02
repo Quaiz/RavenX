@@ -555,29 +555,6 @@ const GothamGlobe = React.memo(() => {
  </MapContainer>
 
  <HexGridOverlay />
-  {/* Watcher Animated Red Tactical Border & UAV Reticle */}
-  <div className="absolute inset-2 pointer-events-none z-[1500]">
-    {/* Flowing Red Perimeter Dashes */}
-    <div className="tactical-perimeter-pulse" />
-
-    {/* 4 Corner UAV Recon Brackets */}
-    <div className="uav-bracket-red top-0 left-0 border-t-2 border-l-2" />
-    <div className="uav-bracket-red top-0 right-0 border-t-2 border-r-2" />
-    <div className="uav-bracket-red bottom-0 left-0 border-b-2 border-l-2" />
-    <div className="uav-bracket-red bottom-0 right-0 border-b-2 border-r-2" />
-
-    {/* Central UAV Crosshair HUD */}
-    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 pointer-events-none flex items-center justify-center opacity-60">
-      <div className="w-4 h-[1px] bg-red-500/70" />
-      <div className="h-4 w-[1px] bg-red-500/70 absolute" />
-      <div className="w-6 h-6 border border-dashed border-red-500/40 rounded-full animate-spin" style={{ animationDuration: '20s' }} />
-    </div>
-
-    {/* Top Heading Ladder */}
-    <div className="absolute top-2 left-1/2 -translate-x-1/2 bg-black/60 border border-red-500/30 px-3 py-0.5 text-[8px] font-mono text-red-400/90 tracking-widest uppercase">
-      UAV OVERWATCH // 34.0522° N, 118.2437° W // FLIR SENSOR
-    </div>
-  </div>
 
 
  {predictiveTracking.active && (

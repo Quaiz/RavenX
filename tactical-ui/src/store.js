@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { audio } from './utils/audioEngine';
+import { MILITARY_BASES } from './military_bases';
 
 export const MODULE_CATEGORIES = {
  CORE: [
@@ -608,7 +609,10 @@ const useStore = create(persist((set, get) => ({
  gdelt: [],
  outbreaks: [],
  ewData: { zones: [], flights: [], total_impacted: 0 },
- militaryBases: [],
+ militaryBases: MILITARY_BASES.map((b, idx) => ({
+      ...b,
+      id: b.id || `base-${idx}-${(b.name || '').toLowerCase().replace(/[^a-z0-9]/g, '-')}`
+    })),
  countryNews: [],
  markets: [],
  seismic: null,
@@ -926,16 +930,24 @@ const useStore = create(persist((set, get) => ({
  },
 
  fetchMilitaryBases: async () => {
- try {
- const res = await fetch(import.meta.env.VITE_BACKEND_URL + '/api/military-bases');
- if (!res.ok) return;
- const data = await res.json();
- 
- set(state => ({ feeds: { ...state.feeds, militaryBases: data.bases || [] } }));
- } catch (err) {
- console.warn('[MILITARY BASES] Fetch failed:', err);
- }
- },
+    try {
+      const res = await fetch(import.meta.env.VITE_BACKEND_URL + '/api/military-bases');
+      if (res.ok) {
+        const data = await res.json();
+        if (data && Array.isArray(data.bases) && data.bases.length > 0) {
+          set(state => ({ feeds: { ...state.feeds, militaryBases: data.bases } }));
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn('[MILITARY BASES] Fetch failed:', err);
+    }
+    const fallback = MILITARY_BASES.map((b, idx) => ({
+      ...b,
+      id: b.id || `base-${idx}-${(b.name || '').toLowerCase().replace(/[^a-z0-9]/g, '-')}`
+    }));
+    set(state => ({ feeds: { ...state.feeds, militaryBases: fallback } }));
+  },
 
  fetchCountryNews: async (countryName) => {
  try {

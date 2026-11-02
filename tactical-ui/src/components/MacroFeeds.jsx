@@ -3,6 +3,7 @@ import useStore from '../store';
 import { Globe, DollarSign, RefreshCcw, Ship, FileText, ExternalLink, Activity, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 
 const MacroFeeds = () => {
+ const storeMacro = useStore(s => s.feeds?.macro);
  const [data, setData] = useState({ news: [], markets: [] });
  const [loading, setLoading] = useState(true);
  const [lastUpdate, setLastUpdate] = useState(new Date());
