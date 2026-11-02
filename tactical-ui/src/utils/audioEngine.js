@@ -114,6 +114,64 @@ class TacticalAudioEngine {
     this.play('initialize');
   }
 
+  // Radio Squelch & Comms Chirp (Call of Duty Watcher Program FX)
+  playRadioSquelch() {
+    if (!this.enabled) return;
+    if (!this.audioContext) this.init();
+    if (!this.audioContext) return;
+    if (this.audioContext.state === 'suspended') this.audioContext.resume();
+
+    try {
+      const ctx = this.audioContext;
+      const now = ctx.currentTime;
+
+      // 1. White noise burst (Radio burst)
+      const bufferSize = ctx.sampleRate * 0.08; // 80ms
+      const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const output = noiseBuffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        output[i] = Math.random() * 2 - 1;
+      }
+
+      const whiteNoise = ctx.createBufferSource();
+      whiteNoise.buffer = noiseBuffer;
+
+      // Bandpass filter to sound like military comms (800Hz - 3200Hz)
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.setValueAtTime(1800, now);
+      filter.Q.setValueAtTime(2.5, now);
+
+      const noiseGain = ctx.createGain();
+      noiseGain.gain.setValueAtTime(0.08, now);
+      noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+
+      whiteNoise.connect(filter);
+      filter.connect(noiseGain);
+      noiseGain.connect(ctx.destination);
+
+      whiteNoise.start(now);
+
+      // 2. High-pitch roger chirp tone
+      const osc = ctx.createOscillator();
+      const oscGain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(2400, now);
+      osc.frequency.exponentialRampToValueAtTime(1200, now + 0.06);
+
+      oscGain.gain.setValueAtTime(0.04, now);
+      oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+
+      osc.connect(oscGain);
+      oscGain.connect(ctx.destination);
+
+      osc.start(now);
+      osc.stop(now + 0.06);
+    } catch (e) {
+      this.play('generic_click');
+    }
+  }
+
   setEnabled(val) {
     this.enabled = val;
   }

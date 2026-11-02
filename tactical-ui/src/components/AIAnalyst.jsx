@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Send, Bot, User, Zap, Shield, AlertTriangle, Loader2, Trash2, ChevronDown } from 'lucide-react';
 import useStore from '../store';
+import { audio } from '../utils/audioEngine';
 import {
  GPS_INTERFERENCE, DISPLACEMENT_EVENTS, LIVE_VESSELS,
  INTERNET_OUTAGES, MILITARY_BASES, NUCLEAR_FACILITIES,
@@ -241,6 +242,7 @@ const AIAnalyst = () => {
 
  const sendMessage = useCallback(async (text) => {
  if (!text.trim() || isStreaming) return;
+ try { audio.playRadioSquelch(); } catch(e){}
  const userMsg = { role: 'user', content: text.trim() };
  const newMessages = [...messages, userMsg];
  setMessages(newMessages);
