@@ -1,9 +1,9 @@
-# 🐦 RAVEN-X: AI-Powered Multi-Domain Command & Control System
+#  RAVEN-X: AI-Powered Multi-Domain Command & Control System
 ### *Real-Time Geospatial Intelligence, Spatiotemporal Data Engineering & Agentic LLM Diagnostics*
 
 ---
 
-## 📌 GIỚI THIỆU CHUNG (PROJECT OVERVIEW)
+##  GIỚI THIỆU CHUNG (PROJECT OVERVIEW)
 **RAVEN-X** là một hệ thống Trạm Chỉ huy Tình báo Đa nhiệm (Multi-Domain Command & Control System) mô phỏng theo ngôn ngữ thiết kế của các hệ thống tình báo cao cấp (như Palantir Gotham). Dự án được thiết kế và phát triển bởi sinh viên ngành **Trí tuệ Nhân tạo & Khoa học Dữ liệu**, tập trung vào việc xử lý các bài toán:
 *   **Agentic Workflow & LLM Reasoning:** Tự động hóa phân tích tình báo chiến lược sử dụng các mô hình ngôn ngữ lớn (LLM).
 *   **Spatiotemporal Data Engineering:** Thu thập, chuẩn hóa và biểu diễn dữ liệu không gian - thời gian thực từ các nguồn dữ liệu vệ tinh, địa chất và hàng không toàn cầu.
@@ -11,7 +11,7 @@
 
 ---
 
-## 🧠 CÁC TRỤ CỘT AI & KHOA HỌC DỮ LIỆU (AI & DATA SCIENCE PILLARS)
+##  CÁC TRỤ CỘT AI & KHOA HỌC DỮ LIỆU (AI & DATA SCIENCE PILLARS)
 
 ### 1. Tác Tử Phân Tích Chiến Lược (Agentic Intel Analyst)
 Hệ thống tích hợp một **AI Agent** chạy trên hạ tầng **Groq API** (với lõi mô hình siêu lớn **Llama-3.3-70b-versatile**, hỗ trợ chế độ fallback động tự phục hồi sang **Llama-3.1-8b-instant** và **Gemma2-9b-it** khi gặp quota rate limits) để tự động hóa quy trình phân tích và viết Báo cáo Tình hình Chiến dịch (SITREP - Situation Report):
@@ -28,7 +28,7 @@ Hệ thống tích hợp một **AI Agent** chạy trên hạ tầng **Groq API*
 
 ---
 
-## 🏗️ KIẾN TRÚC HỆ THỐNG (SYSTEM ARCHITECTURE)
+##  KIẾN TRÚC HỆ THỐNG (SYSTEM ARCHITECTURE)
 
 ```mermaid
 graph TD
@@ -64,7 +64,7 @@ graph TD
 
 ---
 
-## ⚡ HƯỚNG DẪN CHẠY LOCAL & TRIỂN KHAI VPS (DEPLOYMENT PROTOCOL)
+##  HƯỚNG DẪN CHẠY LOCAL & TRIỂN KHAI VPS (DEPLOYMENT PROTOCOL)
 
 ### 1. Chạy Thử Ở Local (Local Sandbox)
 Chạy trực tiếp trên Windows bằng script tự động hóa:
