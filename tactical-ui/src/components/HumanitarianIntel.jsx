@@ -160,7 +160,7 @@ const HumanitarianIntel = () => {
  </span>
  </div>
  
- <span className={`text-[11px] leading-tight ${textColor}`} dangerouslySetInnerHTML={{__html: ev.title.replace(/<[^>]+>/g, '')}} />
+ <span className={`text-[11px] leading-tight ${textColor}`}>{ev.title ? ev.title.replace(/<[^>]+>/g, '') : ''}</span>
  </div>
  </div>
 

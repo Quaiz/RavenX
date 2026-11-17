@@ -7,13 +7,20 @@ Google News redirect URLs work fine when opened in browser.
 
 from flask import Flask, request, jsonify, Response, stream_with_context
 from flask_cors import CORS
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 import feedparser
 import requests
-from datetime import datetime
-from urllib.parse import quote
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+from datetime import datetime, timedelta
+from urllib.parse import quote, urlparse
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import re
 import time
+import logging
+import ipaddress
+import socket
 import libsql_client
 from dotenv import load_dotenv
 import uuid
@@ -23,14 +30,34 @@ import random
 from werkzeug.security import generate_password_hash, check_password_hash
 
 load_dotenv()
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+)
+logger = logging.getLogger("ravenx")
+
 from youtubesearchpython import VideosSearch
 import yt_dlp
 
 app = Flask(__name__)
+
+_raw_origins = os.environ.get(
+    "CORS_ORIGINS",
+    "https://ravenx-protocol.duckdns.org,http://localhost:5173,http://127.0.0.1:5173",
+).strip()
+_allowed_origins = "*" if _raw_origins == "*" else [o.strip() for o in _raw_origins.split(",") if o.strip()]
+
 CORS(app,
-     origins="*", # Allow all origins for production (Vercel deployment)
+     origins=_allowed_origins,
      allow_headers=["Content-Type", "Authorization"],
      methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
+
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    default_limits=["300 per minute"],
+    storage_uri="memory://",
+)
 
 @app.after_request
 def add_cache_headers(response):
@@ -87,28 +114,82 @@ def init_db():
 
 init_db()
 
+SESSION_TTL_DAYS = int(os.environ.get("SESSION_TTL_DAYS", "7"))
+
+
 def get_user_from_token(req):
-    """Validate Bearer token, return {id, username} or None."""
+    """Validate Bearer token with TTL check, return {id, username} or None."""
     auth = req.headers.get('Authorization', '')
     if not auth.startswith('Bearer '):
         return None
     token = auth[7:].strip()
+    if not token:
+        return None
     client = get_db()
-    rs = client.execute(
-        'SELECT u.id, u.username FROM sessions s '
-        'JOIN users u ON s.user_id = u.id WHERE s.token = ?',
-        [token]
-    )
-    user_dict = row_to_dict(rs)
-    client.close()
-    return user_dict
+    try:
+        rs = client.execute(
+            'SELECT u.id, u.username, s.created_at FROM sessions s '
+            'JOIN users u ON s.user_id = u.id WHERE s.token = ?',
+            [token]
+        )
+        user_dict = row_to_dict(rs)
+        if not user_dict:
+            return None
+        created_str = user_dict.get('created_at')
+        if created_str:
+            try:
+                created_dt = datetime.fromisoformat(str(created_str).replace('Z', '+00:00')).replace(tzinfo=None)
+                if datetime.utcnow() - created_dt > timedelta(days=SESSION_TTL_DAYS):
+                    client.execute('DELETE FROM sessions WHERE token = ?', [token])
+                    return None
+            except ValueError as e:
+                logger.debug("Session timestamp parse fallback: %s", e)
+        return {'id': user_dict['id'], 'username': user_dict['username']}
+    except Exception as e:
+        logger.error("Token validation error: %s", e)
+        return None
+    finally:
+        client.close()
+
+
+def _is_safe_public_url(url: str) -> bool:
+    """Prevent SSRF by allowing only http(s) URLs resolving to public IPs."""
+    try:
+        parsed = urlparse(url)
+        if parsed.scheme not in ("http", "https") or not parsed.hostname:
+            return False
+        infos = socket.getaddrinfo(parsed.hostname, None)
+        for info in infos:
+            ip_str = info[4][0]
+            ip_obj = ipaddress.ip_address(ip_str)
+            if (
+                ip_obj.is_private
+                or ip_obj.is_loopback
+                or ip_obj.is_link_local
+                or ip_obj.is_reserved
+                or ip_obj.is_multicast
+            ):
+                return False
+        return True
+    except Exception:
+        return False
+
 
 # Simple in-memory cache
 _cache = {}
 CACHE_TTL = 60  # 60 seconds — refresh every minute
 
-# Reusable session for connection pooling
+# Reusable session with automatic retry/backoff on transient 5xx
 _session = requests.Session()
+_retry_strategy = Retry(
+    total=2,
+    backoff_factor=0.3,
+    status_forcelist=[502, 503, 504],
+    allowed_methods=["GET", "HEAD"],
+)
+_adapter = HTTPAdapter(max_retries=_retry_strategy)
+_session.mount("https://", _adapter)
+_session.mount("http://", _adapter)
 _session.headers.update({
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
                   "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -119,8 +200,10 @@ _session.headers.update({
 
 def extract_og_image(url: str) -> str | None:
     """Extract og:image from a URL's HTML <head> section."""
+    if not _is_safe_public_url(url):
+        return None
     try:
-        resp = _session.get(url, timeout=6, stream=True)
+        resp = _session.get(url, timeout=6, stream=True, allow_redirects=False)
         # Read first 50KB only — meta tags are in <head>
         content = b""
         for chunk in resp.iter_content(chunk_size=8192):
@@ -143,22 +226,22 @@ def extract_og_image(url: str) -> str | None:
                 if img.startswith("http") and not img.endswith(".svg"):
                     return img
         return None
-    except Exception:
+    except Exception as e:
+        logger.debug("extract_og_image failed for %s: %s", url, e)
         return None
 
 
 def fetch_article_image(source_href: str, google_link: str) -> str | None:
     """
     Try to get an article thumbnail image.
-    First tries following the Google News link (which redirects in browser),
-    then falls back to the source homepage for og:image.
+    Validates target URLs against SSRF before fetching.
     """
-    # Try the Google News redirect link (may give us the real article page)
+    if not _is_safe_public_url(google_link):
+        return None
     try:
-        resp = _session.get(google_link, allow_redirects=True, timeout=8)
+        resp = _session.get(google_link, allow_redirects=False, timeout=8)
         final_url = resp.url
         if "news.google" not in final_url and "consent.google" not in final_url:
-            # We actually got to the article! Extract og:image
             html = resp.text[:50000]
             for pattern in [
                 r'<meta[^>]+property=["\']og:image["\'][^>]+content=["\']([^"\']+)["\']',
@@ -169,8 +252,8 @@ def fetch_article_image(source_href: str, google_link: str) -> str | None:
                     img = match.group(1).strip()
                     if img.startswith("http"):
                         return img
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug("fetch_article_image failed: %s", e)
 
     return None
 
@@ -207,7 +290,8 @@ def parse_google_news(country: str, max_results: int = 25) -> list:
     encoded_query = quote(country)
     url = f"https://news.google.com/rss/search?q={encoded_query}&hl=en&gl=US&ceid=US:en"
 
-    feed = feedparser.parse(url)
+    rss_resp = _session.get(url, timeout=8)
+    feed = feedparser.parse(rss_resp.content)
 
     raw_articles = []
     for i, entry in enumerate(feed.entries[:max_results]):
@@ -551,7 +635,7 @@ def get_radiation():
     micro = math.cos(current_time / 60.0) * 0.005
     
     val = round(0.12 + variation + micro, 3)
-    return jsonify({"nSv_h": val, "status": "NORMAL", "timestamp": current_time})
+    return jsonify({"nSv_h": val, "status": "NORMAL", "simulated": True, "timestamp": current_time})
 
 @app.route("/api/censorship", methods=["GET"])
 def get_censorship():
@@ -824,7 +908,8 @@ def get_humanitarian_data():
         # 1. GDACS Disasters
         try:
             gdacs_url = "https://www.gdacs.org/xml/rss.xml"
-            gdacs_feed = feedparser.parse(gdacs_url)
+            gdacs_resp = _session.get(gdacs_url, timeout=8)
+            gdacs_feed = feedparser.parse(gdacs_resp.content)
             for entry in gdacs_feed.entries[:20]:
                 level = entry.get('gdacs_alertlevel', 'Unknown')
                 events.append({
@@ -1277,7 +1362,8 @@ def get_weather_alerts():
 
         # 2. GDACS Global Alerts
         try:
-            feed = feedparser.parse("https://www.gdacs.org/xml/rss.xml")
+            gdacs_resp = _session.get("https://www.gdacs.org/xml/rss.xml", timeout=8)
+            feed = feedparser.parse(gdacs_resp.content)
             for entry in feed.entries:
                 alert_level = entry.get('gdacs_alertlevel', 'Green').upper()
                 if alert_level in ['ORANGE', 'RED']:
@@ -1286,7 +1372,8 @@ def get_weather_alerts():
                         dt = parser.parse(entry.published)
                         ts = dt.timestamp()
                         time_str = dt.isoformat()
-                    except:
+                    except Exception as e:
+                        logger.debug("GDACS date parse fallback: %s", e)
                         ts = 0
                         time_str = entry.published
 
@@ -1410,8 +1497,8 @@ def get_cables_data():
                 res = req.get(f"https://www.submarinecablemap.com/api/v3/cable/{cable_id}.json", timeout=6)
                 if res.status_code == 200:
                     return res.json()
-            except:
-                pass
+            except Exception as e:
+                logger.debug("Cable fetch failed for %s: %s", cable_id, e)
             return None
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
@@ -1432,7 +1519,8 @@ def get_cables_data():
                 if not l_str or l_str == 'N/A': return 0
                 clean = ''.join(c for c in str(l_str) if c.isdigit() or c == '.')
                 return float(clean) if clean else 0
-            except:
+            except Exception as e:
+                logger.debug("Cable length parse failed: %s", e)
                 return 0
                 
         cables.sort(key=lambda x: parse_length(x['length']), reverse=True)
@@ -1492,7 +1580,8 @@ def get_fires_data():
                         'conf': conf,
                         'time': row.get('acq_time', '')
                     })
-            except:
+            except Exception as e:
+                logger.debug("Skipping malformed FIRMS row: %s", e)
                 continue
                 
         # Sort by FRP descending so the most massive fires are at the top
@@ -1631,7 +1720,8 @@ def get_nuclear_data():
 
         # 2. Fetch Google News RSS for Intel Feed
         feed_url = "https://news.google.com/rss/search?q=nuclear+reactor+radiation+IAEA+when:24h&hl=en-US&gl=US&ceid=US:en"
-        feed = feedparser.parse(feed_url)
+        feed_resp = _session.get(feed_url, timeout=8)
+        feed = feedparser.parse(feed_resp.content)
         intel_feed = []
         for entry in feed.entries[:15]:
             intel_feed.append({
@@ -1652,8 +1742,8 @@ def get_nuclear_data():
             if match:
                 in_use = int(match.group(1).replace(',', ''))
                 being_built = int(match.group(3).replace(',', ''))
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug("Nuclear wiki parse fallback: %s", e)
             
         decommissioned = 210 # estimate
         
@@ -1687,6 +1777,7 @@ def get_nuclear_data():
 # ─── Auth Endpoints ───────────────────────────────────────────────────────────
 
 @app.route('/api/auth/register', methods=['POST'])
+@limiter.limit("10 per minute")
 def auth_register():
     data = request.get_json() or {}
     username = (data.get('username') or '').strip()
@@ -1699,8 +1790,8 @@ def auth_register():
         return jsonify({'error': 'PASSWORD TOO SHORT — MIN 6 CHARACTERS'}), 400
     password_hash = generate_password_hash(password)
     token = str(uuid.uuid4())
+    client = get_db()
     try:
-        client = get_db()
         check_rs = client.execute('SELECT id FROM users WHERE username = ?', [username])
         if len(check_rs.rows) > 0:
             return jsonify({'error': 'USERNAME ALREADY EXISTS — CHOOSE ANOTHER'}), 409
@@ -1711,21 +1802,24 @@ def auth_register():
         )
         user_id = rs.rows[0][0]
         client.execute('INSERT INTO sessions (token, user_id) VALUES (?, ?)', [token, user_id])
-        client.close()
         return jsonify({'token': token, 'user': {'id': user_id, 'username': username}})
-    except libsql_client.LibsqlError as e:
+    except libsql_client.LibsqlError:
         return jsonify({'error': 'USERNAME ALREADY EXISTS — CHOOSE ANOTHER'}), 409
     except Exception as e:
-        return jsonify({'error': f'SERVER ERROR: {str(e)}'}), 500
+        logger.error("Register error: %s", e)
+        return jsonify({'error': 'SERVER ERROR'}), 500
+    finally:
+        client.close()
 
 
 @app.route('/api/auth/login', methods=['POST'])
+@limiter.limit("10 per minute")
 def auth_login():
     data = request.get_json() or {}
     username = (data.get('username') or '').strip()
     password = data.get('password') or ''
+    client = get_db()
     try:
-        client = get_db()
         rs = client.execute(
             'SELECT id, username, password_hash FROM users WHERE username = ?',
             [username]
@@ -1733,17 +1827,16 @@ def auth_login():
         if len(rs.rows) == 0:
             return jsonify({'error': 'INVALID CREDENTIALS'}), 401
         user = row_to_dict(rs)
+        if not check_password_hash(user['password_hash'], password):
+            return jsonify({'error': 'INVALID CREDENTIALS — ACCESS DENIED'}), 401
+        token = str(uuid.uuid4())
+        client.execute('INSERT INTO sessions (token, user_id) VALUES (?, ?)', [token, user['id']])
+        return jsonify({'token': token, 'user': {'id': user['id'], 'username': user['username']}})
     except Exception as e:
-        return jsonify({'error': f'DATABASE CONNECTION FAILED: {str(e)}'}), 500
-    
-    if not check_password_hash(user['password_hash'], password):
+        logger.error("Login error: %s", e)
+        return jsonify({'error': 'DATABASE CONNECTION FAILED'}), 500
+    finally:
         client.close()
-        return jsonify({'error': 'INVALID CREDENTIALS — ACCESS DENIED'}), 401
-        
-    token = str(uuid.uuid4())
-    client.execute('INSERT INTO sessions (token, user_id) VALUES (?, ?)', [token, user['id']])
-    client.close()
-    return jsonify({'token': token, 'user': {'id': user['id'], 'username': user['username']}})
 
 
 @app.route('/api/auth/logout', methods=['POST'])
@@ -1795,6 +1888,8 @@ def auth_update():
             
         new_hash = generate_password_hash(data['new_password'])
         client.execute('UPDATE users SET password_hash = ? WHERE id = ?', [new_hash, user['id']])
+        # Revoke all active sessions on password change
+        client.execute('DELETE FROM sessions WHERE user_id = ?', [user['id']])
         client.close()
         return jsonify({'status': 'PASSWORD UPDATED'})
         
@@ -1857,6 +1952,7 @@ def proxy_gdelt():
         print(f"[GDELT Proxy Error] {e}")
         # Return mock data if GDELT is down so the map still looks cool
         mock_data = {
+            "is_mock": True,
             "articles": [
                 {"title": "Escalation in border conflict", "sourcecountry": "SY", "tone": -8, "url": "#"},
                 {"title": "Protests erupt in capital", "sourcecountry": "FR", "tone": -6, "url": "#"},
@@ -2347,6 +2443,7 @@ def get_military_bases():
 
 
 @app.route("/api/ai/chat", methods=["POST"])
+@limiter.limit("15 per minute")
 def proxy_ai_chat():
     user = get_user_from_token(request)
     if not user:
@@ -2357,14 +2454,13 @@ def proxy_ai_chat():
     if not groq_key:
         return jsonify({"error": "GROQ_API_KEY not configured on server"}), 500
 
-    # Auto-map deprecated model IDs to active Groq models (prefer Qwen for factual OSINT without refusals)
+    # Auto-map deprecated model IDs to active Groq models while preserving 3-tier fallback independence
     model_mapping = {
         "llama-3.3-70b-versatile": "qwen/qwen3.8-27b",
-        "llama-3.1-8b-instant": "qwen/qwen3.8-27b",
-        "gemma2-9b-it": "qwen/qwen3.8-27b",
+        "llama-3.1-8b-instant": "openai/gpt-oss-120b",
+        "gemma2-9b-it": "openai/gpt-oss-20b",
         "llama3-70b-8192": "qwen/qwen3.8-27b",
         "llama3-8b-8192": "openai/gpt-oss-20b",
-        "openai/gpt-oss-120b": "qwen/qwen3.8-27b"
     }
     req_model = data.get("model", "")
     if req_model in model_mapping:
@@ -2505,4 +2601,4 @@ if __name__ == "__main__":
     print("  Google News RSS Feed API")
     print("  http://localhost:5000/api/news?country=Vietnam")
     print("=" * 50)
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=os.environ.get("FLASK_DEBUG", "0") == "1")

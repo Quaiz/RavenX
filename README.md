@@ -13,18 +13,18 @@
 
 ##  CÁC TRỤ CỘT AI & KHOA HỌC DỮ LIỆU (AI & DATA SCIENCE PILLARS)
 
-### 1. Tác Tử Phân Tích Chiến Lược (Agentic Intel Analyst)
-Hệ thống tích hợp một **AI Agent** chạy trên hạ tầng **Groq API** (với lõi mô hình siêu lớn **Llama-3.3-70b-versatile**, hỗ trợ chế độ fallback động tự phục hồi sang **Llama-3.1-8b-instant** và **Gemma2-9b-it** khi gặp quota rate limits) để tự động hóa quy trình phân tích và viết Báo cáo Tình hình Chiến dịch (SITREP - Situation Report):
-*   **Context-Injection Pipeline:** Tự động gom toàn bộ trạng thái viễn trắc (telemetry) của hệ thống bao gồm: vị trí Operator (GPS), danh sách safehouses, các đám cháy vệ tinh lớn, sự cố Internet, nhiễu GPS và lệnh truy nã Interpol hoạt động.
-*   **Prompt Engineering & Agentic Reasoning:** Ép AI phân tích chéo (cross-reference) mối tương quan giữa các sự kiện địa chính trị và thiên tai để đưa ra cảnh báo sớm về các mối đe dọa tiềm ẩn (Threat Matrix).
+### 1. Trợ Lý Phân Tích Chiến Lược (AI Situational Awareness Handler)
+Hệ thống tích hợp **AI Handler** chạy trên hạ tầng **Groq API** (SSE streaming) với cơ chế auto-fallback 3 tầng model: **`qwen/qwen3.8-27b` → `openai/gpt-oss-120b` → `openai/gpt-oss-20b`** khi gặp giới hạn quota/rate limit để hỗ trợ tổng hợp Báo cáo Tình hình Chiến dịch (SITREP):
+*   **Context-Injection Pipeline:** Tự động gom trạng thái telemetry của hệ thống (thời tiết, thị trường, sự kiện OSINT, dữ liệu bay ADS-B, động đất USGS, cháy rừng NASA FIRMS) vào system prompt kèm thẻ cô lập dữ liệu ngoài `<untrusted_osint_data>` chống prompt injection.
+*   **Prompt Engineering:** Tổng hợp tương quan đa nguồn để hỗ trợ đánh giá rủi ro và đưa ra khuyến nghị giám sát.
 
 ### 2. Xử Lý Luồng Dữ Liệu Không Gian - Thời Gian (Spatiotemporal Analytics)
-*   **Outlier & Noise Filtering (Lọc nhiễu vệ tinh NASA FIRMS):** Dữ liệu nhiệt lượng bề mặt trái đất được lọc qua bộ lọc heuristc: chỉ hiển thị các điểm có năng lượng bức xạ nhiệt (FRP - Fire Radiative Power) $> 500\text{ MW}$ để cô lập các đám cháy rừng hoặc các vụ nổ xung đột lớn, triệt tiêu tín hiệu nhiễu rác từ hoạt động dân sự.
-*   **Geofencing & Collision Detection:** Cho phép vẽ các vùng cấm (Geofence) và tính toán khoảng cách không gian (Rangefinder) thời gian thực trên nền bản đồ phân giải cao (Esri World Imagery).
+*   **Outlier & Noise Filtering (Lọc nhiễu vệ tinh NASA FIRMS):** Dữ liệu nhiệt lượng bề mặt trái đất được lọc theo mức confidence ($\ge 30$) và sắp xếp theo năng lượng bức xạ nhiệt (FRP - Fire Radiative Power) để ưu tiên hiển thị top 300 điểm cháy lớn nhất.
+*   **Geofencing & Collision Detection:** Cho phép vẽ các vùng cấm (Geofence) và tính toán khoảng cách không gian (Rangefinder) thời gian thực trên nền bản đồ phân giải cao (Esri World Imagery / Sentinel-2 / NASA GIBS).
 
-### 3. Trích Xuất Tri Thức Từ Nguồn Tin Mở (OSINT & NLP Regex Interception)
-*   **Text Mining & Intent Categorization:** Dữ liệu tin tức báo chí toàn cầu được crawl thông qua Google News RSS, sau đó bộ máy phân tích NLP Regex sẽ phân loại các bài báo vào các danh mục tác chiến cụ thể như `Cyber Attack` (nếu chứa các từ khóa ransomware, hacker, DDoS) hoặc `Sabotage` (phá hoại hạ tầng vật lý).
-*   **Interpol Database Integration:** Tự động hóa API truy vấn dữ liệu các đối tượng truy nã đỏ (Interpol Red Notices), hỗ trợ tra cứu lý lịch tội phạm chiến tranh và tội phạm công nghệ cao theo thời gian thực.
+### 3. Trích Xuất Tri Thức Từ Nguồn Tin Mở (OSINT & Rule-Based Regex Tagging)
+*   **Rule-Based Severity & Country Tagging:** Dữ liệu tin tức từ Google News RSS được gắn nhãn mức độ (`HIGH` / `MEDIUM` / `INFO`) và ánh xạ khu vực bằng bộ quy tắc Regex (`re.search`) ở backend; tin tức dịch bệnh được phân loại mức độ (`PANDEMIC` / `EPIDEMIC` / `OUTBREAK`) và đường lây truyền tương tự.
+*   **Interpol Database Integration:** Truy vấn công khai API Interpol Red/Yellow Notices và FBI Wanted để tra cứu đối tượng truy nã theo thời gian thực.
 
 ---
 
@@ -75,18 +75,34 @@ Chạy trực tiếp trên Windows bằng script tự động hóa:
    * Khởi động frontend Vite trên port `http://localhost:5173`.
    * Tự động mở trình duyệt truy cập hệ thống chỉ huy.
 
-### 2. Triển Khai Lên VPS Oracle (Production Cloud Docker)
-Dự án đã được container hóa hoàn chỉnh bằng **Docker Compose** và điều phối qua **Nginx Reverse Proxy**:
+### 2. Chạy Docker trên máy sạch (Local Docker Sandbox)
+1. Tạo file `backend/.env` từ mẫu:
+   ```bash
+   cp backend/.env.example backend/.env
+   # Điền GROQ_API_KEY của bạn vào backend/.env
+   ```
+2. Khởi chạy stack local (không cần SSL `/etc/letsencrypt`):
+   ```bash
+   docker compose -f docker-compose.local.yml up --build -d
+   # Truy cập http://localhost:8080
+   ```
 
-1. Cấu hình biến môi trường production trong `tactical-ui/.env.production`:
+### 3. Triển Khai Lên VPS Oracle (Production Cloud Docker)
+1. Cấu hình biến môi trường production trong `backend/.env` và `tactical-ui/.env.production`:
    ```env
    VITE_BACKEND_URL=https://ravenx-protocol.duckdns.org
    ```
 2. Build và khởi động các container bằng Docker Compose trên VPS Oracle:
    ```bash
-   docker-compose up --build -d
+   docker compose up --build -d
    ```
-3. Cấu hình chứng chỉ SSL Let's Encrypt cho tên miền của bạn thông qua volume `/etc/letsencrypt` kết nối trực tiếp với Nginx để bảo mật giao thức truyền tin (AES-GCM-256).
+3. Cấu hình chứng chỉ SSL Let's Encrypt cho tên miền của bạn thông qua volume `/etc/letsencrypt` kết nối trực tiếp với Nginx.
+
+### 4. Chạy Automated Tests (Backend)
+```bash
+cd backend
+pytest -v
+```
 
 ---
 

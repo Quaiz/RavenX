@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import useStore from '../store';
 import { WifiOff, Crosshair, AlertOctagon, Activity, Radio, Cpu, Satellite, ChevronRight, Loader2, RefreshCw } from 'lucide-react';
 import { streamAiResponse } from '../aiManager';
+import { sanitizeHtml } from '../utils/sanitize';
 
 const GPSInterference = () => {
  const ewData = useStore(s => s.feeds.ewData);
@@ -115,17 +116,17 @@ Do not use markdown headers (#), just bold text. Write like a Pentagon briefing.
  return (
  <div key={idx} className="flex gap-2 text-white/70 text-[10px] leading-relaxed pl-2 mt-1">
  <span className="text-orange-500/60 shrink-0 mt-0.5">▸</span>
- <span dangerouslySetInnerHTML={{ __html: content.substring(2) }} />
+ <span dangerouslySetInnerHTML={{ __html: sanitizeHtml(content.substring(2)) }} />
  </div>
  );
  }
  if (content.match(/^\d\)/)) {
  return (
- <div key={idx} className="text-[11px] font-bold text-orange-400 tracking-wider uppercase mt-3 mb-1 border-b border-orange-500/20 pb-1"dangerouslySetInnerHTML={{ __html: content }} />
+ <div key={idx} className="text-[11px] font-bold text-orange-400 tracking-wider uppercase mt-3 mb-1 border-b border-orange-500/20 pb-1"dangerouslySetInnerHTML={{ __html: sanitizeHtml(content) }} />
  );
  }
  return (
- <p key={idx} className="text-white/60 text-[10px] leading-relaxed mt-1"dangerouslySetInnerHTML={{ __html: content }} />
+ <p key={idx} className="text-white/60 text-[10px] leading-relaxed mt-1"dangerouslySetInnerHTML={{ __html: sanitizeHtml(content) }} />
  );
  });
  };

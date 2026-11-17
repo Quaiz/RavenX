@@ -59,12 +59,14 @@ export const streamAiResponse = async (contents, options = {}) => {
 
  const sessionToken = config.token || JSON.parse(localStorage.getItem('ravenx_session') || '{}')?.token;
 
+ const headers = { 'Content-Type': 'application/json' };
+ if (sessionToken) {
+ headers['Authorization'] = `Bearer ${sessionToken}`;
+ }
+
  const response = await fetch(url, {
  method: 'POST',
- headers: { 
- 'Content-Type': 'application/json',
- 'Authorization': `Bearer ${sessionToken}`
- },
+ headers,
  signal,
  body: JSON.stringify(payload)
  });
@@ -93,6 +95,8 @@ export const streamAiResponse = async (contents, options = {}) => {
  let buffer = '';
     let streamText = '';
 
+ let finishReason = null;
+
  while (true) {
  const { done, value } = await reader.read();
  if (done) break;
@@ -108,8 +112,11 @@ export const streamAiResponse = async (contents, options = {}) => {
  try {
  const data = JSON.parse(dataStr);
  // Groq / OpenAI delta content
- const textChunk = data.choices?.[0]?.delta?.content || '';
+ const choice = data.choices?.[0];
+ if (choice?.finish_reason) finishReason = choice.finish_reason;
+ const textChunk = choice?.delta?.content || '';
  if (textChunk && onChunk) {
+ streamText += textChunk;
  onChunk(textChunk);
  }
  } catch (e) {
@@ -120,7 +127,7 @@ export const streamAiResponse = async (contents, options = {}) => {
  }
  
  // Fully completed streaming successfully
- if (onComplete) onComplete();
+ if (onComplete) onComplete({ truncated: finishReason === 'length', length: streamText.length });
  return; // Exit loop
 
  } catch (err) {

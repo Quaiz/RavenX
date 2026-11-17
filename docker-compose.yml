@@ -9,8 +9,8 @@ services:
     restart: always
     env_file:
       - ./backend/.env
-    ports:
-      - "5000:5000"
+    expose:
+      - "5000"
 
   frontend:
     build:
