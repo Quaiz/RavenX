@@ -24,3 +24,4 @@ dist.tar.gz
 *.log
 backend/logs.json
 backend/logs.txt
+pipeline/data/

@@ -1,0 +1,7 @@
+APScheduler==3.11.0
+duckdb==1.2.1
+requests==2.32.4
+feedparser==6.0.12
+PyYAML==6.0.2
+python-dateutil==2.9.0.post0
+pytest==8.3.5

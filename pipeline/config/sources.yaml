@@ -1,0 +1,33 @@
+sources:
+  usgs:
+    enabled: true
+    interval_minutes: 5
+    base_url: "https://earthquake.usgs.gov/fdsnws/event/1/query"
+    min_magnitude: 2.5
+    initial_lookback_hours: 24
+    timeout_seconds: 12
+
+  google_news:
+    enabled: true
+    interval_minutes: 15
+    base_url: "https://news.google.com/rss/search"
+    hl: "en-US"
+    gl: "US"
+    ceid: "US:en"
+    timeout_seconds: 10
+    request_delay_seconds: 1.0
+    queries:
+      - "geopolitics military conflict"
+      - "cyberattack critical infrastructure"
+      - "maritime shipping disruption strait"
+      - "nuclear IAEA security"
+
+  gdelt:
+    enabled: true
+    interval_minutes: 15
+    base_url: "https://api.gdeltproject.org/api/v2/doc/doc"
+    query: "(conflict OR military OR cyberattack OR protest OR missile) sourcelang:english"
+    maxrecords: 50
+    timespan: "1h"
+    timeout_seconds: 15
+    min_interval_seconds: 5.0
