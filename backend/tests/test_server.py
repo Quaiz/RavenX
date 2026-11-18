@@ -131,3 +131,35 @@ def test_military_bases_fallback_on_sparql_failure(client):
         data = res.get_json()
         assert data["count"] > 0
         assert len(data["bases"]) == data["count"]
+
+
+def test_rate_limit_uses_x_forwarded_for_per_client_ip(client):
+    test_client, server = client
+    server.limiter.enabled = True
+    try:
+        # 10 login attempts from IP 1.2.3.4 succeed in reaching auth (401), 11th returns 429
+        for _ in range(10):
+            r = test_client.post(
+                "/api/auth/login",
+                headers={"X-Forwarded-For": "1.2.3.4"},
+                json={"username": "nobody", "password": "wrongpassword"},
+            )
+            assert r.status_code == 401
+
+        r11 = test_client.post(
+            "/api/auth/login",
+            headers={"X-Forwarded-For": "1.2.3.4"},
+            json={"username": "nobody", "password": "wrongpassword"},
+        )
+        assert r11.status_code == 429
+
+        # Different client IP 5.6.7.8 must NOT share the 429 bucket
+        r_other = test_client.post(
+            "/api/auth/login",
+            headers={"X-Forwarded-For": "5.6.7.8"},
+            json={"username": "nobody", "password": "wrongpassword"},
+        )
+        assert r_other.status_code == 401
+    finally:
+        server.limiter.enabled = False
+

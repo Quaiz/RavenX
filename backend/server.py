@@ -28,6 +28,7 @@ import os
 import json
 import random
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 load_dotenv()
 logging.basicConfig(
@@ -40,6 +41,7 @@ from youtubesearchpython import VideosSearch
 import yt_dlp
 
 app = Flask(__name__)
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
 _raw_origins = os.environ.get(
     "CORS_ORIGINS",
