@@ -188,7 +188,7 @@ _retry_strategy = Retry(
     status_forcelist=[502, 503, 504],
     allowed_methods=["GET", "HEAD"],
 )
-_adapter = HTTPAdapter(max_retries=_retry_strategy)
+_adapter = HTTPAdapter(max_retries=_retry_strategy, pool_connections=32, pool_maxsize=32)
 _session.mount("https://", _adapter)
 _session.mount("http://", _adapter)
 _session.headers.update({
