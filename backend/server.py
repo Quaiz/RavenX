@@ -2500,6 +2500,41 @@ def proxy_ai_chat():
         return jsonify({"error": str(e)}), 500
 
 
+@app.route("/api/ai/tts", methods=["POST"])
+@limiter.limit("20 per minute")
+def proxy_ai_tts():
+    """Proxy text-to-speech synthesis to self-hosted GPU F5-TTS worker if online."""
+    user = get_user_from_token(request)
+    if not user:
+        return jsonify({"error": "UNAUTHORIZED ACCESS"}), 401
+
+    worker_url = (os.environ.get("TTS_WORKER_URL") or "").strip().rstrip("/")
+    if not worker_url:
+        return jsonify({"error": "TTS worker not configured", "fallback": "browser_tts"}), 503
+
+    data = request.get_json() or {}
+    text = (data.get("text") or "").strip()[:800]
+    if not text:
+        return jsonify({"error": "TEXT REQUIRED"}), 400
+
+    speed = data.get("speed", 1.05)
+    secret = (os.environ.get("TTS_WORKER_SECRET") or "").strip()
+
+    try:
+        resp = requests.post(
+            f"{worker_url}/synthesize",
+            json={"text": text, "speed": speed},
+            headers={"x-worker-secret": secret} if secret else {},
+            timeout=30,
+        )
+        if resp.status_code == 200 and resp.content:
+            return Response(resp.content, mimetype="audio/wav")
+        return jsonify({"error": f"Worker returned {resp.status_code}", "fallback": "browser_tts"}), 503
+    except Exception as e:
+        logger.warning("TTS worker unreachable, falling back to browser TTS: %s", e)
+        return jsonify({"error": "TTS worker offline", "fallback": "browser_tts"}), 503
+
+
 import platform
 import psutil
 import threading

@@ -142,7 +142,13 @@ const useStore = create(persist((set, get) => ({
  setNotificationsMuted: (muted) => set({ notificationsMuted: muted }),
  notifications: [],
  addNotification: (text, type = 'INFO') => set(state => {
- if (!state.notificationsMuted) { audio.playNotification(); }
+ if (!state.notificationsMuted) {
+ audio.playNotification();
+ if (type === 'CRITICAL' || type === 'HIGH') {
+ const isSeismic = /seismic|earthquake/i.test(text || '');
+ audio.playVoiceClip(isSeismic ? 'alert_seismic' : 'alert_critical', { cooldownMs: 8000 });
+ }
+ }
  const id = Date.now() + Math.random();
  const noti = { id, text, type, time: new Date(), isToast: true };
  setTimeout(() => {
@@ -322,6 +328,22 @@ const useStore = create(persist((set, get) => ({
 
  toggleModule: (id) => set(state => {
  const isActive = state.activeModules.includes(id);
+ if (!isActive) {
+ const voiceMap = {
+ AI_ANALYST: 'comms_online',
+ ADSB_AIRCRAFT: 'airspace_scan',
+ LOCAL_AIR_RADAR: 'airspace_scan',
+ SEISMIC: 'alert_seismic',
+ MARITIME_INTEL: 'maritime_alert',
+ AIS_VESSELS: 'maritime_alert',
+ MILITARY_BASES: 'target_locked',
+ WANTED_CRIMINALS: 'target_locked',
+ LINK_ANALYSIS: 'target_locked',
+ };
+ if (voiceMap[id]) {
+ audio.playVoiceClip(voiceMap[id], { cooldownMs: 4000 });
+ }
+ }
  let nextOverlays = state.mapConfig.activeOverlays;
  
  if (id === 'FLIGHT_TRACKING') {

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Send, Bot, User, Zap, Shield, AlertTriangle, Loader2, Trash2, ChevronDown } from 'lucide-react';
+import { Send, Bot, User, Zap, Shield, AlertTriangle, Loader2, Trash2, ChevronDown, Volume2, VolumeX, Square } from 'lucide-react';
 import useStore from '../store';
 import { audio } from '../utils/audioEngine';
 import {
@@ -206,6 +206,8 @@ const AIAnalyst = () => {
  const [input, setInput] = useState('');
  const [isStreaming, setIsStreaming] = useState(false);
  const [streamingText, setStreamingText] = useState('');
+ const [autoVoice, setAutoVoice] = useState(() => localStorage.getItem('ravenx_ai_autovoice') !== 'false');
+ const [speakingIdx, setSpeakingIdx] = useState(null);
  const chatEndRef = useRef(null);
  const inputRef = useRef(null);
  const abortRef = useRef(null);
@@ -283,6 +285,9 @@ const AIAnalyst = () => {
  setMessages(prev => [...prev, { role: 'assistant', content: finalContent }]);
  setStreamingText('');
  setIsStreaming(false);
+ if (autoVoice && finalContent) {
+ audio.speakText(finalContent);
+ }
  },
  onError: (err) => {
  if (err.name !== 'AbortError') {
@@ -338,6 +343,21 @@ const AIAnalyst = () => {
  </div>
  </div>
  <div className="flex items-center gap-2">
+ <button
+ onClick={() => {
+ const next = !autoVoice;
+ setAutoVoice(next);
+ localStorage.setItem('ravenx_ai_autovoice', String(next));
+ if (!next) { audio.stopSpeaking(); setSpeakingIdx(null); }
+ }}
+ className={`flex items-center gap-1 px-1.5 py-0.5 border text-[7px] font-bold tracking-widest transition-colors ${
+ autoVoice ? 'border-primary/40 bg-primary/10 text-primary' : 'border-white/10 text-white/30'
+ }`}
+ title="Auto-read AI briefings aloud"
+ >
+ {autoVoice ? <Volume2 size={9} /> : <VolumeX size={9} />}
+ <span>AUTO-VOICE</span>
+ </button>
  <div className="flex items-center gap-1">
  <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_6px_rgba(34,197,94,0.5)] animate-pulse"/>
  <span className="text-[7px] text-green-500/70 font-bold tracking-widest">LINKED</span>
@@ -398,7 +418,27 @@ const AIAnalyst = () => {
  {msg.role === 'user' ? (
  <div className="text-[10px] text-white/80 leading-relaxed font-mono">{msg.content}</div>
  ) : (
+ <div className="space-y-1.5">
  <div className="space-y-0.5">{renderMarkdown(msg.content)}</div>
+ <div className="flex justify-end pt-1 border-t border-white/5">
+ <button
+ onClick={() => {
+ if (speakingIdx === i) {
+ audio.stopSpeaking();
+ setSpeakingIdx(null);
+ } else {
+ setSpeakingIdx(i);
+ audio.speakText(msg.content, { onDone: () => setSpeakingIdx(null) });
+ }
+ }}
+ className="flex items-center gap-1 px-1.5 py-0.5 text-[7px] font-bold tracking-widest uppercase border border-white/10 text-white/40 hover:text-primary hover:border-primary/30 transition-colors"
+ title="Read briefing aloud"
+ >
+ {speakingIdx === i ? <Square size={8} /> : <Volume2 size={8} />}
+ <span>{speakingIdx === i ? 'STOP' : 'READ BRIEFING'}</span>
+ </button>
+ </div>
+ </div>
  )}
  </div>
  {msg.role === 'user' && (

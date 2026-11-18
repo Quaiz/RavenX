@@ -25,3 +25,6 @@ dist.tar.gz
 backend/logs.json
 backend/logs.txt
 pipeline/data/
+tts-worker/.venv/
+tts-worker/reference/
+tts-worker/.env

@@ -766,8 +766,25 @@ const Layout = ({ user, showGreeting, onEnterDashboard, onLogout, onUsernameChan
  <button
  onClick={() => { useStore.getState().toggleSound(); }}
  className="flex items-center justify-center w-6 h-6 md:w-8 md:h-[22px] border border-white/10 bg-black/40 hover:bg-white/10 transition-colors shrink-0 text-white/50 hover:text-white/80"
+ title="Toggle All Audio"
  >
  {useStore.getState().isSoundEnabled ? <Volume2 size={12} /> : <VolumeX size={12} />}
+ </button>
+ {/* Watcher Voice Comms toggle */}
+ <button
+ onClick={(e) => {
+ const next = !audio.voiceEnabled;
+ audio.setVoiceEnabled(next);
+ e.currentTarget.dataset.active = String(next);
+ if (next) audio.playVoiceClip('comms_online', { cooldownMs: 1000 });
+ }}
+ className={`hidden sm:flex items-center gap-1 px-2 h-[22px] border text-[8px] font-bold tracking-widest uppercase transition-colors shrink-0 ${
+ audio.voiceEnabled ? 'border-primary/40 bg-primary/10 text-primary' : 'border-white/10 bg-black/40 text-white/30'
+ }`}
+ title="Toggle Watcher Voice Comms"
+ >
+ <Radio size={10} />
+ <span>VOICE</span>
  </button>
  {/* User chip */}
  {currentUser && (
@@ -1036,7 +1053,7 @@ const Layout = ({ user, showGreeting, onEnterDashboard, onLogout, onUsernameChan
  </div>
 
  <button
- onClick={bootReady ? () => { audio.playInitialize(); onEnterDashboard(); } : undefined}
+ onClick={bootReady ? () => { audio.playInitialize(); audio.playVoiceClip('comms_online', { cooldownMs: 5000 }); onEnterDashboard(); } : undefined}
  onMouseEnter={() => { setBootHovered(true); if(bootReady) audio.playHover(); }}
  onMouseLeave={() => setBootHovered(false)}
  disabled={!bootReady}

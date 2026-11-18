@@ -5,6 +5,13 @@ class TacticalAudioEngine {
     this.arrayBuffers = {};
     this.audioContext = null;
     this.initialized = false;
+    this.voiceEnabled = typeof window !== 'undefined'
+      ? localStorage.getItem('ravenx_voice_comms') !== 'false'
+      : true;
+    this._voiceQueue = [];
+    this._isSpeaking = false;
+    this._activeVoiceSource = null;
+    this._clipCooldowns = {};
     
     if (typeof window !== 'undefined') {
       this.preload('/sounds/notification.mp3', 'notification');
@@ -12,6 +19,12 @@ class TacticalAudioEngine {
       this.preload('/sounds/auth_click.mp3', 'auth_click');
       this.preload('/sounds/initialize.mp3', 'initialize');
       this.preload('/sounds/generic_click.mp3', 'generic_click');
+      // Pre-rendered Watcher Handler voice clips
+      [
+        'comms_online', 'alert_critical', 'alert_seismic',
+        'airspace_scan', 'maritime_alert', 'target_locked',
+        'briefing_ready', 'sector_focused', 'comms_muted'
+      ].forEach(id => this.preload(`/sounds/voice/${id}.wav`, `voice_${id}`));
       
       const initAudio = () => {
         this.init();
@@ -174,6 +187,191 @@ class TacticalAudioEngine {
 
   setEnabled(val) {
     this.enabled = val;
+  }
+
+  setVoiceEnabled(val) {
+    this.voiceEnabled = Boolean(val);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('ravenx_voice_comms', String(this.voiceEnabled));
+    }
+    if (!this.voiceEnabled) {
+      this.stopSpeaking();
+    }
+  }
+
+  stopSpeaking() {
+    this._voiceQueue = [];
+    if (this._activeVoiceSource) {
+      try { this._activeVoiceSource.stop(); } catch (e) {}
+      this._activeVoiceSource = null;
+    }
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      try { window.speechSynthesis.cancel(); } catch (e) {}
+    }
+    this._isSpeaking = false;
+  }
+
+  _ensureAudioContext() {
+    if (!this.audioContext) this.init();
+    if (this.audioContext && this.audioContext.state === 'suspended') {
+      this.audioContext.resume();
+    }
+    return this.audioContext;
+  }
+
+  _playBufferWithRadioFx(audioBuffer, vol = 0.9) {
+    return new Promise((resolve) => {
+      const ctx = this._ensureAudioContext();
+      if (!ctx || !audioBuffer) return resolve();
+      try {
+        const source = ctx.createBufferSource();
+        source.buffer = audioBuffer;
+
+        // Subtle tactical comms bandpass filter (300Hz - 3600Hz)
+        const highpass = ctx.createBiquadFilter();
+        highpass.type = 'highpass';
+        highpass.frequency.value = 260;
+
+        const lowpass = ctx.createBiquadFilter();
+        lowpass.type = 'lowpass';
+        lowpass.frequency.value = 3800;
+
+        const gainNode = ctx.createGain();
+        const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+        gainNode.gain.value = isMobile ? vol * 0.4 : vol;
+
+        source.connect(highpass);
+        highpass.connect(lowpass);
+        lowpass.connect(gainNode);
+        gainNode.connect(ctx.destination);
+
+        this._activeVoiceSource = source;
+        source.onended = () => {
+          if (this._activeVoiceSource === source) this._activeVoiceSource = null;
+          resolve();
+        };
+        source.start(0);
+      } catch (e) {
+        resolve();
+      }
+    });
+  }
+
+  _speakBrowserFallback(text) {
+    return new Promise((resolve) => {
+      if (typeof window === 'undefined' || !window.speechSynthesis) return resolve();
+      try {
+        const clean = (text || '')
+          .replace(/\[INCOMING TRANSMISSION[^\]]*\]/gi, '')
+          .replace(/\*{1,3}([^*]+)\*{1,3}/g, '$1')
+          .replace(/`([^`]+)`/g, '$1')
+          .replace(/^#+\s*/gm, '')
+          .replace(/\/\//g, ',')
+          .replace(/[▸⚠]/g, '')
+          .trim()
+          .slice(0, 800);
+        if (!clean) return resolve();
+
+        const utter = new SpeechSynthesisUtterance(clean);
+        utter.lang = 'en-US';
+        utter.rate = 1.02;
+        utter.pitch = 0.92;
+        const voices = window.speechSynthesis.getVoices();
+        const enVoice = voices.find(v => v.lang.startsWith('en') && /natural|google|david|mark|aria/i.test(v.name))
+          || voices.find(v => v.lang.startsWith('en'));
+        if (enVoice) utter.voice = enVoice;
+        utter.onend = () => resolve();
+        utter.onerror = () => resolve();
+        window.speechSynthesis.speak(utter);
+      } catch (e) {
+        resolve();
+      }
+    });
+  }
+
+  async _processVoiceQueue() {
+    if (this._isSpeaking || this._voiceQueue.length === 0) return;
+    this._isSpeaking = true;
+
+    while (this._voiceQueue.length > 0) {
+      if (!this.enabled || !this.voiceEnabled) {
+        this._voiceQueue = [];
+        break;
+      }
+      const task = this._voiceQueue.shift();
+      try {
+        await task();
+      } catch (e) {}
+    }
+
+    this._isSpeaking = false;
+  }
+
+  playVoiceClip(clipId, { cooldownMs = 3000, interrupt = false } = {}) {
+    if (!this.enabled || !this.voiceEnabled) return;
+    const now = Date.now();
+    const last = this._clipCooldowns[clipId] || 0;
+    if (now - last < cooldownMs) return;
+    this._clipCooldowns[clipId] = now;
+
+    if (interrupt) this.stopSpeaking();
+
+    const bufKey = `voice_${clipId}`;
+    this._voiceQueue.push(async () => {
+      const ctx = this._ensureAudioContext();
+      if (!ctx) return;
+      if (!this.buffers[bufKey] && this.arrayBuffers[bufKey]) {
+        try {
+          this.buffers[bufKey] = await ctx.decodeAudioData(this.arrayBuffers[bufKey].slice(0));
+        } catch (e) {
+          return;
+        }
+      }
+      if (this.buffers[bufKey]) {
+        await this._playBufferWithRadioFx(this.buffers[bufKey], 0.95);
+      }
+    });
+    this._processVoiceQueue();
+  }
+
+  async speakText(text, { token, interrupt = true, onDone } = {}) {
+    if (!this.enabled || !this.voiceEnabled || !text?.trim()) {
+      if (onDone) onDone();
+      return;
+    }
+    if (interrupt) this.stopSpeaking();
+
+    this._voiceQueue.push(async () => {
+      this.playRadioSquelch();
+      try {
+        const sessionToken = token || JSON.parse(localStorage.getItem('ravenx_session') || '{}')?.token;
+        const headers = { 'Content-Type': 'application/json' };
+        if (sessionToken) headers['Authorization'] = `Bearer ${sessionToken}`;
+
+        const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/ai/tts`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ text }),
+        });
+
+        if (res.ok) {
+          const arrBuf = await res.arrayBuffer();
+          const ctx = this._ensureAudioContext();
+          if (ctx) {
+            const decoded = await ctx.decodeAudioData(arrBuf);
+            await this._playBufferWithRadioFx(decoded, 1.0);
+            if (onDone) onDone();
+            return;
+          }
+        }
+      } catch (e) {
+        console.warn('[TTS] Remote GPU worker offline, using browser voice fallback');
+      }
+
+      await this._speakBrowserFallback(text);
+      if (onDone) onDone();
+    });
+    this._processVoiceQueue();
   }
 }
 
