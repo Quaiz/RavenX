@@ -13,14 +13,16 @@ const OSINTFeed = () => {
  const [aiAnalysis, setAiAnalysis] = useState('');
  const [isAiLoading, setIsAiLoading] = useState(false);
  const abortRef = useRef(null);
+ const hasFetchedRef = useRef(false);
 
  const activeOperationId = useStore(state => state.activeOperationId);
  const addNodeToOperation = useStore(state => state.addNodeToOperation);
  const addNotification = useStore(state => state.addNotification);
 
  useEffect(() => {
- // Initial fetch if empty
- if (!gdeltData || gdeltData.length === 0) {
+ // Initial fetch once if empty (prevent infinite loop if feed returns empty/error)
+ if (!hasFetchedRef.current && (!gdeltData || gdeltData.length === 0)) {
+ hasFetchedRef.current = true;
  fetchGdelt();
  }
  }, [fetchGdelt, gdeltData]);
