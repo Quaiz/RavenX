@@ -26,3 +26,13 @@ services:
       - /etc/letsencrypt:/etc/letsencrypt:ro
     depends_on:
       - backend
+
+  pipeline:
+    build:
+      context: ./pipeline
+      dockerfile: Dockerfile
+    container_name: ravenx-pipeline
+    restart: unless-stopped
+    mem_limit: 256m
+    volumes:
+      - ./pipeline/data:/app/data
