@@ -12,7 +12,7 @@ _venv_scripts = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".venv"
 if os.path.isdir(_venv_scripts) and _venv_scripts not in os.environ.get("PATH", ""):
     os.environ["PATH"] = _venv_scripts + os.pathsep + os.environ.get("PATH", "")
 
-from f5_tts.api import F5TTS
+from chatterbox.tts_turbo import ChatterboxTurboTTS
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 REF_AUDIO = os.path.join(BASE_DIR, "reference", "watcher_ref.wav")
@@ -37,22 +37,26 @@ def main():
 
     os.makedirs(OUT_DIR, exist_ok=True)
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    print(f"Loading F5-TTS on {device}...")
-    tts = F5TTS(device=device)
+    print(f"Loading Chatterbox-Turbo on {device}...")
+    tts = ChatterboxTurboTTS.from_pretrained(device=device)
+    # Pre-encode speaker conditionals once (norm_loudness=False avoids float64 s3tokenizer mismatch)
+    tts.prepare_conditionals(REF_AUDIO, norm_loudness=False)
 
     for clip_id, text in VOICE_LINES.items():
         out_path = os.path.join(OUT_DIR, f"{clip_id}.wav")
         print(f"Generating {clip_id}.wav -> {text}")
         with torch.inference_mode():
-            wav, sr, _ = tts.infer(
-                ref_file=REF_AUDIO,
-                ref_text="Coordinated from the heart of Silicon Valley, CTOS 2.0 has been implemented across the United States, ushering in the Internet of Things.",
-                gen_text=text,
-                speed=1.0,
-                nfe_step=32,
-                cfg_strength=2.5,
+            wav = tts.generate(
+                text,
+                temperature=0.75,
+                repetition_penalty=1.2,
+                norm_loudness=False,
             )
-        sf.write(out_path, np.asarray(wav, dtype=np.float32), sr, format="WAV")
+        wav_np = wav.squeeze().cpu().numpy().astype(np.float32)
+        peak = float(np.max(np.abs(wav_np)))
+        if peak > 1e-6:
+            wav_np = wav_np / peak * 0.92
+        sf.write(out_path, wav_np, tts.sr, format="WAV")
 
     print(f"Done! Generated {len(VOICE_LINES)} voice clips in {OUT_DIR}")
 

@@ -21,24 +21,46 @@ _venv_scripts = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".venv"
 if os.path.isdir(_venv_scripts) and _venv_scripts not in os.environ.get("PATH", ""):
     os.environ["PATH"] = _venv_scripts + os.pathsep + os.environ.get("PATH", "")
 
-from f5_tts.api import F5TTS
+from chatterbox.tts_turbo import ChatterboxTurboTTS
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 REF_AUDIO = os.path.join(BASE_DIR, os.environ.get("TTS_REF_AUDIO", "reference/watcher_ref.wav"))
-REF_TEXT = os.environ.get("TTS_REF_TEXT", "").strip()
 WORKER_SECRET = os.environ.get("TTS_WORKER_SECRET", "").strip()
 
-app = FastAPI(title="RavenX Watcher TTS Worker")
+app = FastAPI(title="RavenX Watcher TTS Worker (Chatterbox-Turbo)")
 _tts_lock = threading.Lock()
-_model: F5TTS | None = None
+_model: ChatterboxTurboTTS | None = None
+_conds_prepared = False
 
 
-def get_model() -> F5TTS:
-    global _model
+def get_model() -> ChatterboxTurboTTS:
+    global _model, _conds_prepared
     if _model is None:
         device = "cuda" if torch.cuda.is_available() else "cpu"
-        _model = F5TTS(device=device)
+        _model = ChatterboxTurboTTS.from_pretrained(device=device)
+        if os.path.exists(REF_AUDIO):
+            _model.prepare_conditionals(REF_AUDIO, norm_loudness=False)
+            _conds_prepared = True
     return _model
+
+
+def _split_sentences(text: str, max_chars: int = 220) -> list[str]:
+    """Split long briefings into short chunks to keep 4GB VRAM usage safe."""
+    parts = re.split(r"(?<=[.!?])\s+", text)
+    chunks: list[str] = []
+    cur = ""
+    for part in parts:
+        if not part:
+            continue
+        if len(cur) + len(part) + 1 <= max_chars:
+            cur = f"{cur} {part}".strip()
+        else:
+            if cur:
+                chunks.append(cur)
+            cur = part[:max_chars]
+    if cur:
+        chunks.append(cur)
+    return chunks or [text[:max_chars]]
 
 
 def clean_tactical_text(raw: str) -> str:
@@ -86,18 +108,33 @@ def synthesize(req: SynthesizeRequest, x_worker_secret: str = Header(default="")
         raise HTTPException(status_code=400, detail="Empty text")
 
     tts = get_model()
+    chunks = _split_sentences(clean_text, max_chars=220)
+    audio_segments: list[np.ndarray] = []
+    pause = np.zeros(int(tts.sr * 0.12), dtype=np.float32)
+
     with _tts_lock:
+        if not _conds_prepared:
+            tts.prepare_conditionals(REF_AUDIO, norm_loudness=False)
         with torch.inference_mode():
-            wav, sr, _ = tts.infer(
-                ref_file=REF_AUDIO,
-                ref_text=REF_TEXT,
-                gen_text=clean_text,
-                speed=max(0.75, min(1.35, req.speed)),
-                nfe_step=16,  # Fast inference on 4GB RTX 3050 while preserving vocal quality
-            )
+            for idx, chunk in enumerate(chunks):
+                wav = tts.generate(
+                    chunk,
+                    temperature=0.75,
+                    repetition_penalty=1.2,
+                    norm_loudness=False,
+                )
+                seg = wav.squeeze().cpu().numpy().astype(np.float32)
+                audio_segments.append(seg)
+                if idx < len(chunks) - 1:
+                    audio_segments.append(pause)
+
+    full_wav = np.concatenate(audio_segments) if len(audio_segments) > 1 else audio_segments[0]
+    peak = float(np.max(np.abs(full_wav)))
+    if peak > 1e-6:
+        full_wav = full_wav / peak * 0.92
 
     buf = io.BytesIO()
-    sf.write(buf, np.asarray(wav, dtype=np.float32), sr, format="WAV")
+    sf.write(buf, full_wav, tts.sr, format="WAV")
     return Response(content=buf.getvalue(), media_type="audio/wav")
 
 

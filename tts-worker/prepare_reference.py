@@ -27,19 +27,28 @@ def main():
     if os.path.isdir(os.path.dirname(venv_ffmpeg)) and not os.path.exists(venv_ffmpeg):
         shutil.copy2(ffmpeg_exe, venv_ffmpeg)
         print(f"Installed ffmpeg.exe into {venv_ffmpeg}")
-    # Extract 10.8 seconds (23.0s -> 33.8s, clean uninterrupted female narration, <12s F5-TTS limit)
+    # Extract 12.0 seconds (23.0s -> 35.0s, clean female narration) with gentle 70Hz highpass
     cmd = [
         ffmpeg_exe,
         "-y",
         "-ss", "23.0",
-        "-t", "10.8",
+        "-t", "12.0",
         "-i", src,
+        "-af", "highpass=f=70",
         "-ac", "1",
         "-ar", "24000",
         OUT_WAV,
     ]
     subprocess.run(cmd, check=True)
-    print(f"Prepared reference clip: {OUT_WAV}")
+    # Peak-normalize to -1 dBFS (0.90) float32 so voice cloning has crisp, full dynamics
+    import numpy as np
+    import soundfile as sf
+    wav, sr = sf.read(OUT_WAV, dtype="float32")
+    peak = float(np.max(np.abs(wav)))
+    if peak > 1e-6:
+        wav = wav / peak * 0.90
+    sf.write(OUT_WAV, wav.astype(np.float32), sr, format="WAV")
+    print(f"Prepared normalized reference clip: {OUT_WAV} (sr={sr}, peak=0.90)")
 
 
 if __name__ == "__main__":
