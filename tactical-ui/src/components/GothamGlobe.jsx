@@ -556,6 +556,10 @@ const GothamGlobe = React.memo(() => {
 
  <HexGridOverlay />
 
+ <div className="absolute bottom-1 right-2 z-[1500] pointer-events-none px-1.5 py-0.5 bg-black/70 border border-white/10 text-[8px] font-mono text-white/45 tracking-wider">
+ MAP &amp; TELEMETRY: ESRI | OPENSTREETMAP (ODbL) | NASA FIRMS | USGS | NOAA | NON-OFFICIAL OSINT
+ </div>
+
 
  {predictiveTracking.active && (
  <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-[2000] bg-black/85 border border-orange-500/40 px-6 py-4 flex flex-col items-center gap-3 backdrop-blur-lg shadow-[0_0_20px_rgba(249,115,22,0.2)]">

@@ -23,8 +23,7 @@ const OSINT_COUNTRY_COORDS = {
 
 import { CircleMarker, Marker, Tooltip, GeoJSON, TileLayer, Polyline, useMap, Popup, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
-window.L = L;
-import 'leaflet-terminator/leaflet-terminator.js';
+import { createSolarTerminatorPolygon } from '../utils/solarTerminator';
 import * as satellite from 'satellite.js';
 import useStore from '../store';
 import {
@@ -397,22 +396,16 @@ function PredictiveTrackingLayer() {
 function TerminatorLayer() {
  const map = useMap();
  useEffect(() => {
- if (typeof window === 'undefined' || !window.terminator) return;
  try {
- const t = window.terminator();
- t.setStyle({
- fillColor: '#000000',
- fillOpacity: 0.5,
- interactive: false,
- color: '#ffffff',
- weight: 1,
- opacity: 0.2
- });
- t.addTo(map);
- const interval = setInterval(() => t.setTime(), 60000);
+ let layer = createSolarTerminatorPolygon(new Date(), { opacity: 0.2 }).addTo(map);
+ const interval = setInterval(() => {
+ const next = createSolarTerminatorPolygon(new Date(), { opacity: 0.2 }).addTo(map);
+ layer.remove();
+ layer = next;
+ }, 60000);
  return () => {
  clearInterval(interval);
- t.remove();
+ layer.remove();
  };
  } catch (e) {
  console.error('Terminator initialization error', e);
