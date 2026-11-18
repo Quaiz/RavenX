@@ -227,22 +227,11 @@ class TacticalAudioEngine {
         const source = ctx.createBufferSource();
         source.buffer = audioBuffer;
 
-        // Subtle tactical comms bandpass filter (300Hz - 3600Hz)
-        const highpass = ctx.createBiquadFilter();
-        highpass.type = 'highpass';
-        highpass.frequency.value = 260;
-
-        const lowpass = ctx.createBiquadFilter();
-        lowpass.type = 'lowpass';
-        lowpass.frequency.value = 3800;
-
         const gainNode = ctx.createGain();
         const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
-        gainNode.gain.value = isMobile ? vol * 0.4 : vol;
+        gainNode.gain.value = isMobile ? vol * 0.5 : vol;
 
-        source.connect(highpass);
-        highpass.connect(lowpass);
-        lowpass.connect(gainNode);
+        source.connect(gainNode);
         gainNode.connect(ctx.destination);
 
         this._activeVoiceSource = source;

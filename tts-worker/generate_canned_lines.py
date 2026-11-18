@@ -46,10 +46,11 @@ def main():
         with torch.inference_mode():
             wav, sr, _ = tts.infer(
                 ref_file=REF_AUDIO,
-                ref_text="In 2013, Chicago realized the promise of smart cities with CTOS, a citywide operating system merging big data with surveillance, security, and transit programs.",
+                ref_text="Coordinated from the heart of Silicon Valley, CTOS 2.0 has been implemented across the United States, ushering in the Internet of Things.",
                 gen_text=text,
-                speed=1.02,
+                speed=1.0,
                 nfe_step=32,
+                cfg_strength=2.5,
             )
         sf.write(out_path, np.asarray(wav, dtype=np.float32), sr, format="WAV")
 

@@ -27,12 +27,12 @@ def main():
     if os.path.isdir(os.path.dirname(venv_ffmpeg)) and not os.path.exists(venv_ffmpeg):
         shutil.copy2(ffmpeg_exe, venv_ffmpeg)
         print(f"Installed ffmpeg.exe into {venv_ffmpeg}")
-    # Extract 12.4 seconds starting at 00:00:00 (exact clean sentence boundary), 24kHz mono PCM
+    # Extract 10.8 seconds (23.0s -> 33.8s, clean uninterrupted female narration, <12s F5-TTS limit)
     cmd = [
         ffmpeg_exe,
         "-y",
-        "-ss", "0",
-        "-t", "12.4",
+        "-ss", "23.0",
+        "-t", "10.8",
         "-i", src,
         "-ac", "1",
         "-ar", "24000",
