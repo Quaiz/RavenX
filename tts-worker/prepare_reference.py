@@ -27,17 +27,15 @@ def main():
     if os.path.isdir(os.path.dirname(venv_ffmpeg)) and not os.path.exists(venv_ffmpeg):
         shutil.copy2(ffmpeg_exe, venv_ffmpeg)
         print(f"Installed ffmpeg.exe into {venv_ffmpeg}")
-    # Extract 10 seconds starting at 00:00:05 (skip initial silence/breath), 24kHz mono PCM
-    # Also apply mild loudnorm + highpass so F5-TTS gets crisp vocal timbre
+    # Extract 12.4 seconds starting at 00:00:00 (exact clean sentence boundary), 24kHz mono PCM
     cmd = [
         ffmpeg_exe,
         "-y",
-        "-ss", "5",
-        "-t", "10",
+        "-ss", "0",
+        "-t", "12.4",
         "-i", src,
         "-ac", "1",
         "-ar", "24000",
-        "-af", "highpass=f=80,loudnorm=I=-16:TP=-1.5:LRA=11",
         OUT_WAV,
     ]
     subprocess.run(cmd, check=True)

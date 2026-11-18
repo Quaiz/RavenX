@@ -275,9 +275,10 @@ class TacticalAudioEngine {
         const utter = new SpeechSynthesisUtterance(clean);
         utter.lang = 'en-US';
         utter.rate = 1.02;
-        utter.pitch = 0.92;
+        utter.pitch = 1.05;
         const voices = window.speechSynthesis.getVoices();
-        const enVoice = voices.find(v => v.lang.startsWith('en') && /natural|google|david|mark|aria/i.test(v.name))
+        const enVoice = voices.find(v => v.lang.startsWith('en') && /aria|jenny|zira|samantha|victoria|karen|natasha|female|google us english/i.test(v.name))
+          || voices.find(v => v.lang.startsWith('en') && !/david|mark|george|daniel|ryan|guy/i.test(v.name))
           || voices.find(v => v.lang.startsWith('en'));
         if (enVoice) utter.voice = enVoice;
         utter.onend = () => resolve();
