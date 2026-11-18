@@ -557,7 +557,7 @@ const GothamGlobe = React.memo(() => {
  <HexGridOverlay />
 
  <div className="absolute bottom-1 right-2 z-[1500] pointer-events-none px-1.5 py-0.5 bg-black/70 border border-white/10 text-[8px] font-mono text-white/45 tracking-wider">
- MAP &amp; TELEMETRY: ESRI | OPENSTREETMAP (ODbL) | NASA FIRMS | USGS | NOAA | NON-OFFICIAL OSINT
+ MAP &amp; TELEMETRY: ESRI | OPENSTREETMAP (ODbL) | NASA FIRMS | USGS | NOAA
  </div>
 
 

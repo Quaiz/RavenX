@@ -779,12 +779,6 @@ Output ONLY the detailed dossier in a highly structured, immersive, cyber/milita
         </button>
       </div>
 
-      {/* OSINT Compliance & Legal Disclaimer */}
-      <div className="shrink-0 px-3 py-1 bg-black/60 border-b border-white/5 text-[8px] text-white/40 tracking-wider flex items-center justify-between">
-        <span>OSINT DISCLAIMER: Public Interpol Red/Yellow Notices & FBI Wanted feeds for research/portfolio use only.</span>
-        <span className="text-white/25 uppercase">NON-OFFICIAL REFERENCE</span>
-      </div>
-
       {/* Header */}
       <div className={`shrink-0 flex flex-col md:flex-row md:items-center justify-between p-3 border-b ${theme.borderHeader} ${theme.bgHeader} gap-3`}>
         <div className="flex items-center gap-2">
