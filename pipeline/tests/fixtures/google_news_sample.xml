@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>Google News - geopolitics</title>
+    <item>
+      <title>Naval Drills Expand in South China Sea - Reuters</title>
+      <link>https://news.google.com/rss/articles/CBMiTest1?oc=5</link>
+      <guid>gnews-1</guid>
+      <pubDate>Wed, 18 Nov 2026 10:00:00 GMT</pubDate>
+      <description>Naval exercises observed across regional chokepoints.</description>
+    </item>
+    <item>
+      <title>Cyberattack Disrupts Port Logistics - BBC News</title>
+      <link>https://news.google.com/rss/articles/CBMiTest2?utm_source=rss</link>
+      <guid>gnews-2</guid>
+      <pubDate>Wed, 18 Nov 2026 11:00:00 GMT</pubDate>
+      <description>Port terminal operations slowed following ransomware alert.</description>
+    </item>
+  </channel>
+</rss>

@@ -1,0 +1,20 @@
+{
+  "articles": [
+    {
+      "url": "https://www.reuters.com/world/naval-drills-expand-2026-11-18/",
+      "title": "Naval Drills Expand in South China Sea",
+      "seendate": "20261118T103000Z",
+      "domain": "reuters.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://www.example.com/energy/pipeline-alert?utm_medium=social",
+      "title": "Pipeline Pressure Drop Investigated in Baltic",
+      "seendate": "20261118T111500Z",
+      "domain": "example.com",
+      "language": "English",
+      "sourcecountry": "Finland"
+    }
+  ]
+}

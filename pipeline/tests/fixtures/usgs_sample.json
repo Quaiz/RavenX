@@ -1,0 +1,35 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "id": "us7000abc1",
+      "properties": {
+        "mag": 5.4,
+        "place": "45 km E of Sendai, Japan",
+        "time": 1795000000000,
+        "url": "https://earthquake.usgs.gov/earthquakes/eventpage/us7000abc1",
+        "title": "M 5.4 - 45 km E of Sendai, Japan"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [141.35, 38.25, 35.0]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "us7000abc2",
+      "properties": {
+        "mag": 3.2,
+        "place": "12 km S of Hilo, Hawaii",
+        "time": 1795001000000,
+        "url": "https://earthquake.usgs.gov/earthquakes/eventpage/us7000abc2",
+        "title": "M 3.2 - 12 km S of Hilo, Hawaii"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-155.08, 19.60, 10.0]
+      }
+    }
+  ]
+}
