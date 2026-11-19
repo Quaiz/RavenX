@@ -69,99 +69,96 @@ const AuthScreen = ({ onSuccess }) => {
  return (
  <div
  className="fixed inset-0 z-[99998] flex items-center justify-center"
- style={{ background: '#05070a' }}
+ style={{
+ background: 'radial-gradient(ellipse 65% 65% at 50% 45%, #171c18 0%, #0c0e0d 72%)',
+ }}
  >
- {/* Scanlines */}
- <div className="absolute inset-0 pointer-events-none"style={{
- background: 'repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.07) 2px,rgba(0,0,0,0.07) 4px)',
- zIndex: 1,
- }} />
-
- {/* Radial glow */}
- <div className="absolute inset-0 pointer-events-none"style={{
- background: `radial-gradient(ellipse 50% 60% at 50% 50%, ${PRIMARY_RGBA(0.05)} 0%, transparent 70%)`,
- zIndex: 1,
- }} />
-
- {/* Corner brackets */}
- {['top-5 left-5 border-t border-l', 'top-5 right-5 border-t border-r',
- 'bottom-5 left-5 border-b border-l', 'bottom-5 right-5 border-b border-r'].map((cls, i) => (
- <div key={i} className={`absolute w-6 h-6 ${cls} border-white/10`} style={{ zIndex: 2 }} />
+ {/* Subtle top-left & bottom-right tactical corner ticks */}
+ {['top-6 left-6 border-t border-l', 'top-6 right-6 border-t border-r',
+ 'bottom-6 left-6 border-b border-l', 'bottom-6 right-6 border-b border-r'].map((cls, i) => (
+ <div key={i} className={`absolute w-5 h-5 ${cls} border-white/10`} style={{ zIndex: 2 }} />
  ))}
 
- <div className="relative w-full max-w-sm px-8"style={{ zIndex: 3 }}>
- {/* Logo */}
- <div className="flex flex-col items-center mb-10">
- <div className="w-10 h-10 border flex items-center justify-center mb-4"
- style={{ borderColor: PRIMARY_RGBA(0.4), background: PRIMARY_RGBA(0.08) }}>
- <img src="/raven_favicon.png"alt="Raven Logo"className="w-6 h-6 object-contain opacity-80"/>
+ <div className="relative w-full max-w-md px-8 py-9 bg-[#121513] border border-white/10" style={{ zIndex: 3 }}>
+ {/* Header */}
+ <div className="flex items-center gap-3.5 mb-8 pb-5 border-b border-white/10">
+ <div className="w-11 h-11 border border-primary/35 flex items-center justify-center bg-[#191e1a] shrink-0">
+ <img src="/raven_favicon.png" alt="Raven Logo" className="w-6 h-6 object-contain opacity-90" />
  </div>
- <div className="text-[28px] leading-none font-stencil tracking-[0.2em] text-white/90"style={{ textShadow: `0 0 10px ${PRIMARY_RGBA(0.3)}` }}>RAVEN-X</div>
- <div className="text-[14px] font-stencil tracking-[0.3em] uppercase mt-1"style={{ color: PRIMARY_RGBA(0.9) }}>
- SECURE ACCESS TERMINAL
+ <div className="flex flex-col">
+ <div className="flex items-center gap-2">
+ <span className="text-[24px] leading-none font-stencil tracking-[0.18em] text-[#e8eae6]">RAVEN-X</span>
+ <span className="mw4-badge px-1.5 py-0.5 text-[8px] leading-none">OPS</span>
+ </div>
+ <span className="text-[10px] font-mono tracking-[0.22em] uppercase text-white/40 mt-1.5">
+ WATCHER PROGRAM // ACCESS TERMINAL
+ </span>
  </div>
  </div>
 
- {/* Tab switcher */}
- <div className="flex gap-0 mb-8 border-b border-white/5">
+ {/* MW4 Top Tab Switcher (Bone-white active pill) */}
+ <div className="flex gap-1 mb-7 p-1 bg-[#0c0e0d] border border-white/10">
  {['login', 'register'].map(t => (
  <button
  key={t}
+ type="button"
  onClick={() => { setTab(t); setError(''); }}
- className="flex-1 pb-2.5 text-[12px] font-military font-bold tracking-[0.2em] uppercase transition-colors"
- style={{
- color: tab === t ? PRIMARY : 'rgba(255,255,255,0.2)',
- borderBottom: tab === t ? `1px solid ${PRIMARY}` : '1px solid transparent',
- marginBottom: -1,
- }}
+ className={`flex-1 py-2 text-[11px] font-military font-bold tracking-[0.2em] uppercase ${
+ tab === t ? 'mw4-tab-active' : 'mw4-tab'
+ }`}
  >
- {t === 'login' ? '// LOGIN' : '// REGISTER'}
+ {t === 'login' ? 'SIGN IN' : 'REGISTER'}
  </button>
  ))}
  </div>
 
  {/* Form */}
- <form onSubmit={handleSubmit} className="flex flex-col gap-6">
- <Input label="Username"value={username} onChange={setUsername}
- placeholder="agent_codename"disabled={loading} />
- <Input label="Password"type="password"value={password} onChange={setPassword}
+ <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+ <Input label="Operator ID" value={username} onChange={setUsername}
+ placeholder="agent_codename" disabled={loading} />
+ <Input label="Passkey" type="password" value={password} onChange={setPassword}
  placeholder="••••••••••" disabled={loading} />
  {tab === 'register' && (
- <Input label="Confirm Password"type="password"value={confirmPassword}
+ <Input label="Confirm Passkey" type="password" value={confirmPassword}
  onChange={setConfirmPassword} placeholder="••••••••••" disabled={loading} />
  )}
 
  {/* Error */}
  {error && (
- <div className="font-military font-bold text-[12px] tracking-wider text-red-500/90 border-l-4 border-red-500 px-4 py-3 bg-red-500/10">
+ <div className="font-military font-bold text-[11px] tracking-wider text-[#f07167] border-l-2 border-[#d94638] px-3 py-2.5 bg-[#d94638]/10">
  // ERROR: {error}
  </div>
  )}
 
- {/* Submit */}
+ {/* MW4 Olive-Phosphor Active CTA Button */}
  <button
  type="submit"
  onMouseEnter={() => { setBtnHovered(true); audio.playHover(); }}
  onMouseLeave={() => setBtnHovered(false)}
  onClick={() => audio.playAuthClick()}
  disabled={loading || !username || !password}
- className="mt-4 py-4 font-military font-bold text-[14px] tracking-[0.3em] uppercase transition-all border-2"
- style={{
- borderColor: loading ? 'rgba(255,255,255,0.1)' : PRIMARY,
- color: loading ? 'rgba(255,255,255,0.2)' : '#05070a',
- background: loading ? 'transparent' : PRIMARY,
- cursor: loading ? 'not-allowed' : 'pointer',
- }}
+ className={`mt-3 py-3.5 px-5 font-military font-bold text-[13px] tracking-[0.28em] uppercase transition-all flex items-center justify-between ${
+ loading || !username || !password
+ ? 'bg-white/[0.03] border border-white/10 text-white/25 cursor-not-allowed'
+ : 'mw4-row-active cursor-pointer hover:brightness-110'
+ }`}
  >
+ <span className="flex items-center gap-2.5">
+ <span className="text-[15px] leading-none">»</span>
+ <span>
  {loading
- ? '// AUTHENTICATING...'
- : <span>[ <ScrambleText text={tab === 'login' ? 'AUTHENTICATE' : 'CREATE ACCOUNT'} trigger={btnHovered} duration={300} /> ]</span>}
+ ? 'AUTHENTICATING...'
+ : <ScrambleText text={tab === 'login' ? 'AUTHENTICATE' : 'CREATE ACCOUNT'} trigger={btnHovered} duration={260} />}
+ </span>
+ </span>
+ <span className="text-[9px] font-mono tracking-widest opacity-60">ENTER</span>
  </button>
  </form>
 
  {/* Footer */}
- <div className="mt-8 text-center font-military font-bold text-[10px] tracking-[0.2em] uppercase text-white/20">
- UNAUTHORIZED ACCESS IS A FEDERAL OFFENSE
+ <div className="mt-7 pt-4 border-t border-white/5 flex items-center justify-between font-mono text-[9px] tracking-[0.18em] uppercase text-white/25">
+ <span>CLEARANCE: EYES ONLY</span>
+ <span>SECURE LINK</span>
  </div>
  </div>
  </div>

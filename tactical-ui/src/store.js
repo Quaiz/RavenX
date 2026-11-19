@@ -88,10 +88,9 @@ const getDistanceKM = (lat1, lon1, lat2, lon2) => {
  return R * c;
 };
 
-const savedTheme = localStorage.getItem('raven_theme') || 'DEFAULT';
-if (savedTheme !== 'DEFAULT') {
- document.body.className = `theme-${savedTheme.toLowerCase()}`;
-}
+// Unified MW4 (2026) palette locked — clear any legacy theme classes
+document.body.className = '';
+localStorage.removeItem('raven_theme');
 
 const savedUiScale = parseFloat(localStorage.getItem('raven_ui_scale')) || 1.0;
 
@@ -114,11 +113,10 @@ const useStore = create(persist((set, get) => ({
  },
 
  // ── Ops Color Modes ──
- theme: savedTheme,
- setTheme: (newTheme) => {
- document.body.className = newTheme === 'DEFAULT' ? '' : `theme-${newTheme.toLowerCase()}`;
- localStorage.setItem('raven_theme', newTheme);
- set({ theme: newTheme });
+ theme: 'MW4',
+ setTheme: () => {
+ document.body.className = '';
+ set({ theme: 'MW4' });
  },
 
  defconLevel: 5,

@@ -640,105 +640,76 @@ const Layout = ({ user, showGreeting, onEnterDashboard, onLogout, onUsernameChan
  const wrapperHeight = maxModuleBottomPx * layoutScale;
 
  return (
- <div className="w-screen bg-background text-white font-military overflow-hidden flex flex-col relative"style={{ height: '100dvh' }}>
- <div className="crt-overlay"/>
- <div className="crt-vignette"/>
+ <div className="w-screen bg-[#0c0e0d] text-[#e8eae6] font-military overflow-hidden flex flex-col relative" style={{ height: '100dvh' }}>
 
- {/* ═══ TOP NAVIGATION BAR ═══ */}
- <div className="border-b border-primary/20 shrink-0 flex items-center justify-between px-2 md:px-6 z-[10000] relative tactical-glass shadow-[0_5px_20px_rgba(0,0,0,0.5)]" style={{ minHeight: '3.5rem', paddingTop: 'env(safe-area-inset-top)' }}>
- <div className="flex items-center gap-2 md:gap-8 shrink-0">
- <div className="flex items-center gap-2 md:gap-3">
- <div className="w-8 h-8 border border-primary/50 flex items-center justify-center bg-black/40 box-glow shrink-0">
- <RavenLogo size={18} className="text-primary text-glow"/>
+ {/* ═══ TOP NAVIGATION BAR (MW4 2026 Unified Tactical Header) ═══ */}
+ <div className="border-b border-white/10 shrink-0 flex items-center justify-between px-2 md:px-5 z-[10000] relative bg-[#111412]" style={{ minHeight: '3.25rem', paddingTop: 'env(safe-area-inset-top)' }}>
+ <div className="flex items-center gap-2 md:gap-6 shrink-0">
+ <div className="flex items-center gap-2.5">
+ <div className="w-8 h-8 border border-primary/35 flex items-center justify-center bg-[#191e1a] shrink-0">
+ <RavenLogo size={17} className="text-primary" />
  </div>
  <div className="flex flex-col leading-none">
- <span className="text-[12px] md:text-[14px] font-stencil font-bold tracking-[0.2em] md:tracking-[0.4em] text-white/90 text-glow">RAVEN-X</span>
- <span className="text-[6px] md:text-[8px] text-primary/80 font-bold tracking-widest uppercase mt-1 drop-shadow-[0_0_5px_rgba(var(--color-primary),0.8)] hidden sm:block">// WATCHER PROGRAM // DIR-01</span>
+ <div className="flex items-center gap-1.5">
+ <span className="text-[12px] md:text-[14px] font-stencil font-bold tracking-[0.2em] md:tracking-[0.3em] text-[#e8eae6]">RAVEN-X</span>
+ <span className="mw4-badge px-1 py-[1px] text-[7px] leading-none hidden sm:inline-block">OPS</span>
+ </div>
+ <span className="text-[7px] text-white/40 font-mono tracking-widest uppercase mt-1 hidden sm:block">WATCHER // DIR-01</span>
  </div>
  </div>
- <div className="h-6 w-px bg-primary/20 hidden sm:block"/>
- <div className="flex gap-2 md:gap-4 shrink-0 overflow-hidden">
- <div className="flex items-center gap-1 md:gap-2 box-glow bg-green-500/10 px-1 md:px-2 py-1 shrink-0 whitespace-nowrap">
- <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.8)] animate-pulse"/>
- <span className="text-[7px] md:text-[9px] font-bold text-green-500 uppercase tracking-widest hidden sm:inline"style={{textShadow: '0 0 5px rgba(34,197,94,0.5)'}}>GRID: ACTIVE</span>
- </div>
- <div className="hidden lg:flex items-center gap-1 border border-primary/20 bg-primary/5 px-2 py-1 text-[8px] font-mono text-primary/70 tracking-widest uppercase">
-   <span>CLEARANCE: EYES ONLY</span>
- <span className="text-[7px] font-bold text-green-500 uppercase tracking-widest sm:hidden"style={{textShadow: '0 0 5px rgba(34,197,94,0.5)'}}>SYS OK</span>
+ <div className="h-5 w-px bg-white/10 hidden sm:block"/>
+ <div className="flex gap-2 md:gap-3 shrink-0 overflow-hidden items-center">
+ <div className="flex items-center gap-1.5 bg-[#181d19] border border-white/8 px-2 py-1 shrink-0 whitespace-nowrap">
+ <div className="w-1.5 h-1.5 rounded-full bg-[#7fa872]" />
+ <span className="text-[8px] font-bold text-[#c6d67a] uppercase tracking-widest hidden sm:inline">GRID ONLINE</span>
+ <span className="text-[7px] font-bold text-[#c6d67a] uppercase tracking-widest sm:hidden">OK</span>
  </div>
  <TopBarClock />
  </div>
  </div>
 
- {/* WORKSPACE SWITCHER (REDESIGNED TACTICAL HUD) */}
- <div className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 hidden md:flex items-center h-8 bg-black/60 border border-white/10 backdrop-blur-md shadow-[0_0_20px_rgba(0,0,0,0.8)]">
+ {/* WORKSPACE SWITCHER (MW4 Bone-White Active Tab Bar) */}
+ <div className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 hidden md:flex items-center h-7 bg-[#0c0e0d] border border-white/10 p-0.5 gap-0.5">
  {[
  { id: 1, label: 'TACTICAL', icon: Map },
  { id: 2, label: 'OSINT', icon: Network },
  { id: 3, label: 'MACRO', icon: LineChart }
- ].map((ws, index) => {
+ ].map((ws) => {
  const isActive = activeWorkspace === ws.id;
  return (
- <React.Fragment key={ws.id}>
  <button
+ key={ws.id}
  onClick={() => { audio.playClick(); switchWorkspace(ws.id); }}
  title={ws.label}
- className={`relative flex items-center justify-center w-12 h-full transition-all group overflow-hidden ${isActive ? 'bg-primary/10' : 'hover:bg-white/5'}`}
+ className={`flex items-center gap-1.5 px-3 h-full text-[9px] tracking-[0.16em] uppercase ${
+ isActive ? 'mw4-tab-active' : 'mw4-tab'
+ }`}
  >
- {/* Active Top Border Glow */}
- {isActive && (
- <div className="absolute top-0 left-0 right-0 h-[2px] bg-primary shadow-[0_0_8px_rgba(var(--color-primary),1)]" />
- )}
- 
- {/* Background scanning effect on hover */}
- {!isActive && (
- <div className="absolute inset-0 bg-gradient-to-b from-white/0 to-white/5 translate-y-full group-hover:translate-y-0 transition-transform duration-300"/>
- )}
-
- <ws.icon size={14} className={`relative z-10 transition-colors duration-300 ${isActive ? 'text-primary drop-shadow-[0_0_5px_rgba(var(--color-primary),0.8)]' : 'text-white/30 group-hover:text-white/80'}`} />
- 
- {/* Subtly show the workspace number */}
- <span className={`absolute bottom-0.5 right-1 text-[6px] font-mono font-bold ${isActive ? 'text-primary/50' : 'text-white/10 group-hover:text-white/30'}`}>
- 0{ws.id}
- </span>
+ <ws.icon size={11} />
+ <span>{ws.label}</span>
  </button>
- {index < 2 && <div className="w-px h-4 bg-white/10"/>}
- </React.Fragment>
  );
  })}
  </div>
 
- <div className="flex items-center gap-2 md:gap-4 overflow-x-auto no-scrollbar min-w-0 ml-auto pl-2"style={{ maskImage: 'linear-gradient(to right, transparent, black 10px, black)' }}>
+ <div className="flex items-center gap-1.5 md:gap-2.5 overflow-x-auto no-scrollbar min-w-0 ml-auto pl-2">
 
- {/* Theme Switcher */}
- <div className="relative shrink-0 flex items-center">
- <button 
- onClick={() => setIsThemeOpen(!isThemeOpen)}
- className="flex items-center gap-1 border border-white/10 p-1 px-2 bg-black/40 hover:bg-white/10 transition-colors text-[9px] font-bold tracking-widest text-primary uppercase"
- >
- <Settings size={10} className="sm:hidden"/>
- <span className="hidden sm:inline">THEME</span>
- </button>
- 
-
- </div>
-
- <button onClick={() => setIsRegistryOpen(true)} className="flex items-center gap-1 md:gap-2 px-2 md:px-3 py-1 bg-primary text-black text-[9px] md:text-[10px] font-bold tracking-widest uppercase hover:bg-primary/80 transition-colors shadow-[0_0_10px_rgba(var(--color-primary),0.2)] lock-on-hover shrink-0">
- <Grid size={12} />
- <span className="hidden sm:inline">Module</span>
+ <button onClick={() => { audio.playClick(); setIsRegistryOpen(true); }} className="flex items-center gap-1.5 px-2.5 py-1 mw4-row-active text-[9px] font-bold tracking-[0.18em] uppercase shrink-0">
+ <Grid size={11} />
+ <span className="hidden sm:inline">MODULES</span>
  </button>
  
  {/* UI Scaling Controls */}
- <div className="flex items-center border border-white/10 bg-black/40 mr-1 md:mr-3 shrink-0">
+ <div className="flex items-center border border-white/10 bg-[#0c0e0d] shrink-0">
  <button 
  onClick={() => setUiScale(Math.max(0.6, uiScale - 0.1))}
- className="px-2 py-1 text-[9px] font-bold text-white/50 hover:text-primary hover:bg-white/10 transition-colors"
+ className="px-2 py-1 text-[9px] font-bold text-white/50 hover:text-[#e8eae6] hover:bg-white/10 transition-colors"
  title="Decrease Font Size"
  >A-</button>
- <div className="px-1 text-[8px] text-white/30 font-mono tracking-widest min-w-[32px] text-center">{Math.round(uiScale * 100)}%</div>
+ <div className="px-1 text-[8px] text-white/40 font-mono tracking-widest min-w-[30px] text-center">{Math.round(uiScale * 100)}%</div>
  <button 
  onClick={() => setUiScale(Math.min(1.5, uiScale + 0.1))}
- className="px-2 py-1 text-[9px] font-bold text-white/50 hover:text-primary hover:bg-white/10 transition-colors"
+ className="px-2 py-1 text-[9px] font-bold text-white/50 hover:text-[#e8eae6] hover:bg-white/10 transition-colors"
  title="Increase Font Size"
  >A+</button>
  </div>
@@ -746,26 +717,26 @@ const Layout = ({ user, showGreeting, onEnterDashboard, onLogout, onUsernameChan
  {/* Terminal Command Palette Button */}
  <button 
  onClick={() => { audio.playClick(); useStore.getState().setCommandPaletteOpen(true); }}
- className="relative flex items-center justify-center w-6 h-6 md:w-8 md:h-[22px] border border-primary/40 bg-primary/10 hover:bg-primary/20 transition-colors shrink-0 shadow-[0_0_10px_rgba(var(--color-primary),0.2)] mr-1 md:mr-2"
+ className="relative flex items-center justify-center w-7 h-[24px] mw4-row text-[#c6d67a] shrink-0"
  title="Command Palette (Ctrl+K)"
  >
- <Terminal size={12} className="text-primary"/>
+ <Terminal size={12} />
  </button>
 
  {/* Notifications Bell */}
  <button 
  onClick={() => { audio.playClick(); setIsNotiOpen(!isNotiOpen); }}
- className="relative flex items-center justify-center w-6 h-6 md:w-8 md:h-[22px] border border-white/10 bg-black/40 hover:bg-white/10 transition-colors shrink-0"
+ className="relative flex items-center justify-center w-7 h-[24px] mw4-row shrink-0"
  >
  <Bell size={12} className="text-white/80"/>
  {(notifications || []).length > 0 && (
- <div className="absolute top-0.5 right-0.5 md:top-1 md:right-1 w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse shadow-[0_0_5px_#ef4444]" />
+ <div className="absolute top-1 right-1 w-1.5 h-1.5 bg-[#d94638] rounded-full" />
  )}
  </button>
  {/* Volume toggle */}
  <button
  onClick={() => { useStore.getState().toggleSound(); }}
- className="flex items-center justify-center w-6 h-6 md:w-8 md:h-[22px] border border-white/10 bg-black/40 hover:bg-white/10 transition-colors shrink-0 text-white/50 hover:text-white/80"
+ className="flex items-center justify-center w-7 h-[24px] mw4-row shrink-0 text-white/60 hover:text-white"
  title="Toggle All Audio"
  >
  {useStore.getState().isSoundEnabled ? <Volume2 size={12} /> : <VolumeX size={12} />}
@@ -778,8 +749,8 @@ const Layout = ({ user, showGreeting, onEnterDashboard, onLogout, onUsernameChan
  e.currentTarget.dataset.active = String(next);
  if (next) audio.playVoiceClip('comms_online', { cooldownMs: 1000 });
  }}
- className={`hidden sm:flex items-center gap-1 px-2 h-[22px] border text-[8px] font-bold tracking-widest uppercase transition-colors shrink-0 ${
- audio.voiceEnabled ? 'border-primary/40 bg-primary/10 text-primary' : 'border-white/10 bg-black/40 text-white/30'
+ className={`hidden sm:flex items-center gap-1.5 px-2 h-[24px] text-[8px] font-bold tracking-widest uppercase shrink-0 ${
+ audio.voiceEnabled ? 'mw4-row-active' : 'mw4-row text-white/35'
  }`}
  title="Toggle Watcher Voice Comms"
  >
@@ -790,41 +761,17 @@ const Layout = ({ user, showGreeting, onEnterDashboard, onLogout, onUsernameChan
  {currentUser && (
  <button
  onClick={() => { audio.playClick(); setIsProfileOpen(true); }}
- className="flex items-center gap-1 md:gap-2 px-2 md:px-3 py-1 border border-white/10 text-[9px] md:text-[10px] font-bold tracking-widest uppercase text-white/50 hover:text-white/80 hover:border-white/20 transition-colors lock-on-hover shrink-0 max-w-[80px] md:max-w-[120px] truncate"
+ className="flex items-center gap-1.5 px-2.5 h-[24px] mw4-row text-[9px] font-bold tracking-widest uppercase text-white/75 hover:text-white shrink-0 max-w-[90px] md:max-w-[125px] truncate"
  >
- <User size={10} className="shrink-0"/>
+ <User size={10} className="shrink-0 text-[#c6d67a]"/>
  <span className="truncate">{currentUser.username ? currentUser.username.split(' ')[0] : 'OPERATOR'}</span>
  </button>
  )}
  </div>
  </div>
 
- {/* Global Dropdowns (Rendered outside overflow containers) */}
- {isThemeOpen && (
- <div className="fixed top-14 right-4 mt-2 p-1.5 bg-[#05080d]/95 border border-white/10 shadow-xl backdrop-blur-md flex flex-col gap-1 z-[100000] min-w-[70px] pointer-events-auto">
- {[
- { id: 'DEFAULT', color: '#ffb800', label: 'TAC' },
- { id: 'GHOST', color: '#00f2ff', label: 'GHO' },
- { id: 'COMBAT', color: '#ff3333', label: 'CBT' },
- { id: 'NVG', color: '#4ade80', label: 'NVG' }
- ].map(t => (
- <button
- key={t.id}
- onClick={() => {
- useStore.getState().setTheme(t.id);
- setIsThemeOpen(false);
- }}
- className={`w-full py-1.5 flex items-center justify-center text-[8px] font-bold transition-all border border-transparent ${useStore.getState().theme === t.id ? 'bg-white/10 border-white/20' : 'hover:bg-white/5'}`}
- style={{ color: t.color }}
- >
- {t.label}
- </button>
- ))}
- </div>
- )}
-
  {/* MAIN WORKSPACE — modules are clipped here, above ticker */}
- <div className="flex-1 relative bg-[#05070a] overflow-hidden">
+ <div className="flex-1 relative bg-[#0c0e0d] overflow-hidden">
  {/* Splash Screen when no modules active */}
  {!hasAnyModules && (
  <SplashScreen onOpenRegistry={() => setIsRegistryOpen(true)} />
@@ -999,78 +946,94 @@ const Layout = ({ user, showGreeting, onEnterDashboard, onLogout, onUsernameChan
  </div>
  )}
 
- {/* Greeting overlay / Boot Sequence */}
+ {/* Greeting overlay / MW4 (2026) Command Staging Intro */}
  {showGreeting && currentUser && (
- <div className="fixed inset-0 z-[99995] flex flex-col items-center justify-center font-military overflow-y-auto overflow-x-hidden py-8"
- style={{ background: 'rgba(5,7,10,0.85)', backdropFilter: 'blur(16px)' }}>
- 
- {/* Hex Dump Background */}
- <div className="absolute top-0 left-0 w-full opacity-10 pointer-events-none font-mono text-[10px] md:text-[14px] text-primary whitespace-pre-wrap break-all leading-none select-none z-0"
- style={{ animation: 'hexScroll 30s linear infinite', height: '200%' }}>
- {HEX_DUMP}
- </div>
+ <div
+ className="fixed inset-0 z-[99995] flex items-center justify-center font-military overflow-y-auto overflow-x-hidden py-8 px-4"
+ style={{
+ background: 'radial-gradient(ellipse 70% 70% at 30% 45%, #19201a 0%, #0b0d0c 72%)',
+ }}
+ >
+ <div className="relative w-full max-w-[760px] bg-[#121513] border border-white/10 p-6 md:p-9 shadow-2xl my-auto">
+ {/* Minimal corner ticks */}
+ <div className="absolute top-0 left-0 w-4 h-4 border-t border-l border-[#c6d67a]/60" />
+ <div className="absolute top-0 right-0 w-4 h-4 border-t border-r border-[#c6d67a]/60" />
+ <div className="absolute bottom-0 left-0 w-4 h-4 border-b border-l border-[#c6d67a]/60" />
+ <div className="absolute bottom-0 right-0 w-4 h-4 border-b border-r border-[#c6d67a]/60" />
 
- {/* Scanlines */}
- <div className="absolute inset-0 pointer-events-none opacity-[0.15]" style={{
- background: 'repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(255,255,255,1) 2px,rgba(255,255,255,1) 4px)',
- }} />
- <div className="absolute inset-0 pointer-events-none opacity-20"style={{
- background: 'radial-gradient(circle at center, rgba(var(--color-primary), 0.2) 0%, transparent 70%)',
- }} />
- 
- {/* Main Console */}
- <div className="relative flex flex-col items-start w-[800px] max-w-[95vw] h-auto p-6 md:p-8 border border-white/10 bg-black/40 shadow-[0_0_50px_rgba(0,0,0,0.8)] backdrop-blur-md shrink-0 my-auto">
- {/* HUD Corners */}
- <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-primary"/>
- <div className="absolute top-0 right-0 w-8 h-8 border-t-2 border-r-2 border-primary"/>
- <div className="absolute bottom-0 left-0 w-8 h-8 border-b-2 border-l-2 border-primary"/>
- <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-primary"/>
-
- <div className="flex flex-col md:flex-row md:items-center gap-4 mb-6 w-full border-b border-white/10 pb-4">
- <div className="w-12 h-12 md:w-16 md:h-16 border border-primary/50 flex items-center justify-center bg-primary/10 box-glow relative shrink-0">
- <RavenLogo size={24} className="text-primary animate-pulse md:w-[32px] md:h-[32px]"/>
+ {/* Operator Career Card (MW4 Top-Left Style) */}
+ <div className="flex flex-wrap items-center justify-between gap-4 pb-6 mb-6 border-b border-white/10">
+ <div className="flex items-center gap-4">
+ <div className="w-12 h-12 rounded-full border border-[#c6d67a]/40 bg-[#1a201b] flex items-center justify-center shrink-0">
+ <RavenLogo size={22} className="text-[#c6d67a]" />
  </div>
  <div>
- <div className="text-[28px] md:text-[40px] font-stencil tracking-[0.2em] uppercase text-white text-glow leading-none">RAVEN_OS</div>
- <div className="text-[10px] md:text-[12px] text-primary/80 tracking-widest uppercase font-mono mt-2">v9.2.4 // SECURE BOOT SEQUENCE</div>
+ <div className="flex items-center gap-2">
+ <span className="text-[24px] md:text-[30px] font-stencil tracking-[0.18em] uppercase text-[#e8eae6] leading-none">
+ RAVEN-X
+ </span>
+ <span className="mw4-badge px-1.5 py-0.5 text-[8px] leading-none">MW4 // OPS</span>
+ </div>
+ <div className="text-[10px] font-mono tracking-[0.2em] uppercase text-white/40 mt-1.5">
+ OPERATOR: <span className="text-[#c6d67a] font-bold">{currentUser?.username || 'OPERATOR'}</span> // CLEARANCE: EYES ONLY
+ </div>
+ </div>
+ </div>
+ <div className="flex items-center gap-2 px-2.5 py-1 bg-[#181d19] border border-white/10 font-mono text-[9px] tracking-widest uppercase">
+ <span className={`w-1.5 h-1.5 rounded-full ${bootReady ? 'bg-[#7fa872]' : 'bg-[#e0c243]'}`} />
+ <span className={bootReady ? 'text-[#c6d67a]' : 'text-[#e0c243]'}>
+ {bootReady ? 'SYSTEMS READY' : 'INITIALIZING'}
+ </span>
  </div>
  </div>
 
- <div className="w-full mb-6 font-mono text-[11px] md:text-[13px] uppercase tracking-wider min-h-[180px] md:min-h-[220px]">
- <div className="space-y-3">
- {bootStep >= 1 && <div className="text-white/40 animate-in fade-in duration-100">&gt; INITIALIZING CORE KERNEL............. <span className="text-green-500">OK</span></div>}
- {bootStep >= 2 && <div className="text-white/40 animate-in fade-in duration-100">&gt; LOADING MIL-SPEC ENCRYPTION MODULES.. <span className="text-green-500">OK</span></div>}
- {bootStep >= 3 && <div className="text-white/40 animate-in fade-in duration-100">&gt; CONNECTING TO SATELLITE UPLINK....... <span className="text-yellow-500">ESTABLISHED</span></div>}
- {bootStep >= 4 && <div className="text-white/40 animate-in fade-in duration-100">&gt; SYNCING BLUE FORCE TRACKER........... <span className="text-green-500">OK</span></div>}
- {bootStep >= 5 && <div className="text-primary text-glow animate-in fade-in duration-100">&gt; AUTHENTICATING USER CREDENTIALS......</div>}
- {bootReady && (
- <>
- <div className="text-green-500 font-bold animate-in fade-in duration-100">&gt; IDENTITY VERIFIED: {currentUser?.username || 'OPERATOR'}</div>
- <div className="text-white animate-in fade-in duration-100"style={{ animationDelay: '200ms' }}>&gt; ACCESS LEVEL: <span className="text-red-500 font-bold bg-red-500/20 px-1">TOP SECRET // NOFORN</span></div>
- </>
- )}
+ {/* MW4 Vertical Staging Checklist (01..05) */}
+ <div className="space-y-1.5 mb-7 font-mono text-[11px] uppercase tracking-wider">
+ {[
+ { num: '01', label: 'CORE COMMAND KERNEL', ready: bootStep >= 1, status: 'ONLINE' },
+ { num: '02', label: 'MIL-SPEC ENCRYPTION', ready: bootStep >= 2, status: 'VERIFIED' },
+ { num: '03', label: 'SATELLITE & ADS-B UPLINK', ready: bootStep >= 3, status: 'LINKED' },
+ { num: '04', label: 'GLOBAL THREAT TELEMETRY', ready: bootStep >= 4, status: 'SYNCED' },
+ { num: '05', label: 'WATCHER-1 VOICE COMMS', ready: bootStep >= 5, status: bootReady ? 'ACTIVE' : 'AUTH...' },
+ ].map((item) => (
+ <div
+ key={item.num}
+ className={`flex items-center justify-between px-3.5 py-2 transition-opacity duration-150 ${
+ item.ready ? 'bg-white/[0.03] border border-white/8 opacity-100' : 'border border-transparent opacity-25'
+ }`}
+ >
+ <div className="flex items-center gap-3">
+ <span className="text-[#c6d67a]/70 font-bold">{item.num}</span>
+ <span className="text-[#e8eae6]/85">{item.label}</span>
  </div>
+ <span className={`text-[9px] px-2 py-0.5 tracking-widest font-bold ${
+ item.ready ? 'bg-[#7fa872]/20 text-[#c6d67a] border border-[#7fa872]/30' : 'text-white/30'
+ }`}>
+ {item.ready ? item.status : 'STANDBY'}
+ </span>
+ </div>
+ ))}
  </div>
 
+ {/* MW4 Signature "» DEPLOY" Active Row Button */}
  <button
  onClick={bootReady ? () => { audio.playInitialize(); audio.playVoiceClip('comms_online', { cooldownMs: 5000 }); onEnterDashboard(); } : undefined}
  onMouseEnter={() => { setBootHovered(true); if(bootReady) audio.playHover(); }}
  onMouseLeave={() => setBootHovered(false)}
  disabled={!bootReady}
- className={`w-full py-4 md:py-6 text-[14px] md:text-[16px] font-bold tracking-[0.4em] uppercase border transition-all group relative overflow-hidden ${bootReady ? 'border-primary text-primary hover:bg-primary hover:text-black cursor-pointer' : 'border-white/10 text-white/30 cursor-not-allowed'}`}
- style={{ boxShadow: bootReady ? '0 0 20px rgba(var(--color-primary),0.2)' : 'none' }}
+ className={`w-full py-4 px-6 text-[15px] md:text-[17px] font-bold tracking-[0.28em] uppercase transition-all flex items-center justify-between ${
+ bootReady ? 'mw4-row-active cursor-pointer hover:brightness-110' : 'bg-white/[0.02] border border-white/10 text-white/30 cursor-not-allowed'
+ }`}
  >
- <div className={`absolute inset-0 bg-primary/20 translate-y-full ${bootReady ? 'group-hover:translate-y-0' : ''} transition-transform duration-300`} />
- <span className="relative flex items-center justify-center gap-3">
+ <span className="flex items-center gap-3">
+ <span className="text-[20px] leading-none">»</span>
  {bootReady ? (
- <>
- [ <ScrambleText text="INITIALIZE WORKSPACE"trigger={bootHovered} duration={300} /> ]
- <ChevronRight size={20} className="group-hover:translate-x-2 transition-transform"/>
- </>
+ <ScrambleText text="DEPLOY WORKSPACE" trigger={bootHovered} duration={260} />
  ) : (
- <span>[ SECURE BOOT IN PROGRESS... ]</span>
+ <span>SECURE BOOT IN PROGRESS...</span>
  )}
  </span>
+ <ChevronRight size={18} className={bootReady ? 'text-[#c6d67a]' : 'text-white/20'} />
  </button>
  </div>
  </div>
