@@ -352,7 +352,7 @@ class TacticalAudioEngine {
       if (!p) continue;
       if (!cur) {
         cur = p;
-      } else if (cur.length + 1 + p.length <= 160) {
+      } else if (cur.length + 1 + p.length <= 110) {
         cur = `${cur} ${p}`;
       } else {
         chunks.push(cur);

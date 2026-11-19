@@ -64,13 +64,20 @@ def _split_sentences(text: str, max_chars: int = 220) -> list[str]:
 
 
 def clean_tactical_text(raw: str) -> str:
-    """Strip markdown symbols and tactical prefixes so TTS reads naturally."""
+    """Strip markdown symbols and normalize tactical acronyms/numbers for fast, clean TTS."""
     text = raw or ""
     text = re.sub(r"\[INCOMING TRANSMISSION[^\]]*\]", "", text, flags=re.IGNORECASE)
+    text = re.sub(r"https?://\S+", "", text)
     text = re.sub(r"\*{1,3}([^*]+)\*{1,3}", r"\1", text)
     text = re.sub(r"`([^`]+)`", r"\1", text)
     text = re.sub(r"^#+\s*", "", text, flags=re.MULTILINE)
-    text = text.replace("//", ",").replace("▸", "").replace("⚠", "Warning.")
+    text = re.sub(r"\bSITREP\b:?", "Situation report,", text, flags=re.IGNORECASE)
+    text = re.sub(r"\bM(\d+(?:\.\d+)?)\+?", r"magnitude \1", text)
+    text = re.sub(r"(\d+)\.(\d+)", r"\1 point \2", text)
+    text = text.replace("+", " plus ").replace("%", " percent").replace("&", " and ")
+    text = text.replace("//", ",").replace("/", " ").replace(":", ", ")
+    text = text.replace("▸", "").replace("⚠", "Warning.").replace("|", ", ")
+    text = re.sub(r"([A-Za-z])-([A-Za-z])", r"\1 \2", text)
     text = re.sub(r"\s+", " ", text).strip()
     return text[:800]
 
@@ -108,7 +115,7 @@ def synthesize(req: SynthesizeRequest, x_worker_secret: str = Header(default="")
         raise HTTPException(status_code=400, detail="Empty text")
 
     tts = get_model()
-    chunks = _split_sentences(clean_text, max_chars=220)
+    chunks = _split_sentences(clean_text, max_chars=130)
     audio_segments: list[np.ndarray] = []
     pause = np.zeros(int(tts.sr * 0.12), dtype=np.float32)
 
