@@ -352,7 +352,7 @@ class TacticalAudioEngine {
       if (!p) continue;
       if (!cur) {
         cur = p;
-      } else if (cur.length + 1 + p.length <= 110) {
+      } else if (cur.length + 1 + p.length <= 200) {
         cur = `${cur} ${p}`;
       } else {
         chunks.push(cur);
@@ -401,22 +401,31 @@ class TacticalAudioEngine {
       const controller = new AbortController();
       this._activeAbortController = controller;
 
-      let nextPromise = this._fetchTtsAudio(chunks[0], headers, controller.signal);
+      // Kick off chunk 0 and chunk 1 immediately so chunk 1 is ready before chunk 0 finishes
+      const inflight = new Map();
+      const startFetch = (idx) => {
+        if (idx < chunks.length && !inflight.has(idx) && sessionId === this._speakSessionId) {
+          inflight.set(idx, this._fetchTtsAudio(chunks[idx], headers, controller.signal));
+        }
+      };
+
+      startFetch(0);
+      startFetch(1);
 
       for (let i = 0; i < chunks.length; i++) {
         if (sessionId !== this._speakSessionId || !this.enabled || !this.voiceEnabled) break;
 
+        startFetch(i + 1);
+        startFetch(i + 2);
+
         let decoded = null;
         try {
-          decoded = await nextPromise;
+          decoded = await inflight.get(i);
+          inflight.delete(i);
         } catch (e) {
+          inflight.delete(i);
           if (e?.name === 'AbortError' || sessionId !== this._speakSessionId) break;
           console.warn('[TTS] Remote GPU worker unreachable for chunk, using browser voice fallback');
-        }
-
-        // Prefetch next sentence while current sentence plays
-        if (i + 1 < chunks.length && sessionId === this._speakSessionId) {
-          nextPromise = this._fetchTtsAudio(chunks[i + 1], headers, controller.signal);
         }
 
         if (sessionId !== this._speakSessionId || !this.enabled || !this.voiceEnabled) break;

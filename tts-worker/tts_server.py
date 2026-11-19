@@ -115,7 +115,7 @@ def synthesize(req: SynthesizeRequest, x_worker_secret: str = Header(default="")
         raise HTTPException(status_code=400, detail="Empty text")
 
     tts = get_model()
-    chunks = _split_sentences(clean_text, max_chars=130)
+    chunks = _split_sentences(clean_text, max_chars=240)
     audio_segments: list[np.ndarray] = []
     pause = np.zeros(int(tts.sr * 0.12), dtype=np.float32)
 
