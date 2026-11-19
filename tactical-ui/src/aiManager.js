@@ -1,9 +1,9 @@
 
 
 const MODELS = [
-  'llama-3.1-8b-instant',
-  'llama-3.3-70b-versatile',
-  'meta-llama/llama-4-scout-17b-16e-instruct'
+  'qwen/qwen3.8-27b',
+  'openai/gpt-oss-20b',
+  'openai/gpt-oss-120b'
 ];
 
 let currentModelIndex = 0;
@@ -53,7 +53,7 @@ export const streamAiResponse = async (contents, options = {}) => {
  model: model,
  messages: messages,
  temperature: config.temperature || 0.6,
- max_tokens: config.maxOutputTokens ? Math.min(config.maxOutputTokens, 1024) : 1024,
+ max_tokens: config.maxOutputTokens ? Math.min(config.maxOutputTokens, 2048) : 2048,
  stream: true
  };
 

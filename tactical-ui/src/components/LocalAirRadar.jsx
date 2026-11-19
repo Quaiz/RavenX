@@ -117,8 +117,9 @@ const LocalAirRadar = () => {
           const res = await fetch(u);
           if (res.ok) {
             const json = await res.json();
-            if (json && Array.isArray(json.ac) && json.ac.length > 0) {
-              data = json;
+            const acList = json?.ac || json?.aircraft;
+            if (Array.isArray(acList) && acList.length > 0) {
+              data = { ac: acList };
               break;
             }
           }

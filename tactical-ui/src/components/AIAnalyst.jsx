@@ -269,7 +269,7 @@ const AIAnalyst = () => {
  await streamAiResponse(contents, {
  config: {
  temperature: 0.55,
- maxOutputTokens: 1024,
+ maxOutputTokens: 2048,
  token: JSON.parse(localStorage.getItem('ravenx_session') || '{}')?.token
  },
  systemInstruction: { parts: [{ text: systemPrompt }] }, 

@@ -2085,7 +2085,9 @@ def proxy_aircraft():
             try:
                 r = requests.get(mil_url, headers=headers, timeout=5)
                 if r.status_code == 200:
-                    parsed = _parse_v2_ac(r.json().get('ac', []), default_mil=True, seen_hex=seen_hex)
+                    rj = r.json()
+                    ac_raw = rj.get('ac') if rj.get('ac') is not None else rj.get('aircraft', [])
+                    parsed = _parse_v2_ac(ac_raw, default_mil=True, seen_hex=seen_hex)
                     if parsed:
                         states.extend(parsed)
                         source_used = src_name
@@ -2107,7 +2109,9 @@ def proxy_aircraft():
                     try:
                         r_local = requests.get(local_url, headers=headers, timeout=5)
                         if r_local.status_code == 200:
-                            parsed_local = _parse_v2_ac(r_local.json().get('ac', []), default_mil=False, seen_hex=seen_hex)
+                            rlj = r_local.json()
+                            local_raw = rlj.get('ac') if rlj.get('ac') is not None else rlj.get('aircraft', [])
+                            parsed_local = _parse_v2_ac(local_raw, default_mil=False, seen_hex=seen_hex)
                             if parsed_local:
                                 states.extend(parsed_local)
                                 break
@@ -2468,25 +2472,21 @@ def proxy_ai_chat():
     if not groq_key:
         return jsonify({"error": "GROQ_API_KEY not configured on server"}), 500
 
-    # Map only retired model IDs; keep fast non-reasoning Groq Llama models directly
-    model_mapping = {
-        "gemma2-9b-it": "llama-3.1-8b-instant",
-        "llama3-70b-8192": "llama-3.3-70b-versatile",
-        "llama3-8b-8192": "llama-3.1-8b-instant",
-        "qwen/qwen3.8-27b": "llama-3.1-8b-instant",
-    }
+    # Use enabled Groq models on this workspace key (qwen/qwen3.8-27b primary, openai/gpt-oss-20b & 120b fallback)
+    enabled_models = {"qwen/qwen3.8-27b", "openai/gpt-oss-20b", "openai/gpt-oss-120b", "allam-2-7b"}
     req_model = data.get("model", "")
-    if req_model in model_mapping:
-        data["model"] = model_mapping[req_model]
-    elif not req_model:
-        data["model"] = "llama-3.1-8b-instant"
+    if req_model not in enabled_models:
+        data["model"] = "qwen/qwen3.8-27b"
 
-    # Allow up to 1024 output tokens so tactical briefings finish cleanly without mid-sentence truncation
-    curr_tokens = data.get("max_tokens", 1024)
+    if "gpt-oss" in data["model"]:
+        data["reasoning_effort"] = "low"
+
+    # Allow up to 2048 output tokens so tactical briefings finish cleanly without mid-sentence truncation
+    curr_tokens = data.get("max_tokens", 2048)
     try:
-        data["max_tokens"] = min(int(curr_tokens), 1024)
+        data["max_tokens"] = min(int(curr_tokens), 2048)
     except (ValueError, TypeError):
-        data["max_tokens"] = 1024
+        data["max_tokens"] = 2048
 
     url = "https://api.groq.com/openai/v1/chat/completions"
     headers = {
