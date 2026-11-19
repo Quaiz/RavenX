@@ -2525,7 +2525,7 @@ def proxy_ai_tts():
             f"{worker_url}/synthesize",
             json={"text": text, "speed": speed},
             headers={"x-worker-secret": secret} if secret else {},
-            timeout=30,
+            timeout=90,
         )
         if resp.status_code == 200 and resp.content:
             return Response(resp.content, mimetype="audio/wav")

@@ -28,3 +28,4 @@ pipeline/data/
 tts-worker/.venv/
 tts-worker/reference/
 tts-worker/.env
+tts-worker/cloudflared.exe
