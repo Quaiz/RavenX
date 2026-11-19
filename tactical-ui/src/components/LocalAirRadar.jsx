@@ -107,6 +107,7 @@ const LocalAirRadar = () => {
       const radiusNm = Math.max(10, Math.min(RADAR_MAX_DIST_KM, 460) / 1.852);
       const distInt = Math.round(radiusNm);
       const urls = [
+        `https://opendata.adsb.fi/api/v2/lat/${lat}/lon/${lon}/dist/${distInt}`,
         `https://api.adsb.lol/v2/lat/${lat}/lon/${lon}/dist/${distInt}?cb=${Date.now()}`,
         `https://api.airplanes.live/v2/point/${lat}/${lon}/${distInt}`,
       ];
@@ -119,6 +120,32 @@ const LocalAirRadar = () => {
             if (json && Array.isArray(json.ac) && json.ac.length > 0) {
               data = json;
               break;
+            }
+          }
+        } catch (e) {}
+      }
+
+      if (!data) {
+        try {
+          const base = import.meta.env.VITE_BACKEND_URL || '';
+          const res = await fetch(`${base}/api/proxy/aircraft?lat=${lat}&lon=${lon}`);
+          if (res.ok) {
+            const json = await res.json();
+            if (json && Array.isArray(json.states) && json.states.length > 0) {
+              data = {
+                ac: json.states.map(s => ({
+                  hex: s[0],
+                  flight: s[1],
+                  r: s[2],
+                  lon: s[5],
+                  lat: s[6],
+                  alt_baro: Math.round((s[7] || 0) / 0.3048),
+                  gs: Math.round((s[9] || 0) / 0.514444),
+                  track: s[10] || 0,
+                  baro_rate: Math.round((s[11] || 0) / 0.00508),
+                  squawk: s[13] || 'NONE',
+                }))
+              };
             }
           }
         } catch (e) {}

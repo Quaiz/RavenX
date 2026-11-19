@@ -347,7 +347,7 @@ const useStore = create(persist((set, get) => ({
  }
  let nextOverlays = state.mapConfig.activeOverlays;
  
- if (id === 'FLIGHT_TRACKING') {
+ if (id === 'ADSB_AIRCRAFT' || id === 'FLIGHT_TRACKING') {
  if (isActive) nextOverlays = nextOverlays.filter(o => o !== 'ADSB_AIRCRAFT');
  else if (!nextOverlays.includes('ADSB_AIRCRAFT')) nextOverlays = [...nextOverlays, 'ADSB_AIRCRAFT'];
  }
@@ -689,7 +689,9 @@ const useStore = create(persist((set, get) => ({
  vert_rate: s[11] || 0,
  squawk: s[13] || null,
  }));
+ if (mappedAircraft.length > 0) {
  nextFeeds.aircraft = mappedAircraft;
+ }
  }
  if (data.outbreaks?.alerts) {
  nextFeeds.outbreaks = data.outbreaks.alerts;

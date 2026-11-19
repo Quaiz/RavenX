@@ -2036,12 +2036,12 @@ def proxy_aircraft():
     lon = request.args.get("lon")
     cache_key = f"aircraft_{lat}_{lon}" if lat and lon else "aircraft"
     
-    if cache_key in proxy_cache and now - proxy_cache[cache_key]["time"] < 10:
+    if cache_key in proxy_cache and now - proxy_cache[cache_key]["time"] < 30:
         return jsonify(proxy_cache[cache_key]["data"])
 
     try:
         states = []
-        source_used = "adsb.lol"
+        source_used = "adsb.fi"
         headers = {'User-Agent': 'RavenX-Tactical/1.0'}
 
         def _parse_v2_ac(ac_list, default_mil=False, seen_hex=None):
@@ -2076,14 +2076,14 @@ def proxy_aircraft():
 
         # 1. Fetch Global Tactical & Military Aircraft with multi-mirror fallback
         mil_mirrors = [
+            ("adsb.fi", "https://opendata.adsb.fi/api/v2/mil"),
             ("adsb.lol", "https://api.adsb.lol/v2/mil"),
             ("airplanes.live", "https://api.airplanes.live/v2/mil"),
-            ("adsb.fi", "https://opendata.adsb.fi/api/v2/mil"),
         ]
         seen_hex = set()
         for src_name, mil_url in mil_mirrors:
             try:
-                r = _session.get(mil_url, headers=headers, timeout=8)
+                r = requests.get(mil_url, headers=headers, timeout=5)
                 if r.status_code == 200:
                     parsed = _parse_v2_ac(r.json().get('ac', []), default_mil=True, seen_hex=seen_hex)
                     if parsed:
@@ -2099,12 +2099,13 @@ def proxy_aircraft():
                 lat_f = round(float(lat), 3)
                 lon_f = round(float(lon), 3)
                 local_mirrors = [
+                    f"https://opendata.adsb.fi/api/v2/lat/{lat_f}/lon/{lon_f}/dist/250",
                     f"https://api.adsb.lol/v2/lat/{lat_f}/lon/{lon_f}/dist/250",
                     f"https://api.airplanes.live/v2/point/{lat_f}/{lon_f}/250",
                 ]
                 for local_url in local_mirrors:
                     try:
-                        r_local = _session.get(local_url, headers=headers, timeout=7)
+                        r_local = requests.get(local_url, headers=headers, timeout=5)
                         if r_local.status_code == 200:
                             parsed_local = _parse_v2_ac(r_local.json().get('ac', []), default_mil=False, seen_hex=seen_hex)
                             if parsed_local:
