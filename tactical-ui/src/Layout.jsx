@@ -972,7 +972,7 @@ const Layout = ({ user, showGreeting, onEnterDashboard, onLogout, onUsernameChan
  <span className="text-[24px] md:text-[30px] font-stencil tracking-[0.18em] uppercase text-[#e8eae6] leading-none">
  RAVEN-X
  </span>
- <span className="mw4-badge px-1.5 py-0.5 text-[8px] leading-none">MW4 // OPS</span>
+ <span className="mw4-badge px-1.5 py-0.5 text-[8px] leading-none">OPS</span>
  </div>
  <div className="text-[10px] font-mono tracking-[0.2em] uppercase text-white/40 mt-1.5">
  OPERATOR: <span className="text-[#c6d67a] font-bold">{currentUser?.username || 'OPERATOR'}</span> // CLEARANCE: EYES ONLY

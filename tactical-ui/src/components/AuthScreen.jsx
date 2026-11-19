@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { login, register } from '../auth';
 import ScrambleText from './ScrambleText';
+import TopographicCanvas from './TopographicCanvas';
 import { audio } from '../utils/audioEngine';
 
 const PRIMARY = 'rgb(var(--color-primary))';
@@ -68,11 +69,12 @@ const AuthScreen = ({ onSuccess }) => {
 
  return (
  <div
- className="fixed inset-0 z-[99998] flex items-center justify-center"
+ className="fixed inset-0 z-[99998] flex items-center justify-center overflow-hidden"
  style={{
  background: 'radial-gradient(ellipse 65% 65% at 50% 45%, #171c18 0%, #0c0e0d 72%)',
  }}
  >
+ <TopographicCanvas />
  {/* Subtle top-left & bottom-right tactical corner ticks */}
  {['top-6 left-6 border-t border-l', 'top-6 right-6 border-t border-r',
  'bottom-6 left-6 border-b border-l', 'bottom-6 right-6 border-b border-r'].map((cls, i) => (

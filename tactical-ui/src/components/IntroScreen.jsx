@@ -1,23 +1,103 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { audio } from '../utils/audioEngine';
-import { Shield, Satellite, Radio, Activity, Globe, Cpu, ChevronsRight, Crosshair } from 'lucide-react';
+import TopographicCanvas from './TopographicCanvas';
+import { Shield, Satellite, Radio, Globe, Cpu, ChevronsRight, Crosshair, Clock, Wifi } from 'lucide-react';
 
 const SUBSYSTEMS = [
-  { id: '01', name: 'CORE COMMAND KERNEL', detail: 'RAVEN_OS v9.2 // MIL-SPEC', icon: Cpu, status: 'ONLINE', level: 100 },
-  { id: '02', name: 'SATELLITE & ADS-B UPLINK', detail: 'GLOBAL AIRSPACE + AIS GRID', icon: Satellite, status: 'LINKED', level: 96 },
-  { id: '03', name: 'OSINT INTELLIGENCE FEED', detail: 'GDELT + NEWS + SEISMIC + FIRMS', icon: Globe, status: 'LIVE', level: 100 },
-  { id: '04', name: 'CRYPTOGRAPHIC CHANNEL', detail: 'AES-256 // EYES ONLY', icon: Shield, status: 'VERIFIED', level: 100 },
-  { id: '05', name: 'WATCHER-1 VOICE COMMS', detail: 'NEURAL HANDLER AUDIO LINK', icon: Radio, status: 'READY', level: 92 },
+  {
+    id: '01',
+    name: 'CORE COMMAND KERNEL',
+    detail: 'RAVEN-X OSINT ENGINE // v9.2',
+    icon: Cpu,
+    status: 'ONLINE',
+    specs: [
+      { k: 'ARCHITECTURE', v: 'FLASK + REACT TACTICAL GRID' },
+      { k: 'WORKSPACES', v: 'TACTICAL / OSINT / MACRO' },
+      { k: 'RENDER MODE', v: 'MATTE 60FPS HARDWARE ACCEL' },
+      { k: 'ACCESS POLICY', v: 'SESSION TOKEN + RATE LIMIT' },
+    ],
+  },
+  {
+    id: '02',
+    name: 'SATELLITE & ADS-B UPLINK',
+    detail: 'GLOBAL AIRSPACE + MARITIME AIS',
+    icon: Satellite,
+    status: 'LINKED',
+    specs: [
+      { k: 'AIRSPACE', v: 'ADS-B LIVE TRANSPONDER FEED' },
+      { k: 'MARITIME', v: 'AIS CHOKEPOINT TELEMETRY' },
+      { k: 'ORBITAL', v: 'TLE SATELLITE PASS TRACKER' },
+      { k: 'PROJECTION', v: '3D GLOBE + 2D TACTICAL MAP' },
+    ],
+  },
+  {
+    id: '03',
+    name: 'OSINT INTELLIGENCE FEED',
+    detail: 'GDELT + NEWS + SEISMIC + FIRMS',
+    icon: Globe,
+    status: 'LIVE',
+    specs: [
+      { k: 'CONFLICT DATA', v: 'GDELT GLOBAL EVENT STREAM' },
+      { k: 'GEOPHYSICS', v: 'USGS SEISMIC + NASA FIRMS' },
+      { k: 'NEWS WIRE', v: 'MULTI-SOURCE RSS AGGREGATOR' },
+      { k: 'STORAGE', v: 'DUCKDB + PARQUET PIPELINE' },
+    ],
+  },
+  {
+    id: '04',
+    name: 'CRYPTOGRAPHIC CHANNEL',
+    detail: 'TLS 1.3 // STRICT CSP // SSRF GUARD',
+    icon: Shield,
+    status: 'VERIFIED',
+    specs: [
+      { k: 'TRANSPORT', v: 'HTTPS TLS 1.3 + HSTS' },
+      { k: 'XSS DEFENSE', v: 'DOMPURIFY + STRICT CSP' },
+      { k: 'PROXY GUARD', v: 'PUBLIC-IP SSRF VALIDATION' },
+      { k: 'CLASSIFICATION', v: 'TOP SECRET // NOFORN' },
+    ],
+  },
+  {
+    id: '05',
+    name: 'WATCHER-1 VOICE COMMS',
+    detail: 'NEURAL HANDLER AUDIO BRIEFINGS',
+    icon: Radio,
+    status: 'READY',
+    specs: [
+      { k: 'SYNTHESIS', v: 'CLOUD NEURAL VOICE CLONE' },
+      { k: 'CANNED ALERTS', v: '9 PRELOADED TACTICAL CLIPS' },
+      { k: 'AI BRIEFINGS', v: 'FULL-TEXT STREAMED PLAYBACK' },
+      { k: 'AUDIO ENGINE', v: 'WEB AUDIO API QUEUE' },
+    ],
+  },
 ];
 
 const IntroScreen = ({ onEnter }) => {
   const [step, setStep] = useState(0);
   const [selectedIdx, setSelectedIdx] = useState(0);
   const [ready, setReady] = useState(false);
+  const [utcNow, setUtcNow] = useState(() => new Date().toISOString().replace('T', ' ').slice(0, 19) + ' UTC');
+  const [backendProbe, setBackendProbe] = useState({ status: 'PROBING', latencyMs: null });
   const timers = useRef([]);
 
   useEffect(() => {
-    let delay = 180;
+    // Live UTC clock
+    const clk = setInterval(() => {
+      setUtcNow(new Date().toISOString().replace('T', ' ').slice(0, 19) + ' UTC');
+    }, 1000);
+
+    // Real backend /api/health latency probe
+    const t0 = performance.now();
+    fetch(`${import.meta.env.VITE_BACKEND_URL || ''}/api/health`)
+      .then((res) => {
+        const ms = Math.round(performance.now() - t0);
+        setBackendProbe({ status: res.ok ? 'ONLINE' : `HTTP ${res.status}`, latencyMs: ms });
+      })
+      .catch(() => {
+        setBackendProbe({ status: 'OFFLINE', latencyMs: null });
+      });
+
+    // Sequential subsystem reveal
+    let delay = 140;
     SUBSYSTEMS.forEach((_, idx) => {
       const t = setTimeout(() => {
         setStep(idx + 1);
@@ -25,16 +105,19 @@ const IntroScreen = ({ onEnter }) => {
         audio.playTyping();
       }, delay);
       timers.current.push(t);
-      delay += 220;
+      delay += 180;
     });
 
     const readyTimer = setTimeout(() => {
       setReady(true);
       setSelectedIdx(0);
-    }, delay + 180);
+    }, delay + 140);
     timers.current.push(readyTimer);
 
-    return () => timers.current.forEach(clearTimeout);
+    return () => {
+      clearInterval(clk);
+      timers.current.forEach(clearTimeout);
+    };
   }, []);
 
   const progress = Math.min(100, Math.round((step / SUBSYSTEMS.length) * 100));
@@ -52,30 +135,25 @@ const IntroScreen = ({ onEnter }) => {
       className="fixed inset-0 z-[99999] overflow-hidden select-none font-military text-[#e8eae6]"
       style={{
         background:
-          'radial-gradient(ellipse 75% 80% at 22% 48%, rgba(44, 58, 42, 0.55) 0%, rgba(14, 18, 15, 0.96) 55%, #090b0a 100%)',
+          'radial-gradient(ellipse 75% 80% at 22% 48%, rgba(36, 48, 35, 0.55) 0%, rgba(12, 15, 13, 0.97) 58%, #080a09 100%)',
       }}
     >
-      {/* Subtle tactical blueprint grid & atmospheric spotlight */}
+      {/* Animated Topographic / Contour Flow-Field Background */}
+      <TopographicCanvas />
+
+      {/* Subtle edge vignette to keep foreground crisp */}
       <div
-        className="absolute inset-0 pointer-events-none opacity-[0.07]"
+        className="absolute inset-0 pointer-events-none"
         style={{
-          backgroundImage:
-            'linear-gradient(rgba(198,214,122,0.4) 1px, transparent 1px), linear-gradient(90deg, rgba(198,214,122,0.4) 1px, transparent 1px)',
-          backgroundSize: '48px 48px',
-        }}
-      />
-      <div
-        className="absolute -right-24 top-1/2 -translate-y-1/2 w-[560px] h-[560px] rounded-full pointer-events-none opacity-[0.14]"
-        style={{
-          background: 'radial-gradient(circle, rgba(163,201,119,0.55) 0%, transparent 68%)',
+          background: 'radial-gradient(circle at 50% 50%, transparent 45%, rgba(6, 8, 7, 0.72) 100%)',
         }}
       />
 
       {/* Top minimal status strip */}
-      <div className="relative z-10 h-12 px-6 md:px-10 border-b border-white/10 bg-[#0d100e]/80 flex items-center justify-between">
+      <div className="relative z-10 h-12 px-6 md:px-10 border-b border-white/10 bg-[#0d100e]/85 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <span className="text-[12px] font-stencil tracking-[0.28em] text-[#e8eae6]">RAVEN-X</span>
-          <span className="mw4-badge px-1.5 py-0.5 text-[8px] leading-none">MW4 // OPS</span>
+          <span className="mw4-badge px-1.5 py-0.5 text-[8px] leading-none">OPS</span>
           <span className="hidden sm:inline text-[9px] font-mono tracking-[0.22em] text-white/35 uppercase">
             GLOBAL INTELLIGENCE COMMAND
           </span>
@@ -86,17 +164,17 @@ const IntroScreen = ({ onEnter }) => {
             {ready ? 'UPLINK ESTABLISHED' : `BOOT ${progress}%`}
           </span>
           <span className="hidden md:inline text-white/25">|</span>
-          <span className="hidden md:inline text-white/40">CLEARANCE: TOP SECRET</span>
+          <span className="hidden md:inline text-white/45">{utcNow}</span>
         </div>
       </div>
 
-      {/* Main MW4 Lobby Grid: Left Vertical Command Column + Right Tactical Dossier */}
+      {/* Main Two-Column Lobby: Left Command Column + Right Live Telemetry Card */}
       <div className="relative z-10 h-[calc(100%-3rem)] max-w-6xl mx-auto px-6 md:px-10 py-6 md:py-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-        {/* ═══ LEFT COLUMN: MW4 LOBBY MENU (Screenshot 1 & 2 Style) ═══ */}
+        {/* ═══ LEFT COLUMN: OPERATOR CARD + ENTER SYSTEM + SUBSYSTEM LIST ═══ */}
         <div className="lg:col-span-5 flex flex-col justify-center">
-          {/* Operator Emblem Card (Screenshot 1 Top-Left) */}
+          {/* Operator Emblem Card */}
           <div className="flex items-center gap-3.5 mb-7 pb-5 border-b border-white/10">
-            <div className="relative w-12 h-12 rounded-full border border-[#c6d67a]/45 bg-[#171d18] flex items-center justify-center shrink-0">
+            <div className="relative w-12 h-12 rounded-full border border-[#c6d67a]/45 bg-[#151b16] flex items-center justify-center shrink-0">
               <div
                 className="w-6 h-6 bg-[#d8ea96]"
                 style={{
@@ -120,13 +198,13 @@ const IntroScreen = ({ onEnter }) => {
                   WATCHER PROGRAM
                 </span>
               </div>
-              <div className="text-[9px] font-mono text-white/35 tracking-[0.22em] uppercase mt-1 truncate">
+              <div className="text-[9px] font-mono text-white/40 tracking-[0.22em] uppercase mt-1 truncate">
                 PROFILE // GLOBAL OSINT OPERATOR
               </div>
             </div>
           </div>
 
-          {/* Signature MW4 "» ENTER SYSTEM" Hero Button (Screenshot 1 "» PLAY") */}
+          {/* Signature Hero Action Button */}
           <button
             onClick={handleEnter}
             onMouseEnter={() => { if (ready) audio.playHover(); }}
@@ -148,7 +226,7 @@ const IntroScreen = ({ onEnter }) => {
                 <div className="text-[22px] md:text-[26px] font-bold tracking-[0.16em] uppercase leading-none">
                   {ready ? 'ENTER SYSTEM' : 'INITIALIZING'}
                 </div>
-                <div className="text-[9px] font-mono tracking-[0.24em] uppercase mt-1.5 opacity-65">
+                <div className="text-[9px] font-mono tracking-[0.24em] uppercase mt-1.5 opacity-70">
                   {ready ? 'DEPLOY TACTICAL COMMAND GRID' : `SYNCING TELEMETRY // ${progress}%`}
                 </div>
               </div>
@@ -160,7 +238,7 @@ const IntroScreen = ({ onEnter }) => {
             )}
           </button>
 
-          {/* Vertical Subsystem List (Screenshot 1 & 2 Vertical List Navigation) */}
+          {/* Vertical Subsystem Navigation List */}
           <div className="space-y-1.5">
             {SUBSYSTEMS.map((sys, idx) => {
               const isLoaded = step > idx;
@@ -201,13 +279,13 @@ const IntroScreen = ({ onEnter }) => {
           </div>
         </div>
 
-        {/* ═══ RIGHT COLUMN: MW4 ARMORY / TELEMETRY PREVIEW CARD (Screenshot 2 & 3 Style) ═══ */}
-        <div className="hidden lg:flex lg:col-span-7 flex-col bg-[#121513]/90 border border-white/10 p-6 relative overflow-hidden">
+        {/* ═══ RIGHT COLUMN: REAL LIVE TELEMETRY & SUBSYSTEM DOSSIER ═══ */}
+        <div className="hidden lg:flex lg:col-span-7 flex-col bg-[#111512]/88 border border-white/10 p-6 relative overflow-hidden">
           <div className="flex items-center justify-between pb-4 mb-5 border-b border-white/10">
             <div className="flex items-center gap-2.5">
               <Crosshair size={15} className="text-[#c6d67a]" />
               <span className="text-[11px] font-bold tracking-[0.24em] uppercase text-white/75">
-                SUBSYSTEM TELEMETRY // {activeSys.id}
+                SUBSYSTEM BRIEF // {activeSys.id}
               </span>
             </div>
             <span className="text-[9px] font-mono text-[#c6d67a] tracking-widest uppercase">
@@ -224,34 +302,41 @@ const IntroScreen = ({ onEnter }) => {
             </div>
           </div>
 
-          {/* MW4 Sage-Green Progress Bars (Screenshot 3 Volume/Level Bars) */}
-          <div className="space-y-3.5 mb-6">
-            {[
-              { label: 'SIGNAL INTEGRITY', val: step >= 2 ? 98 : progress },
-              { label: 'DATA PIPELINE SYNC', val: step >= 3 ? 100 : Math.min(progress, 65) },
-              { label: 'VOICE COMMS LATENCY', val: step >= 5 ? 94 : Math.min(progress, 40) },
-            ].map((metric) => (
-              <div key={metric.label}>
-                <div className="flex justify-between items-center text-[9px] font-mono tracking-[0.2em] uppercase mb-1.5">
-                  <span className="text-white/55">{metric.label}</span>
-                  <span className="text-[#c6d67a] font-bold">{metric.val}%</span>
+          {/* Real Factual Subsystem Spec Grid (No fake percentage bars) */}
+          <div className="grid grid-cols-2 gap-2.5 mb-6">
+            {activeSys.specs.map((item) => (
+              <div
+                key={item.k}
+                className="bg-[#0c0f0d]/85 border border-white/8 px-3.5 py-3"
+              >
+                <div className="text-[8px] font-mono tracking-[0.22em] uppercase text-white/35 mb-1">
+                  {item.k}
                 </div>
-                <div className="w-full h-2 bg-[#1c211d] border border-white/8 overflow-hidden">
-                  <div
-                    className="h-full bg-[#7fa872] transition-all duration-300"
-                    style={{ width: `${metric.val}%` }}
-                  />
+                <div className="text-[10px] font-mono font-bold tracking-wider uppercase text-[#e8eae6]/90">
+                  {item.v}
                 </div>
               </div>
             ))}
           </div>
 
+          {/* Real Live Node Health Strip */}
+          <div className="flex items-center justify-between bg-[#0c0f0d]/85 border border-white/8 px-3.5 py-2.5 mb-5 font-mono text-[9px] tracking-[0.18em] uppercase">
+            <span className="flex items-center gap-2 text-white/55">
+              <Wifi size={12} className={backendProbe.status === 'ONLINE' ? 'text-[#7fa872]' : 'text-[#e0c243]'} />
+              API NODE: <span className="text-[#c6d67a] font-bold">{backendProbe.status}</span>
+              {backendProbe.latencyMs !== null && (
+                <span className="text-white/40">({backendProbe.latencyMs} MS)</span>
+              )}
+            </span>
+            <span className="flex items-center gap-1.5 text-white/45">
+              <Clock size={11} className="text-white/35" />
+              {utcNow.slice(11)}
+            </span>
+          </div>
+
           {/* Bottom Classification Footer */}
           <div className="mt-auto pt-4 border-t border-white/10 flex items-center justify-between text-[9px] font-mono tracking-[0.18em] uppercase">
-            <span className="flex items-center gap-2 text-white/45">
-              <Activity size={12} className="text-[#7fa872]" />
-              ALL SENSORS NOMINAL
-            </span>
+            <span className="text-white/45">CLEARANCE: EYES ONLY</span>
             <span className="text-[#f07167]/80">18 U.S.C. § 1030 // NOFORN</span>
           </div>
         </div>
