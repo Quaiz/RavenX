@@ -46,7 +46,7 @@ const IntroScreen = ({ onEnter }) => {
   const handleEnter = () => {
     if (!ready) return;
     audio.playInitialize();
-    audio.playVoiceClip('comms_online', { cooldownMs: 5000 });
+    audio.playVoiceClip('welcome_auth', { cooldownMs: 5000 });
     onEnter();
   };
 

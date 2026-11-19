@@ -23,7 +23,7 @@ class TacticalAudioEngine {
       this.preload('/sounds/generic_click.mp3', 'generic_click');
       // Pre-rendered Watcher Handler voice clips
       [
-        'comms_online', 'alert_critical', 'alert_seismic',
+        'welcome_auth', 'comms_online', 'alert_critical', 'alert_seismic',
         'airspace_scan', 'maritime_alert', 'target_locked',
         'briefing_ready', 'sector_focused', 'comms_muted'
       ].forEach(id => this.preload(`/sounds/voice/${id}.wav`, `voice_${id}`));
