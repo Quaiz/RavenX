@@ -341,25 +341,55 @@ class TacticalAudioEngine {
       .replace(/[▸⚠]/g, '')
       .replace(/\s+/g, ' ')
       .trim()
-      .slice(0, 800);
+      .slice(0, 8000);
     if (!clean) return [];
 
     const rawParts = clean.match(/[^.!?]+[.!?]+(?:\s|$)|[^.!?]+$/g) || [clean];
     const chunks = [];
     let cur = '';
+    const pushPiece = (piece) => {
+      if (piece.length <= 450) {
+        chunks.push(piece);
+        return;
+      }
+      // Split long run-on sentences at word boundaries so every chunk stays <= 450 chars
+      const words = piece.split(/\s+/);
+      let buf = '';
+      for (const w of words) {
+        if (!buf) {
+          buf = w;
+        } else if (buf.length + 1 + w.length <= 450) {
+          buf = `${buf} ${w}`;
+        } else {
+          chunks.push(buf);
+          buf = w;
+        }
+      }
+      if (buf) chunks.push(buf);
+    };
+
     for (const part of rawParts) {
       const p = part.trim();
       if (!p) continue;
       if (!cur) {
-        cur = p;
+        if (p.length > 450) {
+          pushPiece(p);
+        } else {
+          cur = p;
+        }
       } else if (cur.length + 1 + p.length <= 450) {
         cur = `${cur} ${p}`;
       } else {
-        chunks.push(cur);
-        cur = p;
+        pushPiece(cur);
+        if (p.length > 450) {
+          pushPiece(p);
+          cur = '';
+        } else {
+          cur = p;
+        }
       }
     }
-    if (cur) chunks.push(cur);
+    if (cur) pushPiece(cur);
     return chunks;
   }
 
