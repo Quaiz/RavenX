@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import useStore, { MODULE_CATEGORIES } from './store';
 import { audio } from './utils/audioEngine';
-import { Shield, Radar, Moon, Globe, Database, Settings, Radio, Activity, Clock, BarChart3, Video, Grid, X, Minus, Square, Map, User, Bot, Bell, AlertTriangle, Info, Tv, ChevronRight, Network, LineChart, Volume2, VolumeX, LogOut, Terminal } from 'lucide-react';
+import { Shield, Radar, Moon, Globe, Database, Settings, Radio, Activity, Clock, BarChart3, Video, Grid, X, Minus, Square, Map, User, Bot, Bell, AlertTriangle, Info, Tv, ChevronRight, ChevronsRight, Network, LineChart, Volume2, VolumeX, LogOut, Terminal } from 'lucide-react';
 import { Rnd } from 'react-rnd';
+import TopographicCanvas from './components/TopographicCanvas';
 import GothamGlobe from './components/GothamGlobe';
 import { AtmosphericIntelModule } from './components/DataFeedModules';
 import CountryIntel from './components/CountryIntel';
@@ -946,95 +947,142 @@ const Layout = ({ user, showGreeting, onEnterDashboard, onLogout, onUsernameChan
  </div>
  )}
 
- {/* Greeting overlay / MW4 (2026) Command Staging Intro */}
+ {/* Greeting overlay / Open-Stage Topographic Command Deploy (Synced with IntroScreen) */}
  {showGreeting && currentUser && (
  <div
- className="fixed inset-0 z-[99995] flex items-center justify-center font-military overflow-y-auto overflow-x-hidden py-8 px-4"
- style={{
- background: 'radial-gradient(ellipse 70% 70% at 30% 45%, #19201a 0%, #0b0d0c 72%)',
- }}
+ className="fixed inset-0 z-[99995] overflow-hidden select-none font-military text-[#e8eae6]"
+ style={{ background: '#070a08' }}
  >
- <div className="relative w-full max-w-[760px] bg-[#121513] border border-white/10 p-6 md:p-9 shadow-2xl my-auto">
- {/* Minimal corner ticks */}
- <div className="absolute top-0 left-0 w-4 h-4 border-t border-l border-[#c6d67a]/60" />
- <div className="absolute top-0 right-0 w-4 h-4 border-t border-r border-[#c6d67a]/60" />
- <div className="absolute bottom-0 left-0 w-4 h-4 border-b border-l border-[#c6d67a]/60" />
- <div className="absolute bottom-0 right-0 w-4 h-4 border-b border-r border-[#c6d67a]/60" />
+ {/* Animated Topographic / Contour Flow-Field */}
+ <TopographicCanvas speed={0.14} />
 
- {/* Operator Career Card (MW4 Top-Left Style) */}
- <div className="flex flex-wrap items-center justify-between gap-4 pb-6 mb-6 border-b border-white/10">
- <div className="flex items-center gap-4">
- <div className="w-12 h-12 rounded-full border border-[#c6d67a]/40 bg-[#1a201b] flex items-center justify-center shrink-0">
- <RavenLogo size={22} className="text-[#c6d67a]" />
- </div>
- <div>
- <div className="flex items-center gap-2">
- <span className="text-[24px] md:text-[30px] font-stencil tracking-[0.18em] uppercase text-[#e8eae6] leading-none">
- RAVEN-X
- </span>
+ {/* Directional vignette keeping left column crisp while contours shine on the right */}
+ <div
+ className="absolute inset-0 pointer-events-none"
+ style={{
+ background:
+ 'linear-gradient(90deg, rgba(7,10,8,0.88) 0%, rgba(7,10,8,0.52) 42%, rgba(7,10,8,0.18) 100%)',
+ }}
+ />
+
+ {/* Top minimal status strip */}
+ <div className="relative z-10 h-12 px-6 md:px-10 border-b border-white/10 bg-[#0b0e0c]/75 flex items-center justify-between">
+ <div className="flex items-center gap-3">
+ <span className="text-[12px] font-stencil tracking-[0.28em] text-[#e8eae6]">RAVEN-X</span>
  <span className="mw4-badge px-1.5 py-0.5 text-[8px] leading-none">OPS</span>
+ <span className="hidden sm:inline text-[9px] font-mono tracking-[0.22em] text-white/35 uppercase">
+ OPERATOR STAGING // WORKSPACE READY
+ </span>
  </div>
- <div className="text-[10px] font-mono tracking-[0.2em] uppercase text-white/40 mt-1.5">
- OPERATOR: <span className="text-[#c6d67a] font-bold">{currentUser?.username || 'OPERATOR'}</span> // CLEARANCE: EYES ONLY
- </div>
- </div>
- </div>
- <div className="flex items-center gap-2 px-2.5 py-1 bg-[#181d19] border border-white/10 font-mono text-[9px] tracking-widest uppercase">
+ <div className="flex items-center gap-3 font-mono text-[9px] tracking-[0.2em] uppercase">
+ <span className="flex items-center gap-1.5 text-[#c6d67a]">
  <span className={`w-1.5 h-1.5 rounded-full ${bootReady ? 'bg-[#7fa872]' : 'bg-[#e0c243]'}`} />
- <span className={bootReady ? 'text-[#c6d67a]' : 'text-[#e0c243]'}>
  {bootReady ? 'SYSTEMS READY' : 'INITIALIZING'}
  </span>
  </div>
  </div>
 
- {/* MW4 Vertical Staging Checklist (01..05) */}
- <div className="space-y-1.5 mb-7 font-mono text-[11px] uppercase tracking-wider">
- {[
- { num: '01', label: 'CORE COMMAND KERNEL', ready: bootStep >= 1, status: 'ONLINE' },
- { num: '02', label: 'MIL-SPEC ENCRYPTION', ready: bootStep >= 2, status: 'VERIFIED' },
- { num: '03', label: 'SATELLITE & ADS-B UPLINK', ready: bootStep >= 3, status: 'LINKED' },
- { num: '04', label: 'GLOBAL THREAT TELEMETRY', ready: bootStep >= 4, status: 'SYNCED' },
- { num: '05', label: 'WATCHER-1 VOICE COMMS', ready: bootStep >= 5, status: bootReady ? 'ACTIVE' : 'AUTH...' },
- ].map((item) => (
- <div
- key={item.num}
- className={`flex items-center justify-between px-3.5 py-2 transition-opacity duration-150 ${
- item.ready ? 'bg-white/[0.03] border border-white/8 opacity-100' : 'border border-transparent opacity-25'
+ {/* Open-Stage Left Command Column */}
+ <div className="relative z-10 h-[calc(100%-3rem)] max-w-6xl mx-auto px-6 md:px-12 py-8 flex flex-col justify-center">
+ <div className="w-full max-w-[440px]">
+ {/* Operator Emblem Card */}
+ <div className="flex items-center gap-3.5 mb-8 pb-5 border-b border-white/10">
+ <div className="relative w-12 h-12 rounded-full border border-[#c6d67a]/45 bg-[#131814] flex items-center justify-center shrink-0">
+ <RavenLogo size={22} className="text-[#d8ea96]" />
+ <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-[#7fa872] border-2 border-[#0b0e0c]" />
+ </div>
+ <div className="min-w-0">
+ <div className="flex items-center gap-2">
+ <span className="text-[14px] font-bold text-[#e8eae6] tracking-wider uppercase truncate">
+ {currentUser?.username || 'OPERATOR'}
+ </span>
+ <span className="px-2 py-0.5 bg-[#171e18] border border-[#c6d67a]/30 text-[9px] font-mono text-[#c6d67a] tracking-widest uppercase shrink-0">
+ VERIFIED
+ </span>
+ </div>
+ <div className="text-[9px] font-mono text-white/40 tracking-[0.22em] uppercase mt-1 truncate">
+ WATCHER PROGRAM // CLEARANCE: EYES ONLY
+ </div>
+ </div>
+ </div>
+
+ {/* Signature Hero Deploy Button (Exact Match to IntroScreen) */}
+ <button
+ onClick={bootReady ? () => { audio.playInitialize(); audio.playVoiceClip('comms_online', { cooldownMs: 5000 }); onEnterDashboard(); } : undefined}
+ onMouseEnter={() => { setBootHovered(true); if (bootReady) audio.playHover(); }}
+ onMouseLeave={() => setBootHovered(false)}
+ disabled={!bootReady}
+ className={`w-full text-left px-5 py-4 mb-6 flex items-center justify-between group ${
+ bootReady
+ ? 'mw4-hero-btn cursor-pointer'
+ : 'bg-white/[0.03] border border-white/10 text-white/30 cursor-not-allowed'
  }`}
  >
  <div className="flex items-center gap-3">
- <span className="text-[#c6d67a]/70 font-bold">{item.num}</span>
- <span className="text-[#e8eae6]/85">{item.label}</span>
+ <ChevronsRight
+ size={26}
+ className={`shrink-0 transition-transform duration-150 ${
+ bootReady ? 'text-[#e4f4a4] group-hover:translate-x-1' : 'text-white/20'
+ }`}
+ />
+ <div>
+ <div className="text-[20px] md:text-[24px] font-bold tracking-[0.16em] uppercase leading-none">
+ {bootReady ? (
+ <ScrambleText text="DEPLOY WORKSPACE" trigger={bootHovered} duration={240} />
+ ) : (
+ <span>INITIALIZING</span>
+ )}
  </div>
- <span className={`text-[9px] px-2 py-0.5 tracking-widest font-bold ${
- item.ready ? 'bg-[#7fa872]/20 text-[#c6d67a] border border-[#7fa872]/30' : 'text-white/30'
- }`}>
- {item.ready ? item.status : 'STANDBY'}
+ <div className="text-[9px] font-mono tracking-[0.24em] uppercase mt-1.5 opacity-70">
+ {bootReady ? 'LAUNCH GLOBAL OPERATIONS GRID' : 'VERIFYING OPERATOR CLEARANCE'}
+ </div>
+ </div>
+ </div>
+ {bootReady && (
+ <span className="text-[9px] font-mono tracking-widest uppercase px-2 py-0.5 bg-[#e8eae6] text-[#111413] font-bold shrink-0">
+ READY
+ </span>
+ )}
+ </button>
+
+ {/* Clean Operational Checklist Rows */}
+ <div className="space-y-1.5 font-mono text-[11px] uppercase tracking-wider">
+ {[
+ { num: '01', label: 'COMMAND KERNEL', ready: bootStep >= 1, status: 'ONLINE' },
+ { num: '02', label: 'SECURE CHANNEL', ready: bootStep >= 2, status: 'VERIFIED' },
+ { num: '03', label: 'SATELLITE UPLINK', ready: bootStep >= 3, status: 'LINKED' },
+ { num: '04', label: 'GLOBAL TELEMETRY', ready: bootStep >= 4, status: 'SYNCED' },
+ { num: '05', label: 'WATCHER COMMS', ready: bootStep >= 5, status: bootReady ? 'ACTIVE' : 'AUTH' },
+ ].map((item) => (
+ <div
+ key={item.num}
+ className={`flex items-center justify-between px-3.5 py-2.5 mw4-row transition-opacity duration-150 ${
+ item.ready ? 'opacity-100' : 'opacity-25'
+ }`}
+ >
+ <div className="flex items-center gap-3">
+ <span className="text-[10px] font-bold opacity-55">{item.num}</span>
+ <span className="text-[11px] font-bold tracking-[0.16em]">{item.label}</span>
+ </div>
+ <span
+ className={`text-[8px] px-1.5 py-0.5 tracking-widest font-bold ${
+ item.ready
+ ? 'bg-[#7fa872]/15 text-[#c6d67a] border border-[#7fa872]/30'
+ : 'text-white/25'
+ }`}
+ >
+ {item.ready ? item.status : 'WAIT'}
  </span>
  </div>
  ))}
  </div>
+ </div>
+ </div>
 
- {/* MW4 Signature "» DEPLOY" Active Row Button */}
- <button
- onClick={bootReady ? () => { audio.playInitialize(); audio.playVoiceClip('comms_online', { cooldownMs: 5000 }); onEnterDashboard(); } : undefined}
- onMouseEnter={() => { setBootHovered(true); if(bootReady) audio.playHover(); }}
- onMouseLeave={() => setBootHovered(false)}
- disabled={!bootReady}
- className={`w-full py-4 px-6 text-[15px] md:text-[17px] font-bold tracking-[0.28em] uppercase transition-all flex items-center justify-between ${
- bootReady ? 'mw4-row-active cursor-pointer hover:brightness-110' : 'bg-white/[0.02] border border-white/10 text-white/30 cursor-not-allowed'
- }`}
- >
- <span className="flex items-center gap-3">
- <span className="text-[20px] leading-none">»</span>
- {bootReady ? (
- <ScrambleText text="DEPLOY WORKSPACE" trigger={bootHovered} duration={260} />
- ) : (
- <span>SECURE BOOT IN PROGRESS...</span>
- )}
- </span>
- <ChevronRight size={18} className={bootReady ? 'text-[#c6d67a]' : 'text-white/20'} />
- </button>
+ {/* Bottom-Right Classification Stamp */}
+ <div className="absolute bottom-5 right-6 md:right-10 z-10 text-right font-mono text-[9px] tracking-[0.22em] uppercase pointer-events-none">
+ <div className="text-white/30">RAVEN-X // GLOBAL OPERATIONS</div>
+ <div className="text-[#f07167]/65 mt-0.5">18 U.S.C. § 1030 // NOFORN</div>
  </div>
  </div>
  )}
