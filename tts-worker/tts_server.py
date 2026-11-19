@@ -119,8 +119,8 @@ def synthesize(req: SynthesizeRequest, x_worker_secret: str = Header(default="")
             for idx, chunk in enumerate(chunks):
                 wav = tts.generate(
                     chunk,
-                    temperature=0.75,
-                    repetition_penalty=1.2,
+                    temperature=0.65,
+                    repetition_penalty=1.3,
                     norm_loudness=False,
                 )
                 seg = wav.squeeze().cpu().numpy().astype(np.float32)

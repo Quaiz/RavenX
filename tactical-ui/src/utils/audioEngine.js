@@ -11,6 +11,8 @@ class TacticalAudioEngine {
     this._voiceQueue = [];
     this._isSpeaking = false;
     this._activeVoiceSource = null;
+    this._speakSessionId = 0;
+    this._activeAbortController = null;
     this._clipCooldowns = {};
     
     if (typeof window !== 'undefined') {
@@ -200,7 +202,12 @@ class TacticalAudioEngine {
   }
 
   stopSpeaking() {
+    this._speakSessionId += 1;
     this._voiceQueue = [];
+    if (this._activeAbortController) {
+      try { this._activeAbortController.abort(); } catch (e) {}
+      this._activeAbortController = null;
+    }
     if (this._activeVoiceSource) {
       try { this._activeVoiceSource.stop(); } catch (e) {}
       this._activeVoiceSource = null;
@@ -324,6 +331,52 @@ class TacticalAudioEngine {
     this._processVoiceQueue();
   }
 
+  _splitSentencesForTTS(rawText) {
+    const clean = (rawText || '')
+      .replace(/\[INCOMING TRANSMISSION[^\]]*\]/gi, '')
+      .replace(/\*{1,3}([^*]+)\*{1,3}/g, '$1')
+      .replace(/`([^`]+)`/g, '$1')
+      .replace(/^#+\s*/gm, '')
+      .replace(/\/\//g, ',')
+      .replace(/[▸⚠]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, 800);
+    if (!clean) return [];
+
+    const rawParts = clean.match(/[^.!?]+[.!?]+(?:\s|$)|[^.!?]+$/g) || [clean];
+    const chunks = [];
+    let cur = '';
+    for (const part of rawParts) {
+      const p = part.trim();
+      if (!p) continue;
+      if (!cur) {
+        cur = p;
+      } else if (cur.length + 1 + p.length <= 160) {
+        cur = `${cur} ${p}`;
+      } else {
+        chunks.push(cur);
+        cur = p;
+      }
+    }
+    if (cur) chunks.push(cur);
+    return chunks;
+  }
+
+  async _fetchTtsAudio(text, headers, signal) {
+    const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/ai/tts`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ text }),
+      signal,
+    });
+    if (!res.ok) throw new Error(`TTS HTTP ${res.status}`);
+    const arrBuf = await res.arrayBuffer();
+    const ctx = this._ensureAudioContext();
+    if (!ctx) throw new Error('No AudioContext');
+    return await ctx.decodeAudioData(arrBuf);
+  }
+
   async speakText(text, { token, interrupt = true, onDone } = {}) {
     if (!this.enabled || !this.voiceEnabled || !text?.trim()) {
       if (onDone) onDone();
@@ -331,34 +384,53 @@ class TacticalAudioEngine {
     }
     if (interrupt) this.stopSpeaking();
 
+    const chunks = this._splitSentencesForTTS(text);
+    if (chunks.length === 0) {
+      if (onDone) onDone();
+      return;
+    }
+
+    const sessionId = this._speakSessionId;
+
     this._voiceQueue.push(async () => {
       this.playRadioSquelch();
-      try {
-        const sessionToken = token || JSON.parse(localStorage.getItem('ravenx_session') || '{}')?.token;
-        const headers = { 'Content-Type': 'application/json' };
-        if (sessionToken) headers['Authorization'] = `Bearer ${sessionToken}`;
+      const sessionToken = token || JSON.parse(localStorage.getItem('ravenx_session') || '{}')?.token;
+      const headers = { 'Content-Type': 'application/json' };
+      if (sessionToken) headers['Authorization'] = `Bearer ${sessionToken}`;
 
-        const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/ai/tts`, {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({ text }),
-        });
+      const controller = new AbortController();
+      this._activeAbortController = controller;
 
-        if (res.ok) {
-          const arrBuf = await res.arrayBuffer();
-          const ctx = this._ensureAudioContext();
-          if (ctx) {
-            const decoded = await ctx.decodeAudioData(arrBuf);
-            await this._playBufferWithRadioFx(decoded, 1.0);
-            if (onDone) onDone();
-            return;
-          }
+      let nextPromise = this._fetchTtsAudio(chunks[0], headers, controller.signal);
+
+      for (let i = 0; i < chunks.length; i++) {
+        if (sessionId !== this._speakSessionId || !this.enabled || !this.voiceEnabled) break;
+
+        let decoded = null;
+        try {
+          decoded = await nextPromise;
+        } catch (e) {
+          if (e?.name === 'AbortError' || sessionId !== this._speakSessionId) break;
+          console.warn('[TTS] Remote GPU worker unreachable for chunk, using browser voice fallback');
         }
-      } catch (e) {
-        console.warn('[TTS] Remote GPU worker offline, using browser voice fallback');
+
+        // Prefetch next sentence while current sentence plays
+        if (i + 1 < chunks.length && sessionId === this._speakSessionId) {
+          nextPromise = this._fetchTtsAudio(chunks[i + 1], headers, controller.signal);
+        }
+
+        if (sessionId !== this._speakSessionId || !this.enabled || !this.voiceEnabled) break;
+
+        if (decoded) {
+          await this._playBufferWithRadioFx(decoded, 1.0);
+        } else {
+          await this._speakBrowserFallback(chunks[i]);
+        }
       }
 
-      await this._speakBrowserFallback(text);
+      if (this._activeAbortController === controller) {
+        this._activeAbortController = null;
+      }
       if (onDone) onDone();
     });
     this._processVoiceQueue();
