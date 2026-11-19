@@ -363,18 +363,33 @@ class TacticalAudioEngine {
     return chunks;
   }
 
-  async _fetchTtsAudio(text, headers, signal) {
-    const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/ai/tts`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ text }),
-      signal,
-    });
-    if (!res.ok) throw new Error(`TTS HTTP ${res.status}`);
-    const arrBuf = await res.arrayBuffer();
-    const ctx = this._ensureAudioContext();
-    if (!ctx) throw new Error('No AudioContext');
-    return await ctx.decodeAudioData(arrBuf);
+  async _fetchTtsAudio(text, headers, parentSignal) {
+    const timeoutController = new AbortController();
+    const timer = setTimeout(() => timeoutController.abort(), 30000);
+    const onParentAbort = () => timeoutController.abort();
+    if (parentSignal) {
+      if (parentSignal.aborted) {
+        clearTimeout(timer);
+        throw new DOMException('Aborted', 'AbortError');
+      }
+      parentSignal.addEventListener('abort', onParentAbort, { once: true });
+    }
+    try {
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/ai/tts`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ text }),
+        signal: timeoutController.signal,
+      });
+      if (!res.ok) throw new Error(`TTS HTTP ${res.status}`);
+      const arrBuf = await res.arrayBuffer();
+      const ctx = this._ensureAudioContext();
+      if (!ctx) throw new Error('No AudioContext');
+      return await ctx.decodeAudioData(arrBuf);
+    } finally {
+      clearTimeout(timer);
+      if (parentSignal) parentSignal.removeEventListener('abort', onParentAbort);
+    }
   }
 
   async speakText(text, { token, interrupt = true, onDone } = {}) {
@@ -401,34 +416,26 @@ class TacticalAudioEngine {
       const controller = new AbortController();
       this._activeAbortController = controller;
 
-      // Kick off chunk 0 and chunk 1 immediately so chunk 1 is ready before chunk 0 finishes
-      const inflight = new Map();
-      const startFetch = (idx) => {
-        if (idx < chunks.length && !inflight.has(idx) && sessionId === this._speakSessionId) {
-          inflight.set(idx, this._fetchTtsAudio(chunks[idx], headers, controller.signal));
-        }
-      };
-
-      startFetch(0);
-      startFetch(1);
+      // Fetch chunk 0 first (single GPU, avoid queue pile-up), then prefetch only 1 ahead while playing
+      let nextPromise = this._fetchTtsAudio(chunks[0], headers, controller.signal);
 
       for (let i = 0; i < chunks.length; i++) {
         if (sessionId !== this._speakSessionId || !this.enabled || !this.voiceEnabled) break;
 
-        startFetch(i + 1);
-        startFetch(i + 2);
-
         let decoded = null;
         try {
-          decoded = await inflight.get(i);
-          inflight.delete(i);
+          decoded = await nextPromise;
         } catch (e) {
-          inflight.delete(i);
-          if (e?.name === 'AbortError' || sessionId !== this._speakSessionId) break;
-          console.warn('[TTS] Remote GPU worker unreachable for chunk, using browser voice fallback');
+          if (sessionId !== this._speakSessionId) break;
+          console.warn('[TTS] Remote GPU worker slow/unreachable for chunk, using browser voice fallback');
         }
 
         if (sessionId !== this._speakSessionId || !this.enabled || !this.voiceEnabled) break;
+
+        // Start fetching ONLY the next chunk now that GPU is free and chunk i is about to play
+        if (i + 1 < chunks.length) {
+          nextPromise = this._fetchTtsAudio(chunks[i + 1], headers, controller.signal);
+        }
 
         if (decoded) {
           await this._playBufferWithRadioFx(decoded, 1.0);

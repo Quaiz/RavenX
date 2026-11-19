@@ -2,15 +2,15 @@
 RavenX Local GPU TTS Worker (F5-TTS on RTX 3050 4GB).
 Runs on 127.0.0.1:7860 and is exposed to RavenX VPS via Cloudflare Tunnel.
 """
+import asyncio
 import io
 import os
 import re
-import threading
 import numpy as np
 import soundfile as sf
 import torch
 from dotenv import load_dotenv
-from fastapi import FastAPI, Header, HTTPException
+from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.responses import Response
 from pydantic import BaseModel
 
@@ -28,7 +28,7 @@ REF_AUDIO = os.path.join(BASE_DIR, os.environ.get("TTS_REF_AUDIO", "reference/wa
 WORKER_SECRET = os.environ.get("TTS_WORKER_SECRET", "").strip()
 
 app = FastAPI(title="RavenX Watcher TTS Worker (Chatterbox-Turbo)")
-_tts_lock = threading.Lock()
+_tts_lock = asyncio.Lock()
 _model: ChatterboxTurboTTS | None = None
 _conds_prepared = False
 
@@ -103,7 +103,7 @@ def health():
 
 
 @app.post("/synthesize")
-def synthesize(req: SynthesizeRequest, x_worker_secret: str = Header(default="")):
+async def synthesize(req: SynthesizeRequest, request: Request, x_worker_secret: str = Header(default="")):
     if WORKER_SECRET and x_worker_secret != WORKER_SECRET:
         raise HTTPException(status_code=401, detail="Invalid worker secret")
 
@@ -119,21 +119,28 @@ def synthesize(req: SynthesizeRequest, x_worker_secret: str = Header(default="")
     audio_segments: list[np.ndarray] = []
     pause = np.zeros(int(tts.sr * 0.12), dtype=np.float32)
 
-    with _tts_lock:
+    def _gen_chunk(chunk_text: str) -> np.ndarray:
+        with torch.inference_mode():
+            wav = tts.generate(
+                chunk_text,
+                temperature=0.65,
+                repetition_penalty=1.3,
+                norm_loudness=False,
+            )
+            return wav.squeeze().cpu().numpy().astype(np.float32)
+
+    async with _tts_lock:
+        if await request.is_disconnected():
+            raise HTTPException(status_code=499, detail="Client disconnected")
         if not _conds_prepared:
             tts.prepare_conditionals(REF_AUDIO, norm_loudness=False)
-        with torch.inference_mode():
-            for idx, chunk in enumerate(chunks):
-                wav = tts.generate(
-                    chunk,
-                    temperature=0.65,
-                    repetition_penalty=1.3,
-                    norm_loudness=False,
-                )
-                seg = wav.squeeze().cpu().numpy().astype(np.float32)
-                audio_segments.append(seg)
-                if idx < len(chunks) - 1:
-                    audio_segments.append(pause)
+        for idx, chunk in enumerate(chunks):
+            if await request.is_disconnected():
+                raise HTTPException(status_code=499, detail="Client disconnected")
+            seg = await asyncio.to_thread(_gen_chunk, chunk)
+            audio_segments.append(seg)
+            if idx < len(chunks) - 1:
+                audio_segments.append(pause)
 
     full_wav = np.concatenate(audio_segments) if len(audio_segments) > 1 else audio_segments[0]
     peak = float(np.max(np.abs(full_wav)))
