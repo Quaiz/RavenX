@@ -2501,21 +2501,46 @@ def proxy_ai_chat():
 
 
 @app.route("/api/ai/tts", methods=["POST"])
-@limiter.limit("20 per minute")
+@limiter.limit("30 per minute")
 def proxy_ai_tts():
-    """Proxy text-to-speech synthesis to self-hosted GPU F5-TTS worker if online."""
+    """Proxy text-to-speech synthesis to Fish Audio (cloud cloned voice) or local GPU TTS worker."""
     user = get_user_from_token(request)
     if not user:
         return jsonify({"error": "UNAUTHORIZED ACCESS"}), 401
-
-    worker_url = (os.environ.get("TTS_WORKER_URL") or "").strip().rstrip("/")
-    if not worker_url:
-        return jsonify({"error": "TTS worker not configured", "fallback": "browser_tts"}), 503
 
     data = request.get_json() or {}
     text = (data.get("text") or "").strip()[:800]
     if not text:
         return jsonify({"error": "TEXT REQUIRED"}), 400
+
+    fish_key = (os.environ.get("FISH_API_KEY") or "").strip()
+    fish_voice = (os.environ.get("FISH_VOICE_ID") or "").strip()
+    if fish_key and fish_voice:
+        fish_model = (os.environ.get("FISH_MODEL") or "s2.1-pro-free").strip()
+        try:
+            resp = requests.post(
+                "https://api.fish.audio/v1/tts",
+                headers={
+                    "Authorization": f"Bearer {fish_key}",
+                    "Content-Type": "application/json",
+                    "model": fish_model,
+                },
+                json={
+                    "text": text,
+                    "reference_id": fish_voice,
+                    "format": "mp3",
+                },
+                timeout=30,
+            )
+            if resp.status_code == 200 and resp.content:
+                return Response(resp.content, mimetype="audio/mpeg")
+            logger.warning("Fish Audio TTS returned %s: %s", resp.status_code, resp.text[:200])
+        except Exception as e:
+            logger.warning("Fish Audio TTS request failed: %s", e)
+
+    worker_url = (os.environ.get("TTS_WORKER_URL") or "").strip().rstrip("/")
+    if not worker_url:
+        return jsonify({"error": "TTS worker not configured", "fallback": "browser_tts"}), 503
 
     speed = data.get("speed", 1.05)
     secret = (os.environ.get("TTS_WORKER_SECRET") or "").strip()
