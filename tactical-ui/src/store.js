@@ -137,7 +137,10 @@ const useStore = create(persist((set, get) => ({
  
  // ── Notifications ──
  notificationsMuted: true,
- setNotificationsMuted: (muted) => set({ notificationsMuted: muted }),
+ setNotificationsMuted: (muted) => {
+ audio.setNotificationsMuted(muted);
+ set({ notificationsMuted: muted });
+ },
  notifications: [],
  addNotification: (text, type = 'INFO') => set(state => {
  if (!state.notificationsMuted) {
@@ -740,7 +743,12 @@ const useStore = create(persist((set, get) => ({
  vert_rate: s[11] || 0,
  squawk: s[13] || null,
  }));
- set(state => ({ feeds: { ...state.feeds, aircraft: mapped } }));
+ set(state => {
+ if (mapped.length === 0 && (state.feeds.aircraft || []).length > 0) {
+ return state; // Preserve last known aircraft on transient empty ADS-B response
+ }
+ return { feeds: { ...state.feeds, aircraft: mapped } };
+ });
 
  // Check Geofence breaches
  const { geofences, _notifiedBreaches, addNotification } = get();

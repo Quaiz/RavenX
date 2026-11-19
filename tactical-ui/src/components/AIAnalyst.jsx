@@ -69,7 +69,7 @@ const buildDashboardContext = (state) => {
  const highSev = feeds.gdelt.filter(e => e.severity === 'HIGH' || e.tag === 'HIGH');
  lines.push(`\nLIVE OSINT EVENTS: ${feeds.gdelt.length} total, ${highSev.length} HIGH SEVERITY`);
  lines.push('<untrusted_osint_data>');
- highSev.slice(0, 8).forEach(e => {
+ highSev.slice(0, 5).forEach(e => {
  lines.push(` - [${e.severity || e.tag}] ${e.title} (${e.source || e.domain || 'OSINT'})`);
  });
  lines.push('</untrusted_osint_data>');
@@ -254,9 +254,9 @@ const AIAnalyst = () => {
  const ctx = buildDashboardContext({ mapConfig, feeds, weatherData, activeCountry });
  const systemPrompt = buildSystemPrompt(ctx);
 
- // Build bounded chat history (sliding window of last 10 messages to control token cost)
+ // Build bounded chat history (sliding window of last 6 messages for low latency & token budget)
  const contents = [
- ...newMessages.slice(-10).map(m => ({
+ ...newMessages.slice(-6).map(m => ({
  role: m.role === 'user' ? 'user' : 'model',
  parts: [{ text: m.content }]
  }))
@@ -268,8 +268,8 @@ const AIAnalyst = () => {
  
  await streamAiResponse(contents, {
  config: {
- temperature: 0.6,
- maxOutputTokens: 450,
+ temperature: 0.55,
+ maxOutputTokens: 1024,
  token: JSON.parse(localStorage.getItem('ravenx_session') || '{}')?.token
  },
  systemInstruction: { parts: [{ text: systemPrompt }] }, 

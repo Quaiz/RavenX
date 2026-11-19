@@ -105,11 +105,27 @@ const LocalAirRadar = () => {
     setIsScanning(true);
     try {
       const radiusNm = Math.max(10, Math.min(RADAR_MAX_DIST_KM, 460) / 1.852);
-      const res = await fetch(`https://api.adsb.lol/v2/lat/${lat}/lon/${lon}/dist/${Math.round(radiusNm)}?cb=${Date.now()}`);
-      const data = await res.json();
+      const distInt = Math.round(radiusNm);
+      const urls = [
+        `https://api.adsb.lol/v2/lat/${lat}/lon/${lon}/dist/${distInt}?cb=${Date.now()}`,
+        `https://api.airplanes.live/v2/point/${lat}/${lon}/${distInt}`,
+      ];
+      let data = null;
+      for (const u of urls) {
+        try {
+          const res = await fetch(u);
+          if (res.ok) {
+            const json = await res.json();
+            if (json && Array.isArray(json.ac) && json.ac.length > 0) {
+              data = json;
+              break;
+            }
+          }
+        } catch (e) {}
+      }
       
       if (data && data.ac) {
-        const parsedFlights = data.ac.map(f => {
+        const parsedFlights = data.ac.filter(f => f.lat != null && f.lon != null).map(f => {
           const dist = getDistanceKM(lat, lon, f.lat, f.lon);
           const bearing = getBearing(lat, lon, f.lat, f.lon);
           return {
@@ -130,9 +146,11 @@ const LocalAirRadar = () => {
           };
         }).filter(f => f.dist <= RADAR_MAX_DIST_KM); 
         
-        setFlights(parsedFlights);
-        if (parsedFlights.length > 0 && Math.random() > 0.5) {
+        if (parsedFlights.length > 0) {
+          setFlights(parsedFlights);
+          if (Math.random() > 0.5) {
             audio.playTyping();
+          }
         }
       }
     } catch (err) {

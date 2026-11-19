@@ -2041,100 +2041,112 @@ def proxy_aircraft():
 
     try:
         states = []
+        source_used = "adsb.lol"
         headers = {'User-Agent': 'RavenX-Tactical/1.0'}
-        
-        # 1. Fetch Global Tactical & Military Aircraft (api.adsb.lol/v2/mil)
-        try:
-            r = _session.get('https://api.adsb.lol/v2/mil', headers=headers, timeout=6)
-            if r.status_code == 200:
-                raw_data = r.json()
-                for ac in raw_data.get('ac', []):
-                    v_lat = ac.get('lat')
-                    v_lon = ac.get('lon')
-                    if v_lat is None or v_lon is None:
-                        continue
-                    
-                    hex_id = str(ac.get('hex', ''))
-                    callsign = str(ac.get('flight') or ac.get('r') or hex_id).strip()
-                    reg = str(ac.get('r') or '').strip()
-                    origin = get_country_from_reg(reg)
-                    if origin == "UNKNOWN":
-                        origin = "MILITARY / VIP"
-                    
-                    alt_raw = ac.get('alt_baro')
-                    alt = float(alt_raw) * 0.3048 if isinstance(alt_raw, (int, float)) else 0
-                    gs_raw = ac.get('gs')
-                    vel = float(gs_raw) * 0.514444 if isinstance(gs_raw, (int, float)) else 0
-                    heading = float(ac.get('true_heading') or ac.get('track') or 0)
-                    vrate_raw = ac.get('baro_rate')
-                    vspeed = float(vrate_raw) * 0.00508 if isinstance(vrate_raw, (int, float)) else 0
-                    squawk = str(ac.get('squawk') or '')
-                    
-                    states.append([
-                        hex_id, callsign, origin, 0, 0, v_lon, v_lat, alt, False, vel, heading, vspeed, None, squawk, None, False, 0
-                    ])
-        except Exception as e:
-            print(f"[Aircraft] adsb.lol mil error: {e}")
 
-        # 2. If client coordinates are provided, fetch local aircraft within 250nm
+        def _parse_v2_ac(ac_list, default_mil=False, seen_hex=None):
+            out = []
+            for ac in ac_list or []:
+                hex_id = str(ac.get('hex', ''))
+                if seen_hex is not None and hex_id in seen_hex:
+                    continue
+                v_lat = ac.get('lat')
+                v_lon = ac.get('lon')
+                if v_lat is None or v_lon is None:
+                    continue
+                if seen_hex is not None:
+                    seen_hex.add(hex_id)
+                callsign = str(ac.get('flight') or ac.get('r') or hex_id).strip()
+                reg = str(ac.get('r') or '').strip()
+                origin = get_country_from_reg(reg)
+                if default_mil and origin == "UNKNOWN":
+                    origin = "MILITARY / VIP"
+                alt_raw = ac.get('alt_baro')
+                alt = float(alt_raw) * 0.3048 if isinstance(alt_raw, (int, float)) else 0
+                gs_raw = ac.get('gs')
+                vel = float(gs_raw) * 0.514444 if isinstance(gs_raw, (int, float)) else 0
+                heading = float(ac.get('true_heading') or ac.get('track') or 0)
+                vrate_raw = ac.get('baro_rate')
+                vspeed = float(vrate_raw) * 0.00508 if isinstance(vrate_raw, (int, float)) else 0
+                squawk = str(ac.get('squawk') or '')
+                out.append([
+                    hex_id, callsign, origin, 0, 0, v_lon, v_lat, alt, False, vel, heading, vspeed, None, squawk, None, False, 0
+                ])
+            return out
+
+        # 1. Fetch Global Tactical & Military Aircraft with multi-mirror fallback
+        mil_mirrors = [
+            ("adsb.lol", "https://api.adsb.lol/v2/mil"),
+            ("airplanes.live", "https://api.airplanes.live/v2/mil"),
+            ("adsb.fi", "https://opendata.adsb.fi/api/v2/mil"),
+        ]
+        seen_hex = set()
+        for src_name, mil_url in mil_mirrors:
+            try:
+                r = _session.get(mil_url, headers=headers, timeout=8)
+                if r.status_code == 200:
+                    parsed = _parse_v2_ac(r.json().get('ac', []), default_mil=True, seen_hex=seen_hex)
+                    if parsed:
+                        states.extend(parsed)
+                        source_used = src_name
+                        break
+            except Exception as e:
+                print(f"[Aircraft] {src_name} mil error: {e}")
+
+        # 2. If client coordinates are provided, fetch local aircraft within 250nm (multi-mirror)
         if lat and lon:
             try:
                 lat_f = round(float(lat), 3)
                 lon_f = round(float(lon), 3)
-                local_url = f'https://api.adsb.lol/v2/lat/{lat_f}/lon/{lon_f}/dist/250'
-                r_local = _session.get(local_url, headers=headers, timeout=5)
-                if r_local.status_code == 200:
-                    local_data = r_local.json()
-                    seen_hex = {s[0] for s in states}
-                    for ac in local_data.get('ac', []):
-                        hex_id = str(ac.get('hex', ''))
-                        if hex_id in seen_hex:
-                            continue
-                        v_lat = ac.get('lat')
-                        v_lon = ac.get('lon')
-                        if v_lat is None or v_lon is None:
-                            continue
-                        
-                        callsign = str(ac.get('flight') or ac.get('r') or hex_id).strip()
-                        reg = str(ac.get('r') or '').strip()
-                        origin = get_country_from_reg(reg)
-                        alt_raw = ac.get('alt_baro')
-                        alt = float(alt_raw) * 0.3048 if isinstance(alt_raw, (int, float)) else 0
-                        gs_raw = ac.get('gs')
-                        vel = float(gs_raw) * 0.514444 if isinstance(gs_raw, (int, float)) else 0
-                        heading = float(ac.get('true_heading') or ac.get('track') or 0)
-                        vrate_raw = ac.get('baro_rate')
-                        vspeed = float(vrate_raw) * 0.00508 if isinstance(vrate_raw, (int, float)) else 0
-                        squawk = str(ac.get('squawk') or '')
-                        
-                        states.append([
-                            hex_id, callsign, origin, 0, 0, v_lon, v_lat, alt, False, vel, heading, vspeed, None, squawk, None, False, 0
-                        ])
+                local_mirrors = [
+                    f"https://api.adsb.lol/v2/lat/{lat_f}/lon/{lon_f}/dist/250",
+                    f"https://api.airplanes.live/v2/point/{lat_f}/{lon_f}/250",
+                ]
+                for local_url in local_mirrors:
+                    try:
+                        r_local = _session.get(local_url, headers=headers, timeout=7)
+                        if r_local.status_code == 200:
+                            parsed_local = _parse_v2_ac(r_local.json().get('ac', []), default_mil=False, seen_hex=seen_hex)
+                            if parsed_local:
+                                states.extend(parsed_local)
+                                break
+                    except Exception as e:
+                        print(f"[Aircraft] local mirror error ({local_url}): {e}")
             except Exception as e:
-                print(f"[Aircraft] adsb.lol local error: {e}")
+                print(f"[Aircraft] local coords error: {e}")
 
-        # Fallback to OpenSky or FR24 if adsb.lol was empty
+        # 3. Fallback to OpenSky if all ADS-B v2 mirrors failed
         if not states:
             try:
-                r_os = _session.get('https://opensky-network.org/api/states/all', timeout=4)
+                r_os = _session.get('https://opensky-network.org/api/states/all', timeout=5)
                 if r_os.status_code == 200:
                     os_data = r_os.json()
                     valid = [s for s in os_data.get("states", []) if s[5] is not None and s[6] is not None]
                     states.extend(valid[:250])
+                    source_used = "opensky"
             except Exception:
                 pass
-            
-        if not states and cache_key in proxy_cache:
-            return jsonify(proxy_cache[cache_key]["data"])
-            
-        data = {"states": states, "source": "adsb.lol", "count": len(states)}
-        proxy_cache[cache_key] = {"time": now, "data": data}
+
+        # 4. Stale-while-error fallback: never wipe the map/radar with empty states if we have recent data
+        if not states:
+            for k in (cache_key, "aircraft_last_good"):
+                cached_entry = proxy_cache.get(k)
+                if cached_entry and cached_entry.get("data", {}).get("count", 0) > 0:
+                    stale_data = dict(cached_entry["data"])
+                    stale_data["stale"] = True
+                    return jsonify(stale_data)
+
+        data = {"states": states, "source": source_used, "count": len(states)}
+        if states:
+            proxy_cache[cache_key] = {"time": now, "data": data}
+            proxy_cache["aircraft_last_good"] = {"time": now, "data": data}
         return jsonify(data)
     except Exception as e:
         print(f"[Aircraft Proxy Error] {e}")
-        cached = proxy_cache.get(cache_key, {}).get("data")
-        if cached:
-            return jsonify(cached)
+        for k in (cache_key, "aircraft_last_good"):
+            cached = proxy_cache.get(k, {}).get("data")
+            if cached and cached.get("count", 0) > 0:
+                return jsonify(cached)
         return jsonify({"states": [], "error": str(e), "count": 0})
 
 @app.route("/api/proxy/fires", methods=["GET"])
@@ -2455,26 +2467,25 @@ def proxy_ai_chat():
     if not groq_key:
         return jsonify({"error": "GROQ_API_KEY not configured on server"}), 500
 
-    # Auto-map deprecated model IDs to active Groq models while preserving 3-tier fallback independence
+    # Map only retired model IDs; keep fast non-reasoning Groq Llama models directly
     model_mapping = {
-        "llama-3.3-70b-versatile": "qwen/qwen3.8-27b",
-        "llama-3.1-8b-instant": "openai/gpt-oss-120b",
-        "gemma2-9b-it": "openai/gpt-oss-20b",
-        "llama3-70b-8192": "qwen/qwen3.8-27b",
-        "llama3-8b-8192": "openai/gpt-oss-20b",
+        "gemma2-9b-it": "llama-3.1-8b-instant",
+        "llama3-70b-8192": "llama-3.3-70b-versatile",
+        "llama3-8b-8192": "llama-3.1-8b-instant",
+        "qwen/qwen3.8-27b": "llama-3.1-8b-instant",
     }
     req_model = data.get("model", "")
     if req_model in model_mapping:
         data["model"] = model_mapping[req_model]
     elif not req_model:
-        data["model"] = "qwen/qwen3.8-27b"
+        data["model"] = "llama-3.1-8b-instant"
 
-    # Clamp max_tokens to 450 to stay safely within Groq free-tier 1000 OTPM limit
-    curr_tokens = data.get("max_tokens", 450)
+    # Allow up to 1024 output tokens so tactical briefings finish cleanly without mid-sentence truncation
+    curr_tokens = data.get("max_tokens", 1024)
     try:
-        data["max_tokens"] = min(int(curr_tokens), 450)
+        data["max_tokens"] = min(int(curr_tokens), 1024)
     except (ValueError, TypeError):
-        data["max_tokens"] = 450
+        data["max_tokens"] = 1024
 
     url = "https://api.groq.com/openai/v1/chat/completions"
     headers = {

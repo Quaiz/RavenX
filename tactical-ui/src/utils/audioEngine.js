@@ -1,6 +1,7 @@
 class TacticalAudioEngine {
   constructor() {
     this.enabled = true;
+    this.notificationsMuted = true;
     this.buffers = {};
     this.arrayBuffers = {};
     this.audioContext = null;
@@ -112,8 +113,13 @@ class TacticalAudioEngine {
     this.play('notification'); // Fallback for error
   }
 
+  setNotificationsMuted(val) {
+    this.notificationsMuted = Boolean(val);
+  }
+
   // Specific Call of Duty Mappings
   playNotification() {
+    if (this.notificationsMuted) return;
     this.play('notification');
   }
 
