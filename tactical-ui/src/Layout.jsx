@@ -153,25 +153,8 @@ const ModuleContainer = React.memo(React.forwardRef(({ id, title, icon: Icon, ch
           boxShadow: 'inset 0 1px 0 rgba(198,214,122,0.14)',
         }}
       >
-        {/* Far-left solid olive-green icon square */}
+        {/* Left: Red [X] Close Square (Option A) + Unboxed Module Icon & Title */}
         <div className="flex items-center h-full min-w-0 flex-1">
-          <div className="w-7 h-full bg-[#84a96c] text-[#090d09] flex items-center justify-center shrink-0 border-r border-black/80">
-            {Icon ? <Icon size={13} strokeWidth={2.4} /> : <Grid size={12} strokeWidth={2.4} />}
-          </div>
-
-          {/* Module Name in Watcher IWV format */}
-          <div className="flex items-baseline gap-2 px-2.5 min-w-0 flex-1">
-            <span className="text-[11px] font-bold text-[#d5e3b8] tracking-[0.12em] uppercase truncate">
-              {title}
-            </span>
-            <span className="hidden sm:inline text-[9px] font-mono text-[#7fa872]/45 tracking-wider truncate ml-auto pr-2">
-              {`.../sys/${String(id || 'module').toLowerCase()}.raw`}
-            </span>
-          </div>
-        </div>
-
-        {/* Far-right Red [X] Close Box + signature green end-cap bar */}
-        <div className="flex items-center h-full shrink-0">
           <button
             type="button"
             title="Close Module"
@@ -181,10 +164,28 @@ const ModuleContainer = React.memo(React.forwardRef(({ id, title, icon: Icon, ch
               audio.playClick?.();
               onClose?.(id);
             }}
-            className="no-drag h-5 px-2.5 bg-[#090c09] border border-[#e05252]/55 hover:bg-[#e05252] hover:border-[#ff7b7b] text-[#ef5350] hover:text-[#090c09] font-mono text-[10px] font-bold leading-none flex items-center justify-center transition-colors cursor-pointer"
+            className="no-drag w-7 h-full bg-[#261111] hover:bg-[#e05252] text-[#ff6b6b] hover:text-[#090c09] border-r border-black/80 font-mono text-[11px] font-bold leading-none flex items-center justify-center transition-colors shrink-0 cursor-pointer"
           >
             X
           </button>
+
+          {/* Clean unboxed Icon + Module Name */}
+          <div className="flex items-center gap-2 px-2.5 min-w-0 flex-1">
+            {Icon && <Icon size={13} className="text-[#a3c285] shrink-0" />}
+            <span className="text-[11px] font-bold text-[#d5e3b8] tracking-[0.14em] uppercase truncate">
+              {title}
+            </span>
+            <span className="hidden sm:inline text-[9px] font-mono text-[#7fa872]/45 tracking-wider truncate ml-auto pr-2">
+              {`.../sys/${String(id || 'module').toLowerCase()}.raw`}
+            </span>
+          </div>
+        </div>
+
+        {/* Far-right Watcher Program [ON] Status Box + signature green end-cap bar */}
+        <div className="flex items-center h-full shrink-0">
+          <div className="h-5 px-2 bg-[#090c09] border border-[#7fa872]/35 text-[#a3c285] font-mono text-[8px] font-bold tracking-widest leading-none flex items-center justify-center">
+            ON
+          </div>
           <div className="w-1.5 h-full bg-[#84a96c] ml-1.5 border-l border-black/80" />
         </div>
       </div>
