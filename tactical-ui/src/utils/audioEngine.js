@@ -17,6 +17,8 @@ class TacticalAudioEngine {
     this._clipCooldowns = {};
     this._voiceListeners = new Set();
     this._voiceState = { isSpeaking: false, subtitle: '', mode: 'IDLE' };
+    this.analyser = null;
+    this._analyserData = null;
     this.clipTranscripts = {
       welcome_auth: 'Welcome to the Watcher Program. Verify your credentials to proceed.',
       comms_online: 'Watcher to Operator. Comms online. All sensor grids active. Time to work.',
@@ -227,6 +229,28 @@ class TacticalAudioEngine {
     return () => this._voiceListeners.delete(listener);
   }
 
+  getVoiceLevel() {
+    if (!this._isSpeaking || !this._voiceState.isSpeaking) return 0;
+    if (this.analyser && this._analyserData && this._activeVoiceSource) {
+      try {
+        this.analyser.getByteTimeDomainData(this._analyserData);
+        let sumSq = 0;
+        const len = this._analyserData.length;
+        for (let i = 0; i < len; i++) {
+          const norm = (this._analyserData[i] - 128) / 128;
+          sumSq += norm * norm;
+        }
+        const rms = Math.sqrt(sumSq / len);
+        // Scale RMS voice amplitude (typically 0.02 - 0.30) into 0.0 - 0.96 VU bar range
+        if (rms < 0.008) return 0;
+        return Math.min(0.96, Math.pow(rms * 3.6, 0.78));
+      } catch (e) {
+        return 0;
+      }
+    }
+    return 0;
+  }
+
   _emitVoiceState(patch) {
     this._voiceState = { ...this._voiceState, ...patch };
     this._voiceListeners.forEach((fn) => {
@@ -272,8 +296,16 @@ class TacticalAudioEngine {
         const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
         gainNode.gain.value = isMobile ? vol * 0.5 : vol;
 
+        if (!this.analyser) {
+          this.analyser = ctx.createAnalyser();
+          this.analyser.fftSize = 256;
+          this.analyser.smoothingTimeConstant = 0.55;
+          this._analyserData = new Uint8Array(this.analyser.fftSize);
+        }
+
         source.connect(gainNode);
-        gainNode.connect(ctx.destination);
+        gainNode.connect(this.analyser);
+        this.analyser.connect(ctx.destination);
 
         this._activeVoiceSource = source;
         source.onended = () => {

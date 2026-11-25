@@ -15,28 +15,52 @@ const Watcher02CommsHUD = () => {
   const [voiceState, setVoiceState] = useState({ isSpeaking: false, subtitle: '', mode: 'IDLE' });
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [voiceEnabled, setVoiceEnabled] = useState(() => audio.voiceEnabled);
-  const [bars, setBars] = useState([0.78, 0.92, 0.64, 0.88, 0.72, 0.55]);
+  const [vuLevel, setVuLevel] = useState(0);
+  const [vuPeak, setVuPeak] = useState(0);
 
   useEffect(() => {
     return audio.subscribeVoice((st) => {
       setVoiceState(st);
+      if (!st.isSpeaking) {
+        setVuLevel(0);
+        setVuPeak(0);
+      }
     });
   }, []);
 
-  // Animate green barcode VU spectrum blocks while WATCHER-02 is actively speaking
+  // Real-time Web Audio API amplitude meter (0 when silent, rises/falls dynamically with actual voice audio)
   useEffect(() => {
-    if (!voiceState.isSpeaking) return;
-    const iv = setInterval(() => {
-      setBars([
-        0.55 + Math.random() * 0.45,
-        0.65 + Math.random() * 0.35,
-        0.45 + Math.random() * 0.55,
-        0.60 + Math.random() * 0.40,
-        0.50 + Math.random() * 0.50,
-        0.35 + Math.random() * 0.65,
-      ]);
-    }, 110);
-    return () => clearInterval(iv);
+    if (!voiceState.isSpeaking) {
+      setVuLevel(0);
+      setVuPeak(0);
+      return;
+    }
+    let rafId;
+    let currentSmooth = 0;
+    let currentPeak = 0;
+
+    const tick = () => {
+      const raw = audio.getVoiceLevel();
+      // Fast attack, smooth release
+      currentSmooth = raw > currentSmooth
+        ? currentSmooth * 0.35 + raw * 0.65
+        : currentSmooth * 0.82 + raw * 0.18;
+      if (currentSmooth < 0.01) currentSmooth = 0;
+
+      if (currentSmooth >= currentPeak) {
+        currentPeak = Math.min(0.98, currentSmooth + 0.03);
+      } else {
+        currentPeak = Math.max(currentSmooth, currentPeak - 0.012);
+      }
+      if (currentPeak < 0.015) currentPeak = 0;
+
+      setVuLevel(currentSmooth);
+      setVuPeak(currentPeak);
+      rafId = requestAnimationFrame(tick);
+    };
+
+    rafId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafId);
   }, [voiceState.isSpeaking]);
 
   const toggleVoiceMute = (e) => {
@@ -231,22 +255,26 @@ const Watcher02CommsHUD = () => {
                     </div>
                   </div>
 
-                  {/* Modulated Green Block-Barcode Spectrum Bar (Exact Image 1 & 2 VU style) */}
-                  <div className="h-[22px] w-full bg-[#071109]/85 border border-[#39e75f]/30 flex items-center p-[2px] gap-[2px] overflow-hidden">
-                    {bars.map((val, idx) => (
+                  {/* Continuous Solid Green Audio Level Bar (0% when silent, rises/falls with real voice audio) */}
+                  <div className="h-[22px] w-full bg-[#071109]/75 border border-[#39e75f]/20 relative overflow-hidden">
+                    {vuLevel > 0.01 && (
                       <div
-                        key={idx}
-                        className="h-full transition-all duration-100"
+                        className="h-full"
                         style={{
-                          width: `${Math.round((voiceState.isSpeaking ? val : 0.25) * 18)}%`,
-                          opacity: voiceState.isSpeaking ? 0.55 + (idx % 2) * 0.35 : 0.25,
-                          backgroundColor: idx % 2 === 0 ? '#39e75f' : '#28b846',
-                          backgroundImage:
-                            'repeating-linear-gradient(90deg, rgba(0,0,0,0.32) 0px, rgba(0,0,0,0.32) 1px, transparent 1px, transparent 3px)',
+                          width: `${(vuLevel * 100).toFixed(1)}%`,
+                          background: 'linear-gradient(90deg, #27c93f 0%, #38ea52 45%, #48ff62 100%)',
+                          boxShadow: '0 0 12px rgba(57,231,95,0.45)',
                         }}
                       />
-                    ))}
-                    <div className="w-[3px] h-full bg-[#52ff74] shadow-[0_0_8px_#52ff74] shrink-0 ml-0.5" />
+                    )}
+                    {vuPeak > 0.02 && (
+                      <div
+                        className="absolute top-0 bottom-0 w-[4px] bg-[#48ff62] shadow-[0_0_8px_#48ff62]"
+                        style={{
+                          left: `calc(${(vuPeak * 100).toFixed(1)}% + 3px)`,
+                        }}
+                      />
+                    )}
                   </div>
                 </div>
               </div>
