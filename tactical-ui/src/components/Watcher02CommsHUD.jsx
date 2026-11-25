@@ -198,16 +198,9 @@ const Watcher02CommsHUD = () => {
                 {/* Square Black-Background Portrait (Image 3 processed) */}
                 <div className="w-[92px] h-[92px] bg-[#050806] border border-[#39e75f]/35 overflow-hidden relative shrink-0">
                   <img
-                    src="/watcher02_avatar.png"
+                    src="/watcher02_avatar.png?v=2"
                     alt="WATCHER-02"
                     className="w-full h-full object-cover"
-                  />
-                  <div
-                    className="absolute inset-0 pointer-events-none opacity-30"
-                    style={{
-                      backgroundImage:
-                        'repeating-linear-gradient(0deg, rgba(0,0,0,0.6) 0px, rgba(0,0,0,0.6) 1px, transparent 1px, transparent 2px)',
-                    }}
                   />
                 </div>
 
