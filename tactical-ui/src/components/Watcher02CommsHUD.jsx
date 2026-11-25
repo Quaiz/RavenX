@@ -198,9 +198,9 @@ const Watcher02CommsHUD = () => {
                 {/* Square Black-Background Portrait (Image 3 processed) */}
                 <div className="w-[92px] h-[92px] bg-[#050806] border border-[#39e75f]/35 overflow-hidden relative shrink-0">
                   <img
-                    src="/watcher02_avatar.png?v=2"
+                    src="/watcher02_avatar.png?v=3"
                     alt="WATCHER-02"
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover object-top"
                   />
                 </div>
 
