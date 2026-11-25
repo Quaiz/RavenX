@@ -132,51 +132,89 @@ const NewsTicker = ({ minimizedModules, restoreModule, getModuleIcon }) => {
 // ═══ MODULE CONTAINER FOR GRID ═══
 const MODULES_NO_ZOOM = ['MAP_MODULE', 'LINK_ANALYSIS', 'GLOBAL_NEWS', 'LIVE_WEBCAMS', 'AIS_VESSELS'];
 
-const ModuleContainer = React.memo(React.forwardRef(({ id, title, icon: Icon, children, onClose, onMinimize, onMaximize, ...props }, ref) => {
- const uiScale = useStore(state => state.uiScale);
- const shouldZoom = !MODULES_NO_ZOOM.includes(id);
- 
+const ModuleContainer = React.memo(React.forwardRef(({ id, title, icon: Icon, children, onClose, ...props }, ref) => {
+  const uiScale = useStore(state => state.uiScale);
+  const shouldZoom = !MODULES_NO_ZOOM.includes(id);
+  const dbCode = `IW-${String(id || 'MOD').replace(/[^A-Z0-9]/gi, '').slice(0, 4).toUpperCase()}-A`;
+  const idxCode = `AVF-${String((id || '').length * 19 + 11).padStart(3, '0')}`;
+
   return (
-  <div ref={ref} {...props} className={`flex flex-col w-full h-full tactical-glass overflow-hidden relative shadow-2xl ${props.className || ''}`} style={{ contain: 'layout style', ...(props.style || {}) }}>
-  {/* HUD Corner Brackets */}
-  {['top-[-2px] left-[-2px] border-t-4 border-l-4', 'top-[-2px] right-[-2px] border-t-4 border-r-4',
-  'bottom-[-2px] left-[-2px] border-b-4 border-l-4', 'bottom-[-2px] right-[-2px] border-b-4 border-r-4'].map((cls, i) => (
-  <div key={i} className={`absolute w-4 h-4 ${cls} border-primary/80 box-glow pointer-events-none`} style={{ zIndex: 10 }} />
-  ))}
- 
- {/* Header (Drag Handle) */}
- <div className="window-header h-10 border-b border-primary/40 flex items-center justify-between px-3 cursor-move select-none shrink-0"
- style={{ background: 'linear-gradient(90deg, rgba(var(--color-primary), 0.15) 0%, rgba(0,0,0,0.5) 100%)', boxShadow: '0 2px 10px rgba(var(--color-primary), 0.1)' }}>
- <div className="flex items-center gap-1.5 mr-3">
- <button
- onMouseDown={(e) => e.stopPropagation()}
- onClick={(e) => { e.stopPropagation(); onClose?.(id); }}
- className="w-3 h-3 rounded-full bg-[#ff5f57] hover:brightness-110 transition-all flex items-center justify-center group/close"
- />
- <button
- onMouseDown={(e) => e.stopPropagation()}
- onClick={(e) => { e.stopPropagation(); onMinimize?.(id); }}
- className="w-3 h-3 rounded-full bg-[#febc2e] hover:brightness-110 transition-all flex items-center justify-center group/min"
- />
- <button
- onMouseDown={(e) => e.stopPropagation()}
- onClick={(e) => { e.stopPropagation(); onMaximize?.(id); }}
- className="w-3 h-3 rounded-full bg-[#28c840] hover:brightness-110 transition-all flex items-center justify-center group/max"
- />
- </div>
- <div className="flex items-center gap-2 flex-1 min-w-0">
- {Icon && <Icon size={12} className="text-primary shrink-0 drop-shadow-[0_0_5px_rgba(var(--color-primary),0.8)]" />}
- <span className="text-[10px] font-bold text-primary uppercase tracking-[0.25em] truncate text-glow">{title}</span>
- </div>
- </div>
- {/* Content */}
- <div className="no-drag flex-1 overflow-y-auto overflow-x-hidden relative bg-black/20 custom-scrollbar pointer-events-auto flex flex-col">
- <div className="flex-1 flex flex-col"style={shouldZoom ? { zoom: uiScale, minHeight: '100%', height: '100%' } : { minHeight: '100%', height: '100%' }}>
- {children}
- </div>
- </div>
- </div>
- );
+    <div
+      ref={ref}
+      {...props}
+      className={`flex flex-col w-full h-full overflow-hidden relative bg-[#080b09]/95 border border-[#7fa872]/35 shadow-[0_16px_40px_rgba(0,0,0,0.88)] ${props.className || ''}`}
+      style={{ contain: 'layout style', ...(props.style || {}) }}
+    >
+      {/* Watcher Program IWV Header (Drag Handle) */}
+      <div
+        className="window-header h-7 border-b border-black bg-[#172016] flex items-center justify-between cursor-move select-none shrink-0"
+        style={{
+          background: 'linear-gradient(90deg, #1b2619 0%, #131b12 65%, #161f15 100%)',
+          boxShadow: 'inset 0 1px 0 rgba(198,214,122,0.14)',
+        }}
+      >
+        {/* Far-left solid olive-green icon square */}
+        <div className="flex items-center h-full min-w-0 flex-1">
+          <div className="w-7 h-full bg-[#84a96c] text-[#090d09] flex items-center justify-center shrink-0 border-r border-black/80">
+            {Icon ? <Icon size={13} strokeWidth={2.4} /> : <Grid size={12} strokeWidth={2.4} />}
+          </div>
+
+          {/* Module Name in Watcher IWV format */}
+          <div className="flex items-baseline gap-2 px-2.5 min-w-0 flex-1">
+            <span className="text-[11px] font-bold text-[#d5e3b8] tracking-[0.12em] uppercase truncate">
+              {title}
+            </span>
+            <span className="hidden sm:inline text-[9px] font-mono text-[#7fa872]/45 tracking-wider truncate ml-auto pr-2">
+              {`.../sys/${String(id || 'module').toLowerCase()}.raw`}
+            </span>
+          </div>
+        </div>
+
+        {/* Far-right Red [X] Close Box + signature green end-cap bar */}
+        <div className="flex items-center h-full shrink-0">
+          <button
+            type="button"
+            title="Close Module"
+            onMouseDown={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              audio.playClick?.();
+              onClose?.(id);
+            }}
+            className="no-drag h-5 px-2.5 bg-[#090c09] border border-[#e05252]/55 hover:bg-[#e05252] hover:border-[#ff7b7b] text-[#ef5350] hover:text-[#090c09] font-mono text-[10px] font-bold leading-none flex items-center justify-center transition-colors cursor-pointer"
+          >
+            X
+          </button>
+          <div className="w-1.5 h-full bg-[#84a96c] ml-1.5 border-l border-black/80" />
+        </div>
+      </div>
+
+      {/* Inner viewport border + Content */}
+      <div className="no-drag flex-1 overflow-y-auto overflow-x-hidden relative bg-[#060907]/90 custom-scrollbar pointer-events-auto flex flex-col border-b border-[#7fa872]/20">
+        <div
+          className="flex-1 flex flex-col"
+          style={shouldZoom ? { zoom: uiScale, minHeight: '100%', height: '100%' } : { minHeight: '100%', height: '100%' }}
+        >
+          {children}
+        </div>
+      </div>
+
+      {/* Watcher Program Database / Index Footer Bar */}
+      <div className="h-5 bg-[#0a0e0a] px-2.5 flex items-center justify-between text-[9px] font-mono select-none shrink-0">
+        <div className="flex items-center gap-1.5 truncate">
+          <span className="text-[#7fa872]/60">Database</span>
+          <span className="text-[#c6d67a]/85 font-semibold">{dbCode}</span>
+          <span className="text-[#7fa872]/40 mx-0.5">•</span>
+          <span className="text-[#7fa872]/60">Index</span>
+          <span className="text-[#c6d67a]/85 font-semibold">{idxCode}</span>
+          <span className="text-[#7fa872]/35 uppercase tracking-widest ml-1.5 text-[8px]">ACTIVE</span>
+        </div>
+        <span className="text-[8px] text-[#7fa872]/45 tracking-widest uppercase shrink-0">
+          IWV // LIVE
+        </span>
+      </div>
+    </div>
+  );
 }));
 
 // ═══ ABSOLUTE FREE-FLOATING WINDOW (60FPS HARDWARE ACCELERATED) ═══
