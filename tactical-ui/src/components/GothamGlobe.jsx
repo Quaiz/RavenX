@@ -454,16 +454,16 @@ const GothamGlobe = React.memo(() => {
  return (
  <div className="relative w-full h-full bg-[#05070a] overflow-hidden">
 
- {/* ═══ MAP HEADER BAR (inside map module) ═══ */}
- <div className="absolute top-0 left-0 right-0 z-[1500] h-8 bg-black/40 backdrop-blur-md border-b border-white/5 flex items-center px-2 sm:px-3 gap-1.5 sm:gap-3 overflow-x-auto no-scrollbar mask-edge-fade">
- <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_5px_rgba(34,197,94,0.5)] shrink-0"/>
- <span className="text-[9px] font-bold text-white/60 tracking-[0.2em] uppercase shrink-0 hidden sm:inline">TACTICAL MAP</span>
+ {/* ═══ MAP TACTICAL TOOLBAR (Top-Right Floating Control Strip) ═══ */}
+ <div className="absolute top-3 right-3 z-[1500] h-8 bg-[#0b0f0c]/90 border border-[#7fa872]/35 flex items-center px-2.5 gap-1.5 sm:gap-2.5 overflow-x-auto no-scrollbar shadow-[0_8px_24px_rgba(0,0,0,0.75)]">
+ <div className="w-1.5 h-1.5 rounded-full bg-[#39e75f] shadow-[0_0_5px_rgba(57,231,95,0.6)] shrink-0"/>
+ <span className="text-[9px] font-bold text-[#d5e3b8]/80 tracking-[0.2em] uppercase shrink-0 hidden sm:inline">TACTICAL MAP</span>
  <div className="h-3 w-px bg-white/10 shrink-0 hidden sm:block"/>
  <button
  onClick={() => setOverlayOpen(prev => !prev)}
  className={`flex items-center gap-1.5 px-2.5 py-1 text-[8px] font-bold tracking-widest uppercase transition-all shrink-0 ${overlayOpen
- ? 'bg-white/10 text-white border border-white/10'
- : 'bg-white/[0.03] text-white/40 border border-white/5 hover:text-white/70 hover:bg-white/[0.06]'
+ ? 'bg-[#84a96c]/25 text-[#e4f4a4] border border-[#84a96c]/60'
+ : 'bg-white/[0.03] text-white/50 border border-white/10 hover:text-white/85 hover:bg-white/[0.07]'
  }`}
  >
  <Layers size={10} />
@@ -512,8 +512,8 @@ const GothamGlobe = React.memo(() => {
  </button>
  </div>
 
- {/* ═══ OVERLAY PANEL (inside map) ═══ */}
- <div className="absolute top-8 left-0 bottom-0 z-[1400]">
+ {/* ═══ OVERLAY PANEL (Top-Right below Map Toolbar) ═══ */}
+ <div className="absolute top-12 right-3 bottom-8 z-[1400]">
  <OverlayPanel isOpen={overlayOpen} onClose={() => setOverlayOpen(false)} />
  </div>
 

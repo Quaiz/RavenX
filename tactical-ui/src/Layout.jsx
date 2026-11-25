@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import useStore, { MODULE_CATEGORIES } from './store';
 import { audio } from './utils/audioEngine';
-import { Shield, Radar, Moon, Globe, Database, Settings, Radio, Activity, Clock, BarChart3, Video, Grid, X, Minus, Square, Map, User, Bot, Bell, AlertTriangle, Info, Tv, ChevronRight, ChevronsRight, Network, LineChart, Volume2, VolumeX, LogOut, Terminal } from 'lucide-react';
+import { Shield, Radar, Moon, Globe, Database, Settings, Radio, Activity, Clock, BarChart3, Video, Grid, X, Minus, Square, Plus, Map, User, Bot, Bell, AlertTriangle, Info, Tv, ChevronRight, ChevronsRight, Network, LineChart, Volume2, VolumeX, LogOut, Terminal } from 'lucide-react';
 import { Rnd } from 'react-rnd';
 import TopographicCanvas from './components/TopographicCanvas';
+import Watcher02CommsHUD from './components/Watcher02CommsHUD';
 import GothamGlobe from './components/GothamGlobe';
 import { AtmosphericIntelModule } from './components/DataFeedModules';
 import CountryIntel from './components/CountryIntel';
@@ -670,9 +671,10 @@ const Layout = ({ user, showGreeting, onEnterDashboard, onLogout, onUsernameChan
  onLogout?.();
  };
 
- // Visible modules = active minus minimized
- const visibleModules = activeModules.filter(id => !minimizedModules.includes(id));
- const hasAnyModules = activeModules.length > 0;
+ // Visible floating modules = active minus minimized, excluding permanent Map & dedicated WATCHER-02 HUD
+ const visibleModules = activeModules.filter(
+   id => !minimizedModules.includes(id) && id !== 'MAP_MODULE' && id !== 'AI_ANALYST'
+ );
 
  const maxModuleBottomPx = visibleModules.length > 0 
  ? Math.max(...visibleModules.map(id => (windowStates[id]?.y || 0) + (windowStates[id]?.h || 0) + 150))
@@ -682,202 +684,219 @@ const Layout = ({ user, showGreeting, onEnterDashboard, onLogout, onUsernameChan
  return (
  <div className="w-screen bg-[#0c0e0d] text-[#e8eae6] font-military overflow-hidden flex flex-col relative" style={{ height: '100dvh' }}>
 
- {/* ═══ TOP NAVIGATION BAR (MW4 2026 Unified Tactical Header) ═══ */}
- <div className="border-b border-white/10 shrink-0 flex items-center justify-between px-2 md:px-5 z-[10000] relative bg-[#111412]" style={{ minHeight: '3.25rem', paddingTop: 'env(safe-area-inset-top)' }}>
- <div className="flex items-center gap-2 md:gap-6 shrink-0">
- <div className="flex items-center gap-2.5">
- <div className="w-8 h-8 border border-primary/35 flex items-center justify-center bg-[#191e1a] shrink-0">
- <RavenLogo size={17} className="text-primary" />
- </div>
- <div className="flex flex-col leading-none">
- <div className="flex items-center gap-1.5">
- <span className="text-[12px] md:text-[14px] font-stencil font-bold tracking-[0.2em] md:tracking-[0.3em] text-[#e8eae6]">RAVEN-X</span>
- <span className="mw4-badge px-1 py-[1px] text-[7px] leading-none hidden sm:inline-block">OPS</span>
- </div>
- <span className="text-[7px] text-white/40 font-mono tracking-widest uppercase mt-1 hidden sm:block">WATCHER // DIR-01</span>
- </div>
- </div>
- <div className="h-5 w-px bg-white/10 hidden sm:block"/>
- <div className="flex gap-2 md:gap-3 shrink-0 overflow-hidden items-center">
- <div className="flex items-center gap-1.5 bg-[#181d19] border border-white/8 px-2 py-1 shrink-0 whitespace-nowrap">
- <div className="w-1.5 h-1.5 rounded-full bg-[#7fa872]" />
- <span className="text-[8px] font-bold text-[#c6d67a] uppercase tracking-widest hidden sm:inline">GRID ONLINE</span>
- <span className="text-[7px] font-bold text-[#c6d67a] uppercase tracking-widest sm:hidden">OK</span>
- </div>
- <TopBarClock />
- </div>
+ {/* ═══ MAIN FULL-SCREEN STAGE (Left Vertical Bar + 100% Map Canvas + Floating Modules) ═══ */}
+ <div className="flex-1 flex relative bg-[#0c0e0d] overflow-hidden">
+
+ {/* ═══ LEFT VERTICAL COMMAND BAR (MW4 Watcher Program Left Square Stack) ═══ */}
+ <div
+   className="w-12 border-r border-white/10 bg-[#0b0f0c]/95 z-[10000] flex flex-col items-center justify-between py-2.5 px-1 shrink-0 select-none"
+   style={{ paddingTop: 'max(0.625rem, env(safe-area-inset-top))' }}
+ >
+   {/* Top Stack: Emblem + Modules Registry + Workspaces + [+] / [-] Zoom Squares */}
+   <div className="flex flex-col items-center gap-1.5 w-full">
+     {/* RavenX Core Emblem */}
+     <div
+       onClick={() => { audio.playClick(); setIsRegistryOpen(true); }}
+       title="RAVEN-X // WATCHER PROGRAM (Click to open Modules)"
+       className="w-9 h-9 border border-[#7fa872]/40 bg-[#141b15] hover:border-[#c6d67a] flex items-center justify-center relative cursor-pointer transition-colors"
+     >
+       <RavenLogo size={18} className="text-[#c6d67a]" />
+       <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-[#39e75f] border border-[#0b0f0c]" />
+     </div>
+
+     {/* Target / Modules Selector Square (Matches Top-Left Target Reticle Square in Image 1) */}
+     <button
+       type="button"
+       onClick={() => { audio.playClick(); setIsRegistryOpen(true); }}
+       title="Toggle Tactical Modules"
+       className={`w-9 h-9 border flex items-center justify-center relative transition-colors cursor-pointer ${
+         isRegistryOpen || visibleModules.length > 0
+           ? 'bg-[#172418] border-[#7fa872]/60 text-[#d8ea96]'
+           : 'bg-[#0f1410] border-white/10 text-[#a3c285]/75 hover:border-[#7fa872]/50 hover:text-[#d8ea96]'
+       }`}
+     >
+       <Grid size={15} />
+       {visibleModules.length > 0 && (
+         <span className="absolute -top-1 -right-1 min-w-[14px] h-[14px] px-0.5 bg-[#84a96c] text-[#090c09] font-mono text-[8px] font-bold flex items-center justify-center">
+           {visibleModules.length}
+         </span>
+       )}
+     </button>
+
+     {/* UI Zoom [+] and [-] Squares (Exact Image 1 Left Rail '+' and '-' Buttons) */}
+     <button
+       type="button"
+       onClick={() => { audio.playClick(); setUiScale(Math.min(1.5, Number((uiScale + 0.1).toFixed(2)))); }}
+       title={`Increase UI Scale (${Math.round(uiScale * 100)}%)`}
+       className="w-9 h-9 bg-[#0f1410] border border-white/10 hover:border-[#7fa872]/55 text-[#a3c285] hover:text-[#e4f4a4] flex items-center justify-center transition-colors cursor-pointer"
+     >
+       <Plus size={16} strokeWidth={2.5} />
+     </button>
+     <button
+       type="button"
+       onClick={() => { audio.playClick(); setUiScale(Math.max(0.6, Number((uiScale - 0.1).toFixed(2)))); }}
+       title={`Decrease UI Scale (${Math.round(uiScale * 100)}%)`}
+       className="w-9 h-9 bg-[#0f1410] border border-white/10 hover:border-[#7fa872]/55 text-[#a3c285] hover:text-[#e4f4a4] flex items-center justify-center transition-colors cursor-pointer"
+     >
+       <Minus size={16} strokeWidth={2.5} />
+     </button>
+
+     <div className="w-6 h-px bg-white/10 my-0.5" />
+
+     {/* Workspace Switcher Squares (1: TACTICAL, 2: OSINT, 3: MACRO) */}
+     {[
+       { id: 1, label: 'TACTICAL WORKSPACE', short: 'T1', icon: Map },
+       { id: 2, label: 'OSINT WORKSPACE', short: 'O2', icon: Network },
+       { id: 3, label: 'MACRO WORKSPACE', short: 'M3', icon: LineChart },
+     ].map((ws) => {
+       const isActive = activeWorkspace === ws.id;
+       return (
+         <button
+           key={ws.id}
+           type="button"
+           onClick={() => { audio.playClick(); switchWorkspace(ws.id); }}
+           title={ws.label}
+           className={`w-9 h-8 border flex flex-col items-center justify-center transition-colors cursor-pointer ${
+             isActive
+               ? 'bg-[#e8eae6] text-[#111413] border-[#e8eae6] font-bold'
+               : 'bg-[#0f1410] border-white/10 text-white/45 hover:text-[#e8eae6] hover:border-white/25'
+           }`}
+         >
+           <ws.icon size={11} />
+           <span className="text-[7px] font-mono tracking-wider leading-none mt-0.5">{ws.short}</span>
+         </button>
+       );
+     })}
+   </div>
+
+   {/* Bottom Stack: Command Palette, Notifications, Master Audio, Operator Profile */}
+   <div className="flex flex-col items-center gap-1.5 w-full">
+     {/* Command Palette (Ctrl+K) */}
+     <button
+       type="button"
+       onClick={() => { audio.playClick(); useStore.getState().setCommandPaletteOpen(true); }}
+       className="w-9 h-8 bg-[#0f1410] border border-white/10 hover:border-[#7fa872]/50 text-[#c6d67a] flex items-center justify-center transition-colors cursor-pointer"
+       title="Command Palette (Ctrl+K)"
+     >
+       <Terminal size={13} />
+     </button>
+
+     {/* System Logs / Notifications Bell */}
+     <button
+       type="button"
+       onClick={() => { audio.playClick(); setIsNotiOpen(!isNotiOpen); }}
+       className="relative w-9 h-8 bg-[#0f1410] border border-white/10 hover:border-[#7fa872]/50 text-white/75 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+       title="System Logs & Alerts"
+     >
+       <Bell size={13} />
+       {(notifications || []).length > 0 && (
+         <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-[#d94638] rounded-full" />
+       )}
+     </button>
+
+     {/* Master Audio Mute / Unmute */}
+     <button
+       type="button"
+       onClick={() => { useStore.getState().toggleSound(); }}
+       className="w-9 h-8 bg-[#0f1410] border border-white/10 hover:border-[#7fa872]/50 text-white/65 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+       title="Toggle Master Audio"
+     >
+       {useStore.getState().isSoundEnabled ? <Volume2 size={13} /> : <VolumeX size={13} className="text-[#ef5350]" />}
+     </button>
+
+     {/* Operator Profile */}
+     {currentUser && (
+       <button
+         type="button"
+         onClick={() => { audio.playClick(); setIsProfileOpen(true); }}
+         title={`Operator: ${currentUser.username || 'OPERATOR'}`}
+         className="w-9 h-9 bg-[#141b15] border border-[#c6d67a]/35 hover:border-[#c6d67a] text-[#c6d67a] flex items-center justify-center transition-colors cursor-pointer"
+       >
+         <User size={13} />
+       </button>
+     )}
+   </div>
  </div>
 
- {/* WORKSPACE SWITCHER (MW4 Bone-White Active Tab Bar) */}
- <div className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 hidden md:flex items-center h-7 bg-[#0c0e0d] border border-white/10 p-0.5 gap-0.5">
- {[
- { id: 1, label: 'TACTICAL', icon: Map },
- { id: 2, label: 'OSINT', icon: Network },
- { id: 3, label: 'MACRO', icon: LineChart }
- ].map((ws) => {
- const isActive = activeWorkspace === ws.id;
- return (
- <button
- key={ws.id}
- onClick={() => { audio.playClick(); switchWorkspace(ws.id); }}
- title={ws.label}
- className={`flex items-center gap-1.5 px-3 h-full text-[9px] tracking-[0.16em] uppercase ${
- isActive ? 'mw4-tab-active' : 'mw4-tab'
- }`}
- >
- <ws.icon size={11} />
- <span>{ws.label}</span>
- </button>
- );
- })}
- </div>
-
- <div className="flex items-center gap-1.5 md:gap-2.5 overflow-x-auto no-scrollbar min-w-0 ml-auto pl-2">
-
- <button onClick={() => { audio.playClick(); setIsRegistryOpen(true); }} className="flex items-center gap-1.5 px-2.5 py-1 mw4-row-active text-[9px] font-bold tracking-[0.18em] uppercase shrink-0">
- <Grid size={11} />
- <span className="hidden sm:inline">MODULES</span>
- </button>
- 
- {/* UI Scaling Controls */}
- <div className="flex items-center border border-white/10 bg-[#0c0e0d] shrink-0">
- <button 
- onClick={() => setUiScale(Math.max(0.6, uiScale - 0.1))}
- className="px-2 py-1 text-[9px] font-bold text-white/50 hover:text-[#e8eae6] hover:bg-white/10 transition-colors"
- title="Decrease Font Size"
- >A-</button>
- <div className="px-1 text-[8px] text-white/40 font-mono tracking-widest min-w-[30px] text-center">{Math.round(uiScale * 100)}%</div>
- <button 
- onClick={() => setUiScale(Math.min(1.5, uiScale + 0.1))}
- className="px-2 py-1 text-[9px] font-bold text-white/50 hover:text-[#e8eae6] hover:bg-white/10 transition-colors"
- title="Increase Font Size"
- >A+</button>
- </div>
-
- {/* Terminal Command Palette Button */}
- <button 
- onClick={() => { audio.playClick(); useStore.getState().setCommandPaletteOpen(true); }}
- className="relative flex items-center justify-center w-7 h-[24px] mw4-row text-[#c6d67a] shrink-0"
- title="Command Palette (Ctrl+K)"
- >
- <Terminal size={12} />
- </button>
-
- {/* Notifications Bell */}
- <button 
- onClick={() => { audio.playClick(); setIsNotiOpen(!isNotiOpen); }}
- className="relative flex items-center justify-center w-7 h-[24px] mw4-row shrink-0"
- >
- <Bell size={12} className="text-white/80"/>
- {(notifications || []).length > 0 && (
- <div className="absolute top-1 right-1 w-1.5 h-1.5 bg-[#d94638] rounded-full" />
- )}
- </button>
- {/* Volume toggle */}
- <button
- onClick={() => { useStore.getState().toggleSound(); }}
- className="flex items-center justify-center w-7 h-[24px] mw4-row shrink-0 text-white/60 hover:text-white"
- title="Toggle All Audio"
- >
- {useStore.getState().isSoundEnabled ? <Volume2 size={12} /> : <VolumeX size={12} />}
- </button>
- {/* Watcher Voice Comms toggle */}
- <button
- onClick={(e) => {
- const next = !audio.voiceEnabled;
- audio.setVoiceEnabled(next);
- e.currentTarget.dataset.active = String(next);
- if (next) audio.playVoiceClip('comms_online', { cooldownMs: 1000 });
- }}
- className={`hidden sm:flex items-center gap-1.5 px-2 h-[24px] text-[8px] font-bold tracking-widest uppercase shrink-0 ${
- audio.voiceEnabled ? 'mw4-row-active' : 'mw4-row text-white/35'
- }`}
- title="Toggle Watcher Voice Comms"
- >
- <Radio size={10} />
- <span>VOICE</span>
- </button>
- {/* User chip */}
- {currentUser && (
- <button
- onClick={() => { audio.playClick(); setIsProfileOpen(true); }}
- className="flex items-center gap-1.5 px-2.5 h-[24px] mw4-row text-[9px] font-bold tracking-widest uppercase text-white/75 hover:text-white shrink-0 max-w-[90px] md:max-w-[125px] truncate"
- >
- <User size={10} className="shrink-0 text-[#c6d67a]"/>
- <span className="truncate">{currentUser.username ? currentUser.username.split(' ')[0] : 'OPERATOR'}</span>
- </button>
- )}
- </div>
- </div>
-
- {/* MAIN WORKSPACE — modules are clipped here, above ticker */}
+ {/* ═══ MAIN MAP STAGE (100% Full-Screen Primary Map + Floating Modules + WATCHER-02 Comms HUD) ═══ */}
  <div className="flex-1 relative bg-[#0c0e0d] overflow-hidden">
- {/* Splash Screen when no modules active */}
- {!hasAnyModules && (
- <SplashScreen onOpenRegistry={() => setIsRegistryOpen(true)} />
- )}
+   {/* 1. Permanent Full-Screen Tactical Map Canvas */}
+   <div className="absolute inset-0 z-0">
+     <WindowErrorBoundary moduleId="MAP_MODULE">
+       <GothamGlobe />
+     </WindowErrorBoundary>
+   </div>
 
- {/* ═══ SCROLLING FREE-FLOAT WORKSPACE ═══ */}
- {isMobile ? (
- mobileActiveTab && (mobileActiveTab === 'MAP_MODULE' || activeModules.includes(mobileActiveTab)) && (
- <Window
- key={mobileActiveTab}
- id={mobileActiveTab}
- title={getModuleTitle(mobileActiveTab, activeCountry)}
- icon={getModuleIcon(mobileActiveTab)}
- onClose={toggleModule}
- isMobile={true}
- layoutScale={1}
- >
- <WindowErrorBoundary moduleId={mobileActiveTab}><ModuleContent id={mobileActiveTab} activeCountry={mobileActiveTab === 'COUNTRY_INTEL' ? activeCountry : null} /></WindowErrorBoundary>
- </Window>
- )
- ) : (
- <div className="absolute inset-0 z-10 overflow-y-auto overflow-x-hidden custom-scrollbar pointer-events-auto">
- <div style={{ minHeight: '100%', height: wrapperHeight > 0 ? `${wrapperHeight}px` : '100%', overflow: 'hidden' }}>
- <div 
- className="relative"
- style={{ 
- transform: `scale(${layoutScale})`, 
- transformOrigin: 'top left',
- width: `${100 / layoutScale}%`,
- minHeight: `${100 / layoutScale}%`
- }}
- >
- {/* BOUNDING BOX PARENT: Limits top/left/right perfectly, allows downward dragging */}
- <div className="absolute top-0 left-0 right-0 h-[10000px]">
- {visibleModules.map(id => {
- const isMaximized = preMaxStates[id] !== undefined;
- const pad = 20 / layoutScale;
- const maxW = `calc(100% - ${pad * 2}px)`;
- const maxH = (window.innerHeight - 100) / layoutScale;
- const defaultState = windowStates[id] || { x: 100, y: 100, w: 400, h: 300, z: 10 };
+   {/* 2. WATCHER-02 Dedicated Comms Button & Auto-Popout Active Speaker HUD */}
+   {!showGreeting && <Watcher02CommsHUD />}
 
- return (
- <Window
- key={id}
- id={id}
- title={getModuleTitle(id, activeCountry)}
- icon={getModuleIcon(id)}
- state={isMaximized ? { ...defaultState, w: maxW, h: maxH, x: pad, y: pad } : defaultState}
- isMaximized={isMaximized}
- onDrag={setWindowPos}
- onResize={setWindowPos}
- onFocus={bringToFront}
- onClose={toggleModule}
- onMinimize={minimizeModule}
- onMaximize={toggleMaximize}
- layoutScale={layoutScale}
- >
- <WindowErrorBoundary moduleId={id}><ModuleContent id={id} activeCountry={id === 'COUNTRY_INTEL' ? activeCountry : null} /></WindowErrorBoundary>
- </Window>
- );
- })}
+   {/* 3. Optional Floating Modules Layer (Pointer-Events-None container so Map stays interactive) */}
+   {isMobile ? (
+     mobileActiveTab && mobileActiveTab !== 'MAP_MODULE' && visibleModules.includes(mobileActiveTab) && (
+       <Window
+         key={mobileActiveTab}
+         id={mobileActiveTab}
+         title={getModuleTitle(mobileActiveTab, activeCountry)}
+         icon={getModuleIcon(mobileActiveTab)}
+         onClose={toggleModule}
+         isMobile={true}
+         layoutScale={1}
+       >
+         <WindowErrorBoundary moduleId={mobileActiveTab}>
+           <ModuleContent id={mobileActiveTab} activeCountry={mobileActiveTab === 'COUNTRY_INTEL' ? activeCountry : null} />
+         </WindowErrorBoundary>
+       </Window>
+     )
+   ) : (
+     visibleModules.length > 0 && (
+       <div className="absolute inset-0 z-10 overflow-y-auto overflow-x-hidden custom-scrollbar pointer-events-none">
+         <div style={{ minHeight: '100%', height: wrapperHeight > 0 ? `${wrapperHeight}px` : '100%', overflow: 'hidden' }}>
+           <div
+             className="relative"
+             style={{
+               transform: `scale(${layoutScale})`,
+               transformOrigin: 'top left',
+               width: `${100 / layoutScale}%`,
+               minHeight: `${100 / layoutScale}%`,
+             }}
+           >
+             <div className="absolute top-0 left-0 right-0 h-[10000px] pointer-events-none">
+               {visibleModules.map((id) => {
+                 const isMaximized = preMaxStates[id] !== undefined;
+                 const pad = 20 / layoutScale;
+                 const maxW = `calc(100% - ${pad * 2}px)`;
+                 const maxH = (window.innerHeight - 60) / layoutScale;
+                 const defaultState = windowStates[id] || { x: 120, y: 90, w: 440, h: 340, z: 10 };
+
+                 return (
+                   <Window
+                     key={id}
+                     id={id}
+                     title={getModuleTitle(id, activeCountry)}
+                     icon={getModuleIcon(id)}
+                     state={isMaximized ? { ...defaultState, w: maxW, h: maxH, x: pad, y: pad } : defaultState}
+                     isMaximized={isMaximized}
+                     onDrag={setWindowPos}
+                     onResize={setWindowPos}
+                     onFocus={bringToFront}
+                     onClose={toggleModule}
+                     onMinimize={minimizeModule}
+                     onMaximize={toggleMaximize}
+                     layoutScale={layoutScale}
+                   >
+                     <WindowErrorBoundary moduleId={id}>
+                       <ModuleContent id={id} activeCountry={id === 'COUNTRY_INTEL' ? activeCountry : null} />
+                     </WindowErrorBoundary>
+                   </Window>
+                 );
+               })}
+             </div>
+           </div>
+         </div>
+       </div>
+     )
+   )}
  </div>
- </div>
- </div>
- </div>
- )}
  </div>
 
  {/* SLIM BOTTOM NEWS TICKER — always visible below modules ON DESKTOP */}
@@ -1091,7 +1110,7 @@ const Layout = ({ user, showGreeting, onEnterDashboard, onLogout, onUsernameChan
  { num: '02', label: 'SECURE CHANNEL', ready: bootStep >= 2, status: 'VERIFIED' },
  { num: '03', label: 'SATELLITE UPLINK', ready: bootStep >= 3, status: 'LINKED' },
  { num: '04', label: 'GLOBAL TELEMETRY', ready: bootStep >= 4, status: 'SYNCED' },
- { num: '05', label: 'WATCHER COMMS', ready: bootStep >= 5, status: bootReady ? 'ACTIVE' : 'AUTH' },
+ { num: '05', label: 'WATCHER-02 COMMS', ready: bootStep >= 5, status: bootReady ? 'ACTIVE' : 'AUTH' },
  ].map((item) => (
  <div
  key={item.num}

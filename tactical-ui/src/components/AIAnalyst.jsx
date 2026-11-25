@@ -11,9 +11,9 @@ import { sanitizeHtml } from '../utils/sanitize';
 
 // ─── System Prompt ─────────────────────────────────────────────────────────────
 
-const buildSystemPrompt = (dashboardContext) => `You are WATCHER-1 — Senior Operational Handler and Tactical Intelligence Director within the classified WATCHER PROGRAM (operating via RavenX Tactical Terminal).
+const buildSystemPrompt = (dashboardContext) => `You are WATCHER-02 — Senior Operational Handler and Tactical Intelligence Director within the classified WATCHER PROGRAM (operating via RavenX Tactical Terminal).
 
-CALLSIGN: WATCHER-1 (OPERATIONAL HANDLER)
+CALLSIGN: WATCHER-02 (OPERATIONAL HANDLER)
 RECIPIENT: OPERATOR / TASK FORCE ASSET
 CLEARANCE: TOP SECRET // NOFORN // EYES ONLY
 
@@ -339,7 +339,7 @@ const AIAnalyst = () => {
  <Bot size={11} className="text-primary"/>
  </div>
  <div className="flex flex-col leading-none">
- <span className="text-[9px] font-bold tracking-[0.2em] text-white/70 uppercase">WATCHER-1 // HANDLER</span>
+ <span className="text-[9px] font-bold tracking-[0.2em] text-white/70 uppercase">WATCHER-02 // HANDLER</span>
  </div>
  </div>
  <div className="flex items-center gap-2">
@@ -464,7 +464,7 @@ const AIAnalyst = () => {
  ) : (
  <div className="flex items-center gap-2">
  <Loader2 size={10} className="text-primary/50 animate-spin"/>
- <span className="text-[8px] text-white/30 tracking-widest uppercase animate-pulse">WATCHER-1 PROCESSING TRANSMISSION...</span>
+ <span className="text-[8px] text-white/30 tracking-widest uppercase animate-pulse">WATCHER-02 PROCESSING TRANSMISSION...</span>
  </div>
  )}
  </div>

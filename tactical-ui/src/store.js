@@ -4,13 +4,8 @@ import { audio } from './utils/audioEngine';
 import { MILITARY_BASES } from './military_bases';
 
 export const MODULE_CATEGORIES = {
- CORE: [
- { id: 'MAP_MODULE', name: 'MAP', desc: 'Interactive world map with layer overlays', status: 'ACTIVE' },
- ],
-
  // ── Intel & OSINT ────────────────────────────────────────────────────────────
  INTELLIGENCE: [
- { id: 'AI_ANALYST', name: 'WATCHER-1 HANDLER', desc: 'Classified operational handler with live situational awareness and SITREP generation', status: 'ACTIVE' },
  { id: 'GLOBAL_NEWS', name: 'GLOBAL NEWS TV', desc: 'Real-time live news feeds from global broadcasters', status: 'ACTIVE' },
  { id: 'COUNTRY_INTEL', name: 'COUNTRY INTEL', desc: 'Strategic assessment: Stability, Economy, Security', status: 'ACTIVE' },
  { id: 'PREDICTION_MARKETS', name: 'PREDICTION ODDS', desc: 'Polymarket geopolitical event forecasting', status: 'ACTIVE' },
@@ -199,7 +194,7 @@ const useStore = create(persist((set, get) => ({
  // ── Window Management System ──
  activeWorkspace: 1,
  workspaces: {
- 1: { activeModules: ['MAP_MODULE'], minimizedModules: [], windowStates: { MAP_MODULE: { x: 100, y: 50, w: 900, h: 550, z: 10 } }, preMaxStates: {} },
+ 1: { activeModules: [], minimizedModules: [], windowStates: {}, preMaxStates: {} },
  2: { activeModules: [], minimizedModules: [], windowStates: {}, preMaxStates: {} },
  3: { activeModules: [], minimizedModules: [], windowStates: {}, preMaxStates: {} },
  },
@@ -229,13 +224,11 @@ const useStore = create(persist((set, get) => ({
  };
  }),
 
- activeModules: ['MAP_MODULE'],
+ activeModules: [],
  minimizedModules: [],
  mobileActiveTab: 'MAP_MODULE', // Tracks the active tab on mobile devices
  preMaxStates: {}, // Stores {w, h, x, y} before maximizing
- windowStates: {
- MAP_MODULE: { x: 100, y: 50, w: 900, h: 550, z: 10 }
- },
+ windowStates: {},
 
  setWindowPos: (id, updates) => set((state) => {
  const safeUpdates = { ...updates };

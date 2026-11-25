@@ -15,6 +15,20 @@ class TacticalAudioEngine {
     this._speakSessionId = 0;
     this._activeAbortController = null;
     this._clipCooldowns = {};
+    this._voiceListeners = new Set();
+    this._voiceState = { isSpeaking: false, subtitle: '', mode: 'IDLE' };
+    this.clipTranscripts = {
+      welcome_auth: 'Welcome to the Watcher Program. Verify your credentials to proceed.',
+      comms_online: 'Watcher to Operator. Comms online. All sensor grids active. Time to work.',
+      alert_critical: 'Priority alert. Critical threat signature detected on the global grid.',
+      alert_seismic: 'Seismic anomaly detected. Checking tectonic telemetry.',
+      airspace_scan: 'Airspace radar sweep active. Tracking military and civilian transponders.',
+      maritime_alert: 'Maritime surveillance online. Monitoring strategic chokepoints and vessel tracks.',
+      target_locked: 'Target coordinates locked. Satellite optics acquiring high-resolution feed.',
+      briefing_ready: 'Tactical intelligence briefing compiled and ready for transmission.',
+      sector_focused: 'Sector focus updated. Pulling regional intelligence telemetry.',
+      comms_muted: 'Voice communications muted. Standing by on tactical channel.',
+    };
     
     if (typeof window !== 'undefined') {
       this.preload('/sounds/notification.mp3', 'notification');
@@ -207,6 +221,19 @@ class TacticalAudioEngine {
     }
   }
 
+  subscribeVoice(listener) {
+    this._voiceListeners.add(listener);
+    try { listener(this._voiceState); } catch (e) {}
+    return () => this._voiceListeners.delete(listener);
+  }
+
+  _emitVoiceState(patch) {
+    this._voiceState = { ...this._voiceState, ...patch };
+    this._voiceListeners.forEach((fn) => {
+      try { fn(this._voiceState); } catch (e) {}
+    });
+  }
+
   stopSpeaking() {
     this._speakSessionId += 1;
     this._voiceQueue = [];
@@ -222,6 +249,7 @@ class TacticalAudioEngine {
       try { window.speechSynthesis.cancel(); } catch (e) {}
     }
     this._isSpeaking = false;
+    this._emitVoiceState({ isSpeaking: false, subtitle: '', mode: 'IDLE' });
   }
 
   _ensureAudioContext() {
@@ -308,6 +336,7 @@ class TacticalAudioEngine {
     }
 
     this._isSpeaking = false;
+    this._emitVoiceState({ isSpeaking: false, subtitle: '', mode: 'IDLE' });
   }
 
   playVoiceClip(clipId, { cooldownMs = 3000, interrupt = false } = {}) {
@@ -331,6 +360,11 @@ class TacticalAudioEngine {
         }
       }
       if (this.buffers[bufKey]) {
+        this._emitVoiceState({
+          isSpeaking: true,
+          subtitle: this.clipTranscripts[clipId] || 'Incoming encrypted transmission...',
+          mode: 'ALERT',
+        });
         await this._playBufferWithRadioFx(this.buffers[bufKey], 0.95);
       }
     });
@@ -472,6 +506,12 @@ class TacticalAudioEngine {
         if (i + 1 < chunks.length) {
           nextPromise = this._fetchTtsAudio(chunks[i + 1], headers, controller.signal);
         }
+
+        this._emitVoiceState({
+          isSpeaking: true,
+          subtitle: chunks[i],
+          mode: 'BRIEFING',
+        });
 
         if (decoded) {
           await this._playBufferWithRadioFx(decoded, 1.0);
