@@ -304,18 +304,10 @@ const useStore = create(persist((set, get) => ({
  }
 
  return {
- mapConfig: savedMapConfig
- ? {
- ...state.mapConfig,
- baseMap: savedMapConfig.baseMap || state.mapConfig.baseMap,
- activeOverlays: savedMapConfig.activeOverlays || state.mapConfig.activeOverlays,
- layerOpacity: savedMapConfig.layerOpacity ?? state.mapConfig.layerOpacity,
- }
- : state.mapConfig,
- activeWorkspace: finalActiveWorkspace,
- workspaces: finalWorkspaces,
- activeModules: finalActiveModules,
- windowStates: finalWindowStates
+ activeModules: [],
+ minimizedModules: [],
+ windowStates: {},
+ preMaxStates: {},
  };
  });
  },
@@ -1055,13 +1047,6 @@ const useStore = create(persist((set, get) => ({
  activeView: state.activeView,
  activeCountry: state.activeCountry,
  activeCountryCode: state.activeCountryCode,
- activeWorkspace: state.activeWorkspace,
- workspaces: state.workspaces,
- activeModules: state.activeModules,
- minimizedModules: state.minimizedModules,
- windowStates: state.windowStates,
- preMaxStates: state.preMaxStates,
- mobileActiveTab: state.mobileActiveTab,
  mapConfig: state.mapConfig,
  operatorCoords: state.operatorCoords,
  operatorSafehouses: state.operatorSafehouses,

@@ -635,32 +635,6 @@ const Layout = ({ user, showGreeting, onEnterDashboard, onLogout, onUsernameChan
  return () => window.removeEventListener('keydown', handleKeyDown);
  }, []);
 
- // Auto-save layout to backend (debounced 3s)
- useEffect(() => {
- if (!user?.token) return;
- clearTimeout(saveTimerRef.current);
- saveTimerRef.current = setTimeout(() => {
- const state = useStore.getState();
- // Ensure the current workspace state is perfectly synced to the `workspaces` object before saving
- const workspacesToSave = { ...state.workspaces };
- workspacesToSave[state.activeWorkspace] = {
- activeModules: state.activeModules,
- minimizedModules: state.minimizedModules,
- windowStates: state.windowStates,
- preMaxStates: state.preMaxStates
- };
-
- saveLayout(user.token, { 
- activeModules: state.activeModules, 
- windowStates: state.windowStates, 
- mapConfig: state.mapConfig,
- workspaces: workspacesToSave,
- activeWorkspace: state.activeWorkspace
- });
- }, 3000);
- return () => clearTimeout(saveTimerRef.current);
- }, [activeModules, minimizedModules, windowStates]);
-
  const handleUsernameChange = (newName) => {
  setCurrentUser(prev => ({ ...prev, username: newName }));
  onUsernameChange?.(newName);
@@ -740,33 +714,6 @@ const Layout = ({ user, showGreeting, onEnterDashboard, onLogout, onUsernameChan
      >
        <Minus size={16} strokeWidth={2.5} />
      </button>
-
-     <div className="w-6 h-px bg-white/10 my-0.5" />
-
-     {/* Workspace Switcher Squares (1: TACTICAL, 2: OSINT, 3: MACRO) */}
-     {[
-       { id: 1, label: 'TACTICAL WORKSPACE', short: 'T1', icon: Map },
-       { id: 2, label: 'OSINT WORKSPACE', short: 'O2', icon: Network },
-       { id: 3, label: 'MACRO WORKSPACE', short: 'M3', icon: LineChart },
-     ].map((ws) => {
-       const isActive = activeWorkspace === ws.id;
-       return (
-         <button
-           key={ws.id}
-           type="button"
-           onClick={() => { audio.playClick(); switchWorkspace(ws.id); }}
-           title={ws.label}
-           className={`w-9 h-8 border flex flex-col items-center justify-center transition-colors cursor-pointer ${
-             isActive
-               ? 'bg-[#e8eae6] text-[#111413] border-[#e8eae6] font-bold'
-               : 'bg-[#0f1410] border-white/10 text-white/45 hover:text-[#e8eae6] hover:border-white/25'
-           }`}
-         >
-           <ws.icon size={11} />
-           <span className="text-[7px] font-mono tracking-wider leading-none mt-0.5">{ws.short}</span>
-         </button>
-       );
-     })}
    </div>
 
    {/* Bottom Stack: Command Palette, Notifications, Master Audio, Operator Profile */}
