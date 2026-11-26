@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import useStore, { MODULE_CATEGORIES } from './store';
 import { audio } from './utils/audioEngine';
-import { Shield, Radar, Moon, Globe, Database, Settings, Radio, Activity, Clock, BarChart3, Video, Grid, X, Minus, Square, Plus, Map, User, Bot, Bell, AlertTriangle, Info, Tv, ChevronRight, ChevronsRight, Network, LineChart, Volume2, VolumeX, LogOut, Terminal } from 'lucide-react';
+import { Shield, Radar, Moon, Globe, Database, Settings, Radio, Activity, Clock, BarChart3, Video, Grid, X, Minus, Square, Plus, Mic, Map, User, Bot, Bell, AlertTriangle, Info, Tv, ChevronRight, ChevronsRight, Network, LineChart, Volume2, VolumeX, LogOut, Terminal } from 'lucide-react';
 import { Rnd } from 'react-rnd';
 import TopographicCanvas from './components/TopographicCanvas';
 import Watcher02CommsHUD from './components/Watcher02CommsHUD';
@@ -143,19 +143,19 @@ const ModuleContainer = React.memo(React.forwardRef(({ id, title, icon: Icon, ch
     <div
       ref={ref}
       {...props}
-      className={`flex flex-col w-full h-full overflow-hidden relative bg-[#080b09]/95 border border-[#7fa872]/35 shadow-[0_16px_40px_rgba(0,0,0,0.88)] ${props.className || ''}`}
+      className={`flex flex-col w-full h-full overflow-hidden relative bg-[#060d08]/95 border border-[#4bd865]/45 shadow-[0_18px_44px_rgba(0,0,0,0.92)] ${props.className || ''}`}
       style={{ contain: 'layout style', ...(props.style || {}) }}
     >
-      {/* Watcher Program IWV Header (Drag Handle) */}
+      {/* Watcher Program IWV Header (Synced with WATCHER-02 Emerald Green) */}
       <div
-        className="window-header h-7 border-b border-black bg-[#172016] flex items-center justify-between cursor-move select-none shrink-0"
+        className="window-header h-7 border-b border-black flex items-center justify-between cursor-move select-none shrink-0 relative overflow-hidden"
         style={{
-          background: 'linear-gradient(90deg, #1b2619 0%, #131b12 65%, #161f15 100%)',
-          boxShadow: 'inset 0 1px 0 rgba(198,214,122,0.14)',
+          background: 'linear-gradient(90deg, rgba(42,96,48,0.9) 0%, rgba(24,56,29,0.92) 48%, rgba(10,20,12,0.96) 100%)',
+          boxShadow: 'inset 0 1px 0 rgba(57,231,95,0.22)',
         }}
       >
-        {/* Left: Red [X] Close Square (Option A) + Unboxed Module Icon & Title */}
-        <div className="flex items-center h-full min-w-0 flex-1">
+        {/* Left: Red [X] Close Square + Unboxed Module Icon & Title */}
+        <div className="flex items-center h-full min-w-0 flex-1 relative z-10">
           <button
             type="button"
             title="Close Module"
@@ -172,27 +172,27 @@ const ModuleContainer = React.memo(React.forwardRef(({ id, title, icon: Icon, ch
 
           {/* Clean unboxed Icon + Module Name */}
           <div className="flex items-center gap-2 px-2.5 min-w-0 flex-1">
-            {Icon && <Icon size={13} className="text-[#a3c285] shrink-0" />}
-            <span className="text-[11px] font-bold text-[#d5e3b8] tracking-[0.14em] uppercase truncate">
+            {Icon && <Icon size={13} className="text-[#39e75f] shrink-0 drop-shadow-[0_0_5px_rgba(57,231,95,0.5)]" />}
+            <span className="text-[11px] font-bold text-[#eef6ee] tracking-[0.14em] uppercase truncate">
               {title}
             </span>
-            <span className="hidden sm:inline text-[9px] font-mono text-[#7fa872]/45 tracking-wider truncate ml-auto pr-2">
+            <span className="hidden sm:inline text-[9px] font-mono text-[#4de068]/50 tracking-wider truncate ml-auto pr-2">
               {`.../sys/${String(id || 'module').toLowerCase()}.raw`}
             </span>
           </div>
         </div>
 
-        {/* Far-right Watcher Program [ON] Status Box + signature green end-cap bar */}
-        <div className="flex items-center h-full shrink-0">
-          <div className="h-5 px-2 bg-[#090c09] border border-[#7fa872]/35 text-[#a3c285] font-mono text-[8px] font-bold tracking-widest leading-none flex items-center justify-center">
+        {/* Far-right Watcher Program [ON] Status Box + signature bright green end-cap bar */}
+        <div className="flex items-center h-full shrink-0 relative z-10">
+          <div className="h-5 px-2 bg-[#071109] border border-[#39e75f]/40 text-[#39e75f] font-mono text-[8px] font-bold tracking-widest leading-none flex items-center justify-center">
             ON
           </div>
-          <div className="w-1.5 h-full bg-[#84a96c] ml-1.5 border-l border-black/80" />
+          <div className="w-1.5 h-full bg-[#39e75f] ml-1.5 border-l border-black/80" />
         </div>
       </div>
 
       {/* Inner viewport border + Content */}
-      <div className="no-drag flex-1 overflow-y-auto overflow-x-hidden relative bg-[#060907]/90 custom-scrollbar pointer-events-auto flex flex-col border-b border-[#7fa872]/20">
+      <div className="no-drag flex-1 overflow-y-auto overflow-x-hidden relative bg-[#050b07]/90 custom-scrollbar pointer-events-auto flex flex-col border-b border-[#4bd865]/25">
         <div
           className="flex-1 flex flex-col"
           style={shouldZoom ? { zoom: uiScale, minHeight: '100%', height: '100%' } : { minHeight: '100%', height: '100%' }}
@@ -202,16 +202,16 @@ const ModuleContainer = React.memo(React.forwardRef(({ id, title, icon: Icon, ch
       </div>
 
       {/* Watcher Program Database / Index Footer Bar */}
-      <div className="h-5 bg-[#0a0e0a] px-2.5 flex items-center justify-between text-[9px] font-mono select-none shrink-0">
+      <div className="h-5 bg-[#071109] px-2.5 flex items-center justify-between text-[9px] font-mono select-none shrink-0">
         <div className="flex items-center gap-1.5 truncate">
-          <span className="text-[#7fa872]/60">Database</span>
-          <span className="text-[#c6d67a]/85 font-semibold">{dbCode}</span>
-          <span className="text-[#7fa872]/40 mx-0.5">•</span>
-          <span className="text-[#7fa872]/60">Index</span>
-          <span className="text-[#c6d67a]/85 font-semibold">{idxCode}</span>
-          <span className="text-[#7fa872]/35 uppercase tracking-widest ml-1.5 text-[8px]">ACTIVE</span>
+          <span className="text-[#4de068]/65">Database</span>
+          <span className="text-[#eef6ee]/90 font-semibold">{dbCode}</span>
+          <span className="text-[#39e75f]/40 mx-0.5">•</span>
+          <span className="text-[#4de068]/65">Index</span>
+          <span className="text-[#eef6ee]/90 font-semibold">{idxCode}</span>
+          <span className="text-[#39e75f]/65 uppercase tracking-widest ml-1.5 text-[8px]">ACTIVE</span>
         </div>
-        <span className="text-[8px] text-[#7fa872]/45 tracking-widest uppercase shrink-0">
+        <span className="text-[8px] text-[#39e75f]/60 tracking-widest uppercase shrink-0">
           IWV // LIVE
         </span>
       </div>
@@ -553,7 +553,15 @@ const Layout = ({ user, showGreeting, onEnterDashboard, onLogout, onUsernameChan
  const setMobileActiveTab = useStore(state => state.setMobileActiveTab);
 
  const [isRegistryOpen, setIsRegistryOpen] = useState(false);
+ const [isWatcherOpen, setIsWatcherOpen] = useState(false);
+ const [isWatcherSpeaking, setIsWatcherSpeaking] = useState(false);
  const [isProfileOpen, setIsProfileOpen] = useState(false);
+
+ useEffect(() => {
+   return audio.subscribeVoice((st) => {
+     setIsWatcherSpeaking(Boolean(st.isSpeaking));
+   });
+ }, []);
  const [isNotiOpen, setIsNotiOpen] = useState(false);
  const [isThemeOpen, setIsThemeOpen] = useState(false);
  const [bootHovered, setBootHovered] = useState(false);
@@ -661,69 +669,80 @@ const Layout = ({ user, showGreeting, onEnterDashboard, onLogout, onUsernameChan
  {/* ═══ MAIN FULL-SCREEN STAGE (Left Vertical Bar + 100% Map Canvas + Floating Modules) ═══ */}
  <div className="flex-1 flex relative bg-[#0c0e0d] overflow-hidden">
 
- {/* ═══ LEFT VERTICAL COMMAND BAR (MW4 Watcher Program Left Square Stack) ═══ */}
+ {/* ═══ LEFT VERTICAL COMMAND BAR (WATCHER-02 Emerald Green Stack) ═══ */}
  <div
-   className="w-12 border-r border-white/10 bg-[#0b0f0c]/95 z-[10000] flex flex-col items-center justify-between py-2.5 px-1 shrink-0 select-none"
+   className="w-12 border-r border-[#4bd865]/30 bg-[#060d08]/95 z-[10000] flex flex-col items-center justify-between py-2.5 px-1 shrink-0 select-none"
    style={{ paddingTop: 'max(0.625rem, env(safe-area-inset-top))' }}
  >
-   {/* Top Stack: Emblem + Modules Registry + Workspaces + [+] / [-] Zoom Squares */}
-   <div className="flex flex-col items-center gap-1.5 w-full">
-     {/* RavenX Core Emblem */}
+   {/* Top Stack: Static Brand Emblem + Modules Registry + WATCHER-02 Toggle */}
+   <div className="flex flex-col items-center gap-2 w-full">
+     {/* Static RavenX Core Emblem (Not a button) */}
      <div
-       onClick={() => { audio.playClick(); setIsRegistryOpen(true); }}
-       title="RAVEN-X // WATCHER PROGRAM (Click to open Modules)"
-       className="w-9 h-9 border border-[#7fa872]/40 bg-[#141b15] hover:border-[#c6d67a] flex items-center justify-center relative cursor-pointer transition-colors"
+       title="RAVEN-X // WATCHER PROGRAM"
+       className="w-9 h-9 border border-[#39e75f]/35 bg-[#0a170d] flex items-center justify-center relative select-none"
      >
-       <RavenLogo size={18} className="text-[#c6d67a]" />
-       <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-[#39e75f] border border-[#0b0f0c]" />
+       <RavenLogo size={18} className="text-[#39e75f]" />
+       <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-[#39e75f] border border-[#060d08]" />
      </div>
 
-     {/* Target / Modules Selector Square (Matches Top-Left Target Reticle Square in Image 1) */}
+     <div className="w-6 h-px bg-[#39e75f]/20" />
+
+     {/* 1. Toggle Tactical Modules Button */}
      <button
        type="button"
        onClick={() => { audio.playClick(); setIsRegistryOpen(true); }}
        title="Toggle Tactical Modules"
        className={`w-9 h-9 border flex items-center justify-center relative transition-colors cursor-pointer ${
          isRegistryOpen || visibleModules.length > 0
-           ? 'bg-[#172418] border-[#7fa872]/60 text-[#d8ea96]'
-           : 'bg-[#0f1410] border-white/10 text-[#a3c285]/75 hover:border-[#7fa872]/50 hover:text-[#d8ea96]'
+           ? 'bg-[#17361d] border-[#39e75f] text-[#eef6ee] shadow-[0_0_12px_rgba(57,231,95,0.25)]'
+           : 'bg-[#09140b] border-[#39e75f]/30 text-[#4de068] hover:border-[#39e75f] hover:text-[#eef6ee]'
        }`}
      >
        <Grid size={15} />
        {visibleModules.length > 0 && (
-         <span className="absolute -top-1 -right-1 min-w-[14px] h-[14px] px-0.5 bg-[#84a96c] text-[#090c09] font-mono text-[8px] font-bold flex items-center justify-center">
+         <span className="absolute -top-1 -right-1 min-w-[14px] h-[14px] px-0.5 bg-[#39e75f] text-[#060d08] font-mono text-[8px] font-bold flex items-center justify-center">
            {visibleModules.length}
          </span>
        )}
      </button>
 
-     {/* UI Zoom [+] and [-] Squares (Exact Image 1 Left Rail '+' and '-' Buttons) */}
+     {/* 2. WATCHER-02 Handler Toggle Button (Shows WATCHER-02 HUD only when turned ON) */}
      <button
        type="button"
-       onClick={() => { audio.playClick(); setUiScale(Math.min(1.5, Number((uiScale + 0.1).toFixed(2)))); }}
-       title={`Increase UI Scale (${Math.round(uiScale * 100)}%)`}
-       className="w-9 h-9 bg-[#0f1410] border border-white/10 hover:border-[#7fa872]/55 text-[#a3c285] hover:text-[#e4f4a4] flex items-center justify-center transition-colors cursor-pointer"
+       onClick={() => {
+         audio.playClick();
+         setIsWatcherOpen((prev) => !prev);
+       }}
+       title="Toggle WATCHER-02 Tactical Handler"
+       className={`w-9 h-9 border flex items-center justify-center relative transition-all cursor-pointer ${
+         isWatcherOpen
+           ? 'bg-[#17361d] border-[#39e75f] text-[#eef6ee] shadow-[0_0_14px_rgba(57,231,95,0.35)]'
+           : 'bg-[#09140b] border-[#39e75f]/30 text-[#4de068] hover:border-[#39e75f] hover:text-[#eef6ee]'
+       }`}
      >
-       <Plus size={16} strokeWidth={2.5} />
-     </button>
-     <button
-       type="button"
-       onClick={() => { audio.playClick(); setUiScale(Math.max(0.6, Number((uiScale - 0.1).toFixed(2)))); }}
-       title={`Decrease UI Scale (${Math.round(uiScale * 100)}%)`}
-       className="w-9 h-9 bg-[#0f1410] border border-white/10 hover:border-[#7fa872]/55 text-[#a3c285] hover:text-[#e4f4a4] flex items-center justify-center transition-colors cursor-pointer"
-     >
-       <Minus size={16} strokeWidth={2.5} />
+       <div
+         className={`w-6 h-6 rounded-full border flex items-center justify-center ${
+           isWatcherOpen || isWatcherSpeaking
+             ? 'border-[#39e75f] bg-[#243d27]'
+             : 'border-[#39e75f]/45 bg-[#0c1a0f]'
+         }`}
+       >
+         <Mic size={12} className={isWatcherOpen ? 'text-[#eef6ee]' : 'text-[#39e75f]'} />
+       </div>
+       {isWatcherSpeaking && (
+         <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-[#39e75f] animate-ping" />
+       )}
      </button>
    </div>
 
    {/* Bottom Stack: Command Palette, Notifications, Master Audio, Operator Profile */}
    <div className="flex flex-col items-center gap-1.5 w-full">
-     {/* Command Palette (Ctrl+K) */}
+     {/* Tactical Command Link (Ctrl+K) */}
      <button
        type="button"
        onClick={() => { audio.playClick(); useStore.getState().setCommandPaletteOpen(true); }}
-       className="w-9 h-8 bg-[#0f1410] border border-white/10 hover:border-[#7fa872]/50 text-[#c6d67a] flex items-center justify-center transition-colors cursor-pointer"
-       title="Command Palette (Ctrl+K)"
+       className="w-9 h-8 bg-[#09140b] border border-[#39e75f]/30 hover:border-[#39e75f] text-[#39e75f] flex items-center justify-center transition-colors cursor-pointer"
+       title="Tactical Command Link (Ctrl+K)"
      >
        <Terminal size={13} />
      </button>
@@ -732,7 +751,7 @@ const Layout = ({ user, showGreeting, onEnterDashboard, onLogout, onUsernameChan
      <button
        type="button"
        onClick={() => { audio.playClick(); setIsNotiOpen(!isNotiOpen); }}
-       className="relative w-9 h-8 bg-[#0f1410] border border-white/10 hover:border-[#7fa872]/50 text-white/75 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+       className="relative w-9 h-8 bg-[#09140b] border border-[#39e75f]/30 hover:border-[#39e75f] text-[#a3cca7] hover:text-[#eef6ee] flex items-center justify-center transition-colors cursor-pointer"
        title="System Logs & Alerts"
      >
        <Bell size={13} />
@@ -745,10 +764,10 @@ const Layout = ({ user, showGreeting, onEnterDashboard, onLogout, onUsernameChan
      <button
        type="button"
        onClick={() => { useStore.getState().toggleSound(); }}
-       className="w-9 h-8 bg-[#0f1410] border border-white/10 hover:border-[#7fa872]/50 text-white/65 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+       className="w-9 h-8 bg-[#09140b] border border-[#39e75f]/30 hover:border-[#39e75f] text-[#a3cca7] hover:text-[#eef6ee] flex items-center justify-center transition-colors cursor-pointer"
        title="Toggle Master Audio"
      >
-       {useStore.getState().isSoundEnabled ? <Volume2 size={13} /> : <VolumeX size={13} className="text-[#ef5350]" />}
+       {useStore.getState().isSoundEnabled ? <Volume2 size={13} className="text-[#39e75f]" /> : <VolumeX size={13} className="text-[#ef5350]" />}
      </button>
 
      {/* Operator Profile */}
@@ -757,7 +776,7 @@ const Layout = ({ user, showGreeting, onEnterDashboard, onLogout, onUsernameChan
          type="button"
          onClick={() => { audio.playClick(); setIsProfileOpen(true); }}
          title={`Operator: ${currentUser.username || 'OPERATOR'}`}
-         className="w-9 h-9 bg-[#141b15] border border-[#c6d67a]/35 hover:border-[#c6d67a] text-[#c6d67a] flex items-center justify-center transition-colors cursor-pointer"
+         className="w-9 h-9 bg-[#0e2012] border border-[#39e75f]/45 hover:border-[#39e75f] text-[#39e75f] flex items-center justify-center transition-colors cursor-pointer"
        >
          <User size={13} />
        </button>
@@ -774,8 +793,13 @@ const Layout = ({ user, showGreeting, onEnterDashboard, onLogout, onUsernameChan
      </WindowErrorBoundary>
    </div>
 
-   {/* 2. WATCHER-02 Dedicated Comms Button & Auto-Popout Active Speaker HUD */}
-   {!showGreeting && <Watcher02CommsHUD />}
+   {/* 2. WATCHER-02 Comms HUD (Shown when toggled ON from Left Vertical Bar) */}
+   {!showGreeting && (
+     <Watcher02CommsHUD
+       isOpen={isWatcherOpen}
+       onClose={() => setIsWatcherOpen(false)}
+     />
+   )}
 
    {/* 3. Optional Floating Modules Layer (Pointer-Events-None container so Map stays interactive) */}
    {isMobile ? (

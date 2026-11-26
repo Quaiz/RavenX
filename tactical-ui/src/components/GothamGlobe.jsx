@@ -293,17 +293,22 @@ function OverlayPanel({ isOpen, onClose }) {
  if (!isOpen) return null;
 
  return (
- <div className="absolute top-0 left-0 z-[2000] w-[260px] bg-[#0a0d11]/95 backdrop-blur-md border-r border-white/5 shadow-2xl flex flex-col h-full overflow-hidden">
+ <div className="absolute top-0 right-0 z-[2000] w-[270px] bg-[#071009]/95 border border-[#4bd865]/45 shadow-[0_18px_44px_rgba(0,0,0,0.92)] flex flex-col h-full overflow-hidden">
  {/* Header */}
- <div className="p-3 border-b border-white/5 flex items-center justify-between shrink-0">
+ <div
+   className="p-2.5 border-b border-black flex items-center justify-between shrink-0"
+   style={{
+     background: 'linear-gradient(90deg, rgba(42,96,48,0.88) 0%, rgba(24,56,29,0.92) 55%, rgba(10,20,12,0.95) 100%)',
+   }}
+ >
  <div className="flex items-center gap-2">
- <Layers size={13} className="text-white/40"/>
- <span className="text-[10px] font-bold tracking-[0.2em] text-white/80 uppercase">// Overlays</span>
+ <Layers size={13} className="text-[#39e75f]"/>
+ <span className="text-[10px] font-bold tracking-[0.2em] text-[#eef6ee] uppercase">// Overlays</span>
  </div>
  <div className="flex items-center gap-3">
- <span className="text-[8px] font-bold text-primary tracking-widest">{activeOverlayCount} ACTIVE</span>
- <button onClick={onClose} className="text-white/20 hover:text-white transition-colors">
- <X size={13} />
+ <span className="text-[8px] font-bold text-[#39e75f] tracking-widest">{activeOverlayCount} ACTIVE</span>
+ <button onClick={onClose} className="w-5 h-5 bg-[#261111] border border-[#ef5350]/55 text-[#ff6b6b] hover:bg-[#e05252] hover:text-black flex items-center justify-center transition-colors">
+ <X size={11} />
  </button>
  </div>
  </div>
@@ -454,32 +459,37 @@ const GothamGlobe = React.memo(() => {
  return (
  <div className="relative w-full h-full bg-[#05070a] overflow-hidden">
 
- {/* ═══ MAP TACTICAL TOOLBAR (Top-Right Floating Control Strip) ═══ */}
- <div className="absolute top-3 right-3 z-[1500] h-8 bg-[#0b0f0c]/90 border border-[#7fa872]/35 flex items-center px-2.5 gap-1.5 sm:gap-2.5 overflow-x-auto no-scrollbar shadow-[0_8px_24px_rgba(0,0,0,0.75)]">
- <div className="w-1.5 h-1.5 rounded-full bg-[#39e75f] shadow-[0_0_5px_rgba(57,231,95,0.6)] shrink-0"/>
- <span className="text-[9px] font-bold text-[#d5e3b8]/80 tracking-[0.2em] uppercase shrink-0 hidden sm:inline">TACTICAL MAP</span>
- <div className="h-3 w-px bg-white/10 shrink-0 hidden sm:block"/>
+ {/* ═══ MAP TACTICAL TOOLBAR (Top-Right Floating Control Strip — WATCHER-02 Green Sync) ═══ */}
+ <div
+   className="absolute top-3 right-3 z-[1500] h-8 border border-[#4bd865]/45 flex items-center px-2.5 gap-1.5 sm:gap-2.5 overflow-x-auto no-scrollbar shadow-[0_8px_24px_rgba(0,0,0,0.85)]"
+   style={{
+     background: 'linear-gradient(90deg, rgba(42,96,48,0.88) 0%, rgba(24,56,29,0.92) 50%, rgba(10,20,12,0.95) 100%)',
+   }}
+ >
+ <div className="w-1.5 h-1.5 rounded-full bg-[#39e75f] shadow-[0_0_6px_#39e75f] shrink-0"/>
+ <span className="text-[9px] font-bold text-[#eef6ee] tracking-[0.2em] uppercase shrink-0 hidden sm:inline">TACTICAL MAP</span>
+ <div className="h-3 w-px bg-[#39e75f]/25 shrink-0 hidden sm:block"/>
  <button
  onClick={() => setOverlayOpen(prev => !prev)}
- className={`flex items-center gap-1.5 px-2.5 py-1 text-[8px] font-bold tracking-widest uppercase transition-all shrink-0 ${overlayOpen
- ? 'bg-[#84a96c]/25 text-[#e4f4a4] border border-[#84a96c]/60'
- : 'bg-white/[0.03] text-white/50 border border-white/10 hover:text-white/85 hover:bg-white/[0.07]'
+ className={`flex items-center gap-1.5 px-2.5 py-1 text-[8px] font-bold tracking-widest uppercase transition-all shrink-0 cursor-pointer ${overlayOpen
+ ? 'bg-[#39e75f] text-[#060d08] border border-[#39e75f] shadow-[0_0_10px_rgba(57,231,95,0.4)]'
+ : 'bg-[#071109]/80 text-[#a3cca7] border border-[#39e75f]/35 hover:text-[#eef6ee] hover:border-[#39e75f]'
  }`}
  >
  <Layers size={10} />
  LAYERS
  </button>
  {activeOverlayCount > 0 && (
- <span className="text-[7px] font-bold text-primary tracking-widest shrink-0">{activeOverlayCount} ACTIVE</span>
+ <span className="text-[7px] font-bold text-[#39e75f] tracking-widest shrink-0">{activeOverlayCount} ACTIVE</span>
  )}
 
- <div className="h-3 w-px bg-white/10 ml-1 sm:ml-2 shrink-0"/>
+ <div className="h-3 w-px bg-[#39e75f]/25 ml-1 sm:ml-2 shrink-0"/>
  
  <button
  onClick={() => { setRangefinderActive(prev => !prev); setGeofenceActive(false); }}
- className={`flex items-center gap-1.5 px-2.5 py-1 text-[8px] font-bold tracking-widest uppercase transition-all shrink-0 ${rangefinderActive
+ className={`flex items-center gap-1.5 px-2.5 py-1 text-[8px] font-bold tracking-widest uppercase transition-all shrink-0 cursor-pointer ${rangefinderActive
  ? 'bg-red-500/20 text-red-400 border border-red-500/50 shadow-[0_0_8px_rgba(239,68,68,0.3)]'
- : 'bg-white/[0.03] text-white/40 border border-white/5 hover:text-white/70 hover:bg-white/[0.06]'
+ : 'bg-[#071109]/80 text-[#a3cca7] border border-[#39e75f]/30 hover:text-[#eef6ee] hover:border-[#39e75f]/60'
  }`}
  title="Tactical Rangefinder (Middle Click to use)"
  >
@@ -489,9 +499,9 @@ const GothamGlobe = React.memo(() => {
 
  <button
  onClick={() => { setGeofenceActive(prev => !prev); setRangefinderActive(false); if(predictiveTracking.active) togglePredictiveTracking(); }}
- className={`flex items-center gap-1.5 px-2.5 py-1 text-[8px] font-bold tracking-widest uppercase transition-all shrink-0 ${geofenceActive
+ className={`flex items-center gap-1.5 px-2.5 py-1 text-[8px] font-bold tracking-widest uppercase transition-all shrink-0 cursor-pointer ${geofenceActive
  ? 'bg-red-500/20 text-red-400 border border-red-500/50 shadow-[0_0_8px_rgba(239,68,68,0.3)]'
- : 'bg-white/[0.03] text-white/40 border border-white/5 hover:text-white/70 hover:bg-white/[0.06]'
+ : 'bg-[#071109]/80 text-[#a3cca7] border border-[#39e75f]/30 hover:text-[#eef6ee] hover:border-[#39e75f]/60'
  }`}
  title="Draw Geofence Perimeter"
  >
@@ -501,9 +511,9 @@ const GothamGlobe = React.memo(() => {
 
  <button
  onClick={() => { togglePredictiveTracking(); setRangefinderActive(false); setGeofenceActive(false); }}
- className={`flex items-center gap-1.5 px-2.5 py-1 text-[8px] font-bold tracking-widest uppercase transition-all shrink-0 ${predictiveTracking.active
+ className={`flex items-center gap-1.5 px-2.5 py-1 text-[8px] font-bold tracking-widest uppercase transition-all shrink-0 cursor-pointer ${predictiveTracking.active
  ? 'bg-orange-500/20 text-orange-400 border border-orange-500/50 shadow-[0_0_8px_rgba(249,115,22,0.3)]'
- : 'bg-white/[0.03] text-white/40 border border-white/5 hover:text-white/70 hover:bg-white/[0.06]'
+ : 'bg-[#071109]/80 text-[#a3cca7] border border-[#39e75f]/30 hover:text-[#eef6ee] hover:border-[#39e75f]/60'
  }`}
  title="Target Predictive Tracking (Data Fusion)"
  >
@@ -513,7 +523,7 @@ const GothamGlobe = React.memo(() => {
  </div>
 
  {/* ═══ OVERLAY PANEL (Top-Right below Map Toolbar) ═══ */}
- <div className="absolute top-12 right-3 bottom-8 z-[1400]">
+ <div className="absolute top-12 right-3 bottom-8 z-[2000] pointer-events-auto">
  <OverlayPanel isOpen={overlayOpen} onClose={() => setOverlayOpen(false)} />
  </div>
 
@@ -546,7 +556,6 @@ const GothamGlobe = React.memo(() => {
   predictiveTrackingActive={predictiveTracking.active} 
  />
  <OverlayLayers />
- <CursorTelemetry />
  <TacticalRangefinder active={rangefinderActive} />
  <TacticalGeofence active={geofenceActive} onToggle={setGeofenceActive} />
  <MapController />

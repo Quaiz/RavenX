@@ -6,25 +6,25 @@
 
 :root {
  color-scheme: dark;
- /* Unified MW4 (2026) Tactical Palette: Phosphor Olive-Lime + Smoky Charcoal + Bone White */
- --color-primary: 198, 214, 122;
- --mw4-bg: #0c0e0d;
- --mw4-surface: #131614;
- --mw4-surface-elev: #1a1e1b;
- --mw4-border: rgba(255, 255, 255, 0.08);
- --mw4-sage: #7fa872;
- --mw4-lime: #c6d67a;
- --mw4-bone: #e8eae6;
- --mw4-ochre: #e0c243;
+ /* Unified WATCHER-02 Phosphor Emerald-Green Tactical Palette */
+ --color-primary: 57, 231, 95;
+ --mw4-bg: #060b07;
+ --mw4-surface: #0b140d;
+ --mw4-surface-elev: #132416;
+ --mw4-border: rgba(75, 216, 101, 0.22);
+ --mw4-sage: #4bd865;
+ --mw4-lime: #39e75f;
+ --mw4-bone: #eef6ee;
+ --mw4-ochre: #39e75f;
  --mw4-crimson: #d94638;
 }
 
-/* Performance-optimized Matte Tactical Surface (MW4 Smoky Olive-Charcoal, 60FPS) */
+/* Performance-optimized Matte Tactical Surface (WATCHER-02 Deep Phosphor Green, 60FPS) */
 .tactical-glass {
-  background: #121513;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.55);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-top: 1px solid rgba(198, 214, 122, 0.24);
+  background: #071009;
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.75);
+  border: 1px solid rgba(75, 216, 101, 0.32);
+  border-top: 1px solid rgba(57, 231, 95, 0.45);
   contain: layout style paint;
 }
 
@@ -40,9 +40,9 @@
 /* MW4 Signature Interactive Row / Button (Screenshots 2 & 3: "01 SLAYER" / "Voice Chat Volume") */
 .mw4-row {
   position: relative;
-  background: rgba(18, 22, 19, 0.78);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  color: rgba(232, 234, 230, 0.72);
+  background: rgba(11, 22, 13, 0.85);
+  border: 1px solid rgba(75, 216, 101, 0.18);
+  color: rgba(238, 246, 238, 0.78);
   overflow: hidden;
   transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease, transform 0.14s ease;
 }
@@ -57,16 +57,16 @@
   opacity: 0;
   pointer-events: none;
   background-image:
-    radial-gradient(rgba(198, 214, 122, 0.65) 1px, transparent 1px),
-    linear-gradient(to top, rgba(145, 186, 108, 0.22), transparent);
+    radial-gradient(rgba(57, 231, 95, 0.7) 1px, transparent 1px),
+    linear-gradient(to top, rgba(57, 231, 95, 0.24), transparent);
   background-size: 4px 4px, 100% 100%;
   transition: opacity 0.16s ease;
 }
 
 .mw4-row:hover {
-  background: linear-gradient(90deg, rgba(163, 201, 119, 0.16) 0%, rgba(127, 168, 114, 0.06) 55%, rgba(18, 22, 19, 0.88) 100%);
-  border-color: rgba(184, 212, 126, 0.45);
-  color: #e4f2a8;
+  background: linear-gradient(90deg, rgba(42, 96, 48, 0.55) 0%, rgba(24, 56, 29, 0.45) 55%, rgba(10, 20, 12, 0.92) 100%);
+  border-color: rgba(75, 216, 101, 0.55);
+  color: #eef6ee;
 }
 
 .mw4-row:hover::after {
@@ -75,11 +75,11 @@
 
 .mw4-row-active {
   position: relative;
-  background: linear-gradient(90deg, rgba(168, 204, 114, 0.24) 0%, rgba(127, 168, 114, 0.10) 50%, rgba(18, 22, 19, 0.88) 100%);
-  border: 1px solid rgba(198, 214, 122, 0.55);
-  color: #e4f2a8;
+  background: linear-gradient(90deg, rgba(42, 96, 48, 0.88) 0%, rgba(24, 56, 29, 0.88) 50%, rgba(10, 20, 12, 0.95) 100%);
+  border: 1px solid rgba(75, 216, 101, 0.65);
+  color: #f2faf2;
   overflow: hidden;
-  box-shadow: inset 0 -10px 18px -10px rgba(163, 201, 119, 0.35), 0 0 14px rgba(145, 186, 108, 0.12);
+  box-shadow: inset 0 -10px 18px -10px rgba(57, 231, 95, 0.35), 0 0 14px rgba(57, 231, 95, 0.16);
 }
 
 .mw4-row-active::before {
@@ -89,8 +89,8 @@
   top: 0;
   bottom: 0;
   width: 3px;
-  background: #d8ea96;
-  box-shadow: 0 0 8px rgba(216, 234, 150, 0.7);
+  background: #39e75f;
+  box-shadow: 0 0 8px rgba(57, 231, 95, 0.85);
 }
 
 .mw4-row-active::after {
@@ -102,22 +102,22 @@
   height: 14px;
   pointer-events: none;
   background-image:
-    radial-gradient(rgba(216, 234, 150, 0.65) 1px, transparent 1px),
-    linear-gradient(to top, rgba(154, 194, 112, 0.28), transparent);
+    radial-gradient(rgba(57, 231, 95, 0.75) 1px, transparent 1px),
+    linear-gradient(to top, rgba(57, 231, 95, 0.3), transparent);
   background-size: 4px 4px, 100% 100%;
   mask-image: linear-gradient(to top, rgba(0, 0, 0, 0.95), transparent);
   -webkit-mask-image: linear-gradient(to top, rgba(0, 0, 0, 0.95), transparent);
 }
 
-/* MW4 Hero Action Button (Screenshot 1: "» PLAY" luminous bottom-edge phosphor glow) */
+/* MW4 Hero Action Button (WATCHER-02 Green Sync) */
 .mw4-hero-btn {
   position: relative;
-  background: linear-gradient(180deg, rgba(168, 204, 114, 0.04) 0%, rgba(168, 204, 114, 0.18) 100%);
-  border: 1px solid rgba(198, 214, 122, 0.28);
-  border-bottom: 2px solid #d8ea96;
-  color: #e4f4a4;
+  background: linear-gradient(90deg, rgba(42, 96, 48, 0.82) 0%, rgba(24, 56, 29, 0.88) 55%, rgba(10, 20, 12, 0.95) 100%);
+  border: 1px solid rgba(75, 216, 101, 0.45);
+  border-bottom: 2px solid #39e75f;
+  color: #f2faf2;
   overflow: hidden;
-  box-shadow: 0 10px 28px -10px rgba(198, 214, 122, 0.32), inset 0 -14px 24px -12px rgba(198, 214, 122, 0.38);
+  box-shadow: 0 10px 28px -10px rgba(57, 231, 95, 0.35), inset 0 -14px 24px -12px rgba(57, 231, 95, 0.38);
   transition: all 0.18s ease;
 }
 
@@ -129,41 +129,41 @@
   bottom: 0;
   height: 18px;
   pointer-events: none;
-  background-image: radial-gradient(rgba(220, 240, 155, 0.65) 1px, transparent 1px);
+  background-image: radial-gradient(rgba(57, 231, 95, 0.7) 1px, transparent 1px);
   background-size: 4px 4px;
   mask-image: linear-gradient(to top, rgba(0, 0, 0, 0.9), transparent);
   -webkit-mask-image: linear-gradient(to top, rgba(0, 0, 0, 0.9), transparent);
 }
 
 .mw4-hero-btn:hover {
-  background: linear-gradient(180deg, rgba(180, 216, 124, 0.12) 0%, rgba(180, 216, 124, 0.30) 100%);
-  border-color: rgba(216, 234, 150, 0.65);
-  box-shadow: 0 12px 34px -8px rgba(198, 214, 122, 0.5), inset 0 -18px 28px -10px rgba(216, 234, 150, 0.45);
-  color: #f3fcc8;
+  background: linear-gradient(90deg, rgba(52, 118, 60, 0.9) 0%, rgba(30, 72, 36, 0.92) 55%, rgba(12, 26, 15, 0.96) 100%);
+  border-color: rgba(57, 231, 95, 0.8);
+  box-shadow: 0 12px 34px -8px rgba(57, 231, 95, 0.55), inset 0 -18px 28px -10px rgba(57, 231, 95, 0.45);
+  color: #ffffff;
 }
 
-/* MW4 Top Navigation Tab (Solid Bone-White Active Pill) */
+/* MW4 Top Navigation Tab (WATCHER-02 Active Pill) */
 .mw4-tab {
-  color: rgba(232, 234, 230, 0.5);
-  background: transparent;
+  color: rgba(163, 204, 167, 0.65);
+  background: rgba(7, 17, 9, 0.6);
   transition: background-color 0.12s ease, color 0.12s ease;
 }
 
 .mw4-tab:hover {
-  color: #e8eae6;
-  background: rgba(255, 255, 255, 0.06);
+  color: #eef6ee;
+  background: rgba(57, 231, 95, 0.12);
 }
 
 .mw4-tab-active {
-  background: #e8eae6;
-  color: #111413;
+  background: #39e75f;
+  color: #060d08;
   font-weight: 700;
 }
 
-/* MW4 Tactical Ochre Status Badge (BETA / OPS) */
+/* MW4 Tactical Status Badge */
 .mw4-badge {
-  background: #e0c243;
-  color: #111413;
+  background: #39e75f;
+  color: #060d08;
   font-weight: 800;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -175,8 +175,8 @@
   width: 30px;
   height: 16px;
   border-radius: 9999px;
-  background: #272b28;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: #0b160d;
+  border: 1px solid rgba(75, 216, 101, 0.25);
   transition: background-color 0.15s ease, border-color 0.15s ease;
   flex-shrink: 0;
 }
@@ -189,18 +189,18 @@
   width: 10px;
   height: 10px;
   border-radius: 9999px;
-  background: #a4aaa5;
+  background: #6b8f71;
   transition: transform 0.15s ease, background-color 0.15s ease;
 }
 
 .mw4-toggle-on {
-  background: #7aa374;
-  border-color: rgba(198, 214, 122, 0.55);
+  background: #278c38;
+  border-color: #39e75f;
 }
 
 .mw4-toggle-on::after {
   transform: translateX(14px);
-  background: #f4f6f2;
+  background: #eef6ee;
 }
 
 /* Restrained Tactical Highlights (replaces heavy neon glow for 60FPS clarity) */

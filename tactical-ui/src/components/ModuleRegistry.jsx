@@ -53,17 +53,35 @@ const ModuleRegistry = ({ isOpen, onClose }) => {
 
  return (
  <div className="fixed inset-0 z-[20000] flex items-center justify-center p-4 bg-black/75">
- <div className="w-full max-w-xl h-[560px] bg-[#121513] border border-white/10 shadow-2xl flex flex-col overflow-hidden">
+ <div className="w-full max-w-xl h-[560px] bg-[#071009]/95 border border-[#4bd865]/50 shadow-[0_22px_55px_rgba(0,0,0,0.92)] flex flex-col overflow-hidden">
 
- {/* ═══ HEADER (MW4 Settings Style) ═══ */}
- <div className="h-12 border-b border-white/10 flex items-center justify-between px-5 bg-[#0e110f] shrink-0">
- <div className="flex items-center gap-2.5">
- <span className="text-[13px] font-bold tracking-[0.2em] text-[#e8eae6] uppercase">MODULES</span>
- <span className="mw4-badge px-1.5 py-0.5 text-[7px] leading-none">{activeCount}/{totalCount}</span>
+ {/* ═══ HEADER (WATCHER-02 Green Style) ═══ */}
+ <div
+   className="h-9 border-b border-black flex items-center justify-between shrink-0"
+   style={{
+     background: 'linear-gradient(90deg, rgba(42,96,48,0.9) 0%, rgba(24,56,29,0.92) 48%, rgba(10,20,12,0.96) 100%)',
+   }}
+ >
+ <div className="flex items-center h-full">
+   <button
+     type="button"
+     onClick={() => { audio.playClick(); onClose(); }}
+     className="w-8 h-full bg-[#261111] hover:bg-[#e05252] text-[#ff6b6b] hover:text-[#090c09] border-r border-black/80 font-mono text-[11px] font-bold flex items-center justify-center transition-colors cursor-pointer"
+     title="Close Modules"
+   >
+     X
+   </button>
+   <div className="flex items-center gap-2.5 px-3">
+     <span className="text-[12px] font-bold tracking-[0.2em] text-[#eef6ee] uppercase">// TACTICAL MODULES</span>
+     <span className="mw4-badge px-1.5 py-0.5 text-[7px] leading-none">{activeCount}/{totalCount}</span>
+   </div>
  </div>
- <button onClick={() => { audio.playClick(); onClose(); }} className="p-1.5 hover:bg-white/10 text-white/40 hover:text-white transition-colors">
- <X size={16} />
- </button>
+ <div className="flex items-center h-full">
+   <div className="h-5 px-2 bg-[#071109] border border-[#39e75f]/40 text-[#39e75f] font-mono text-[8px] font-bold tracking-widest flex items-center justify-center">
+     ON.SE1
+   </div>
+   <div className="w-1.5 h-full bg-[#39e75f] ml-1.5 border-l border-black/80" />
+ </div>
  </div>
 
  {/* ═══ SEARCH ═══ */}
