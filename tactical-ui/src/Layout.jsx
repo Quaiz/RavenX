@@ -674,7 +674,7 @@ const Layout = ({ user, showGreeting, onEnterDashboard, onLogout, onUsernameChan
    className="w-12 border-r border-[#4bd865]/30 bg-[#060d08]/95 z-[10000] flex flex-col items-center justify-between py-2.5 px-1 shrink-0 select-none"
    style={{ paddingTop: 'max(0.625rem, env(safe-area-inset-top))' }}
  >
-   {/* Top Stack: Static Brand Emblem + Modules Registry + WATCHER-02 Toggle */}
+   {/* Top Stack: Static Brand Emblem + Modules Registry */}
    <div className="flex flex-col items-center gap-2 w-full">
      {/* Static RavenX Core Emblem (Not a button) */}
      <div
@@ -687,7 +687,7 @@ const Layout = ({ user, showGreeting, onEnterDashboard, onLogout, onUsernameChan
 
      <div className="w-6 h-px bg-[#39e75f]/20" />
 
-     {/* 1. Toggle Tactical Modules Button */}
+     {/* Toggle Tactical Modules Button */}
      <button
        type="button"
        onClick={() => { audio.playClick(); setIsRegistryOpen(true); }}
@@ -705,8 +705,11 @@ const Layout = ({ user, showGreeting, onEnterDashboard, onLogout, onUsernameChan
          </span>
        )}
      </button>
+   </div>
 
-     {/* 2. WATCHER-02 Handler Toggle Button (Shows WATCHER-02 HUD only when turned ON) */}
+   {/* Bottom Stack: WATCHER-02, Command Palette, Notifications, Master Audio, Operator Profile */}
+   <div className="flex flex-col items-center gap-1.5 w-full">
+     {/* WATCHER-02 Handler Toggle Button (Grouped with bottom controls, no blinking dot) */}
      <button
        type="button"
        onClick={() => {
@@ -714,29 +717,15 @@ const Layout = ({ user, showGreeting, onEnterDashboard, onLogout, onUsernameChan
          setIsWatcherOpen((prev) => !prev);
        }}
        title="Toggle WATCHER-02 Tactical Handler"
-       className={`w-9 h-9 border flex items-center justify-center relative transition-all cursor-pointer ${
+       className={`w-9 h-8 border flex items-center justify-center relative transition-all cursor-pointer ${
          isWatcherOpen
-           ? 'bg-[#17361d] border-[#39e75f] text-[#eef6ee] shadow-[0_0_14px_rgba(57,231,95,0.35)]'
-           : 'bg-[#09140b] border-[#39e75f]/30 text-[#4de068] hover:border-[#39e75f] hover:text-[#eef6ee]'
+           ? 'bg-[#17361d] border-[#39e75f] text-[#eef6ee] shadow-[0_0_12px_rgba(57,231,95,0.25)]'
+           : 'bg-[#09140b] border-[#39e75f]/30 text-[#39e75f] hover:border-[#39e75f] hover:text-[#eef6ee]'
        }`}
      >
-       <div
-         className={`w-6 h-6 rounded-full border flex items-center justify-center ${
-           isWatcherOpen || isWatcherSpeaking
-             ? 'border-[#39e75f] bg-[#243d27]'
-             : 'border-[#39e75f]/45 bg-[#0c1a0f]'
-         }`}
-       >
-         <Mic size={12} className={isWatcherOpen ? 'text-[#eef6ee]' : 'text-[#39e75f]'} />
-       </div>
-       {isWatcherSpeaking && (
-         <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-[#39e75f] animate-ping" />
-       )}
+       <Mic size={13} className={isWatcherOpen ? 'text-[#eef6ee]' : 'text-[#39e75f]'} />
      </button>
-   </div>
 
-   {/* Bottom Stack: Command Palette, Notifications, Master Audio, Operator Profile */}
-   <div className="flex flex-col items-center gap-1.5 w-full">
      {/* Tactical Command Link (Ctrl+K) */}
      <button
        type="button"

@@ -112,13 +112,9 @@ const Watcher02CommsHUD = ({ isOpen, onClose }) => {
                 </span>
 
                 <div className="flex items-center gap-2.5 pb-0.5">
-                  {/* Active Green Node */}
+                  {/* Active Green Node (Static, no blinking ping) */}
                   <div className="w-4 h-4 rounded-full bg-[#050806] border-2 border-[#39e75f]/85 flex items-center justify-center shadow-[0_0_6px_rgba(57,231,95,0.5)]">
-                    <div
-                      className={`w-1.5 h-1.5 rounded-full bg-[#39e75f] ${
-                        voiceState.isSpeaking ? 'animate-ping' : ''
-                      }`}
-                    />
+                    <div className="w-1.5 h-1.5 rounded-full bg-[#39e75f]" />
                   </div>
                   {/* Secondary Cyan-Ring Node */}
                   <div className="w-4 h-4 rounded-full bg-[#050806] border-2 border-[#48b8d0]/75 flex items-center justify-center">
@@ -253,18 +249,6 @@ const Watcher02CommsHUD = ({ isOpen, onClose }) => {
           </div>
         </div>
       </div>
-
-      {/* ═══ DIEGETIC SUBTITLE BAR (Positioned in open Map area to the right of WATCHER-02 so it NEVER overlaps!) ═══ */}
-      {voiceState.isSpeaking && voiceState.subtitle && (
-        <div className="fixed bottom-10 left-14 md:left-[500px] right-6 z-[99990] flex justify-center pointer-events-none">
-          <div className="max-w-xl w-auto px-4 py-1.5 bg-[#060d09]/92 border border-[#39e75f]/30 shadow-[0_8px_28px_rgba(0,0,0,0.92)] text-center">
-            <span className="text-[12px] font-sans tracking-wide leading-snug line-clamp-2">
-              <span className="text-[#48b8d0] font-bold mr-1.5">WATCHER-02:</span>
-              <span className="text-[#eef4f4]">{voiceState.subtitle}</span>
-            </span>
-          </div>
-        </div>
-      )}
     </>
   );
 };
