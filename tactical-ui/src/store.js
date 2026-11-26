@@ -237,7 +237,7 @@ const useStore = create(persist((set, get) => ({
  windowStates: { 
  ...state.windowStates, 
  [id]: { 
- ...(state.windowStates[id] || { x: 100, y: 100, w: 400, h: 300, z: 10 }), 
+ ...(state.windowStates[id] || { x: 460, y: 60, w: 460, h: 360, z: 100 }), 
  ...safeUpdates 
  } 
  }
@@ -246,13 +246,13 @@ const useStore = create(persist((set, get) => ({
 
  bringToFront: (id) => set((state) => {
  const currentZ = state.windowStates[id]?.z || 0;
- const maxZ = Math.max(...Object.values(state.windowStates).map(w => w?.z || 0), 0);
+ const maxZ = Math.max(...Object.values(state.windowStates).map(w => w?.z || 0), 100);
  if (currentZ === maxZ && currentZ > 0) return state;
  return {
  windowStates: { 
  ...state.windowStates, 
  [id]: { 
- ...(state.windowStates[id] || { x: 100, y: 100, w: 400, h: 300 }), 
+ ...(state.windowStates[id] || { x: 460, y: 60, w: 460, h: 360 }), 
  z: maxZ + 1 
  } 
  }
@@ -355,10 +355,15 @@ const useStore = create(persist((set, get) => ({
  };
  } else {
  const nextActive = [...state.activeModules, id];
- const offset = (nextActive.length % 5) * 40;
+ const offset = ((nextActive.length - 1) % 6) * 34;
+ const maxZ = Math.max(...Object.values(state.windowStates).map(w => w?.z || 0), 100);
+ const defaultX = typeof window !== 'undefined' && window.innerWidth > 1024 ? 470 + offset : 80 + offset;
+ const defaultY = 50 + offset;
  const newWindowStates = {
  ...state.windowStates,
- [id]: state.windowStates[id] || { x: 100 + offset, y: 100 + offset, w: 400, h: 300, z: 100 + nextActive.length }
+ [id]: state.windowStates[id]
+   ? { ...state.windowStates[id], z: maxZ + 1 }
+   : { x: defaultX, y: defaultY, w: 460, h: 360, z: maxZ + 1 }
  };
  return {
  activeModules: nextActive,
@@ -397,10 +402,15 @@ const useStore = create(persist((set, get) => ({
  }
  
  const nextActive = [...state.activeModules, id];
- const offset = (nextActive.length % 5) * 40;
+ const offset = ((nextActive.length - 1) % 6) * 34;
+ const maxZ = Math.max(...Object.values(state.windowStates).map(w => w?.z || 0), 100);
+ const defaultX = typeof window !== 'undefined' && window.innerWidth > 1024 ? 470 + offset : 80 + offset;
+ const defaultY = 50 + offset;
  const newWindowStates = {
  ...state.windowStates,
- [id]: state.windowStates[id] || { x: 100 + offset, y: 100 + offset, w: 400, h: 300, z: 100 + nextActive.length }
+ [id]: state.windowStates[id]
+   ? { ...state.windowStates[id], z: maxZ + 1 }
+   : { x: defaultX, y: defaultY, w: 460, h: 360, z: maxZ + 1 }
  };
  return {
  activeModules: nextActive,
@@ -1075,6 +1085,15 @@ const useStore = create(persist((set, get) => ({
  addCommsLog: (log) => set(state => ({ commsLink: { ...state.commsLink, logs: [...state.commsLink.logs.slice(-20), log] } }))
 }), {
  name: 'raven-global-store',
+ version: 2,
+ merge: (persistedState, currentState) => ({
+ ...currentState,
+ ...(persistedState || {}),
+ activeModules: [],
+ minimizedModules: [],
+ windowStates: {},
+ preMaxStates: {},
+ }),
  partialize: (state) => ({
  activeView: state.activeView,
  activeCountry: state.activeCountry,

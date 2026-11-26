@@ -216,18 +216,15 @@
 @keyframes macosWindowOpen {
   0% {
     opacity: 0;
-    transform: scale(0.42) translate(-28px, 18px);
-    filter: brightness(1.35);
+    transform: scale(0.86) translate(-16px, 12px);
   }
-  65% {
+  70% {
     opacity: 1;
-    transform: scale(1.02) translate(1px, -1px);
-    filter: brightness(1.05);
+    transform: scale(1.01) translate(0, 0);
   }
   100% {
     opacity: 1;
-    transform: scale(1) translate(0, 0);
-    filter: brightness(1);
+    transform: none;
   }
 }
 
@@ -238,21 +235,19 @@
   }
   100% {
     opacity: 0;
-    transform: scale(0.38) translate(-32px, 22px);
+    transform: scale(0.82) translate(-18px, 14px);
   }
 }
 
 .macos-window-enter {
   transform-origin: left bottom;
-  animation: macosWindowOpen 0.26s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-  will-change: transform, opacity;
+  animation: macosWindowOpen 0.22s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .macos-window-exit {
   transform-origin: left bottom;
-  animation: macosWindowClose 0.21s cubic-bezier(0.32, 0, 0.67, 0) forwards;
+  animation: macosWindowClose 0.18s cubic-bezier(0.32, 0, 0.67, 0) forwards;
   pointer-events: none !important;
-  will-change: transform, opacity;
 }
 
 /* Hexagon Grid Animation Keyframes */

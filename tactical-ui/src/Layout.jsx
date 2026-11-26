@@ -133,11 +133,18 @@ const NewsTicker = ({ minimizedModules, restoreModule, getModuleIcon }) => {
 // ═══ MODULE CONTAINER FOR GRID ═══
 const MODULES_NO_ZOOM = ['MAP_MODULE', 'LINK_ANALYSIS', 'GLOBAL_NEWS', 'LIVE_WEBCAMS', 'AIS_VESSELS'];
 
-const ModuleContainer = React.memo(React.forwardRef(({ id, title, icon: Icon, children, onClose, isClosing = false, ...props }, ref) => {
+const ModuleContainer = React.memo(React.forwardRef(({ id, title, icon: Icon, children, onClose, onMinimize, onMaximize, isClosing = false, ...props }, ref) => {
   const uiScale = useStore(state => state.uiScale);
   const shouldZoom = !MODULES_NO_ZOOM.includes(id);
   const dbCode = `IW-${String(id || 'MOD').replace(/[^A-Z0-9]/gi, '').slice(0, 4).toUpperCase()}-A`;
   const idxCode = `AVF-${String((id || '').length * 19 + 11).padStart(3, '0')}`;
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      window.dispatchEvent(new Event('resize'));
+    }, 230);
+    return () => clearTimeout(t);
+  }, []);
 
   return (
     <div
@@ -146,7 +153,7 @@ const ModuleContainer = React.memo(React.forwardRef(({ id, title, icon: Icon, ch
       className={`flex flex-col w-full h-full overflow-hidden relative bg-[#060d08]/95 border border-[#4bd865]/45 shadow-[0_18px_44px_rgba(0,0,0,0.92)] ${
         isClosing ? 'macos-window-exit' : 'macos-window-enter'
       } ${props.className || ''}`}
-      style={{ contain: 'layout style', ...(props.style || {}) }}
+      style={{ ...(props.style || {}) }}
     >
       {/* Watcher Program IWV Header (Synced with WATCHER-02 Emerald Green) */}
       <div
@@ -245,17 +252,18 @@ const Window = React.memo(({ id, title, icon, state = {}, isMaximized, isClosing
 
  const handleResizeStop = useCallback((e, direction, ref, delta, position) => {
  onResize?.(id, {
- w: parseInt(ref.style.width, 10) || state.w,
- h: parseInt(ref.style.height, 10) || state.h,
+ w: parseInt(ref.style.width, 10) || ref.offsetWidth || state.w,
+ h: parseInt(ref.style.height, 10) || ref.offsetHeight || state.h,
  x: position.x,
  y: position.y
  });
+ setTimeout(() => window.dispatchEvent(new Event('resize')), 30);
  }, [onResize, id, state.w, state.h]);
 
  if (isMobile) {
  return (
  <div
-   className="absolute top-11 left-1.5 right-1.5 z-50 flex flex-col pointer-events-auto"
+   className={`absolute top-11 left-1.5 right-1.5 z-50 flex flex-col ${isClosing ? 'pointer-events-none' : 'pointer-events-auto'}`}
    style={{ bottom: 'calc(2.85rem + env(safe-area-inset-bottom))' }}
  >
  <ModuleContainer
@@ -282,14 +290,14 @@ const Window = React.memo(({ id, title, icon, state = {}, isMaximized, isClosing
  onDragStop={handleDragStop}
  onResizeStop={handleResizeStop}
  onMouseDownCapture={handleFocus}
- disableDragging={isMaximized}
- enableResizing={!isMaximized}
+ disableDragging={isMaximized || isClosing}
+ enableResizing={!isMaximized && !isClosing}
  minWidth={300}
  minHeight={200}
  dragHandleClassName="window-header"
  cancel=".no-drag"
- style={{ zIndex: state.z, position: 'absolute', willChange: 'transform' }}
- className="pointer-events-auto flex flex-col"
+ style={{ zIndex: state.z, position: 'absolute', willChange: 'transform', pointerEvents: isClosing ? 'none' : 'auto' }}
+ className={`${isClosing ? 'pointer-events-none' : 'pointer-events-auto'} flex flex-col`}
  >
  <ModuleContainer
  id={id}
@@ -706,26 +714,50 @@ const Layout = ({ user, showGreeting, onEnterDashboard, onLogout, onUsernameChan
  };
 
  // Visible floating modules = active minus minimized, excluding permanent Map & dedicated WATCHER-02 HUD
- const visibleModules = activeModules.filter(
-   id => !minimizedModules.includes(id) && id !== 'MAP_MODULE' && id !== 'AI_ANALYST'
+ const visibleModules = React.useMemo(
+   () => activeModules.filter(id => !minimizedModules.includes(id) && id !== 'MAP_MODULE' && id !== 'AI_ANALYST'),
+   [activeModules, minimizedModules]
  );
 
- // Track closing modules for 215ms so macOS window-close animation plays smoothly before unmount
+ // Track closing modules for 190ms using per-module timers in a ref so re-renders NEVER cancel the unmount timer!
  const [closingModules, setClosingModules] = useState([]);
  const prevVisibleRef = useRef(visibleModules);
+ const closingTimersRef = useRef({});
 
  useEffect(() => {
    const prev = prevVisibleRef.current;
    const removed = prev.filter(id => !visibleModules.includes(id));
+   const added = visibleModules.filter(id => !prev.includes(id));
    prevVisibleRef.current = visibleModules;
+
+   // If a module was re-opened while closing, cancel its close timer immediately
+   if (added.length > 0) {
+     added.forEach(id => {
+       if (closingTimersRef.current[id]) {
+         clearTimeout(closingTimersRef.current[id]);
+         delete closingTimersRef.current[id];
+       }
+     });
+     setClosingModules(curr => curr.filter(id => !added.includes(id)));
+   }
+
    if (removed.length > 0) {
      setClosingModules(curr => [...new Set([...curr, ...removed])]);
-     const t = setTimeout(() => {
-       setClosingModules(curr => curr.filter(id => !removed.includes(id)));
-     }, 215);
-     return () => clearTimeout(t);
+     removed.forEach(id => {
+       if (closingTimersRef.current[id]) clearTimeout(closingTimersRef.current[id]);
+       closingTimersRef.current[id] = setTimeout(() => {
+         delete closingTimersRef.current[id];
+         setClosingModules(curr => curr.filter(m => m !== id));
+       }, 190);
+     });
    }
  }, [visibleModules]);
+
+ useEffect(() => {
+   return () => {
+     Object.values(closingTimersRef.current).forEach(clearTimeout);
+   };
+ }, []);
 
  const renderedModules = [
    ...visibleModules,
@@ -962,7 +994,7 @@ const Layout = ({ user, showGreeting, onEnterDashboard, onLogout, onUsernameChan
      )
    ) : (
      renderedModules.length > 0 && (
-       <div className="absolute inset-0 z-10 overflow-y-auto overflow-x-hidden custom-scrollbar pointer-events-none">
+       <div className="absolute inset-0 z-[3000] overflow-y-auto overflow-x-hidden custom-scrollbar pointer-events-none">
          <div style={{ minHeight: '100%', height: wrapperHeight > 0 ? `${wrapperHeight}px` : '100%', overflow: 'hidden' }}>
            <div
              className="relative"
