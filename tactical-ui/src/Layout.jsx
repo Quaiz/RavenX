@@ -724,7 +724,14 @@ const Layout = ({ user, showGreeting, onEnterDashboard, onLogout, onUsernameChan
      {/* 1. Toggle Tactical Modules Button */}
      <button
        type="button"
-       onClick={() => { audio.playClick(); setIsRegistryOpen(prev => !prev); }}
+       onClick={() => {
+         audio.playClick();
+         setIsRegistryOpen((prev) => {
+           const next = !prev;
+           if (next) useStore.getState().setMapOverlayOpen(false);
+           return next;
+         });
+       }}
        title="Toggle Tactical Modules"
        className={`w-9 h-9 border flex items-center justify-center relative transition-colors cursor-pointer ${
          isRegistryOpen || visibleModules.length > 0
@@ -745,7 +752,10 @@ const Layout = ({ user, showGreeting, onEnterDashboard, onLogout, onUsernameChan
      {/* 2. Map Overlays / Layers Button */}
      <button
        type="button"
-       onClick={toggleMapOverlayOpen}
+       onClick={() => {
+         if (!mapOverlayOpen) setIsRegistryOpen(false);
+         toggleMapOverlayOpen();
+       }}
        title="Map Layers & Overlays"
        className={`w-9 h-8 border flex items-center justify-center relative transition-colors cursor-pointer ${
          mapOverlayOpen || activeOverlayCount > 0

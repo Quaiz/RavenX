@@ -309,7 +309,7 @@ function OverlayPanel({ isOpen, onClose }) {
  if (!shouldRender) return null;
 
  return (
- <div className={`absolute top-0 left-0 z-[2000] w-[285px] bg-[#071009]/95 border border-[#4bd865]/45 shadow-[0_18px_44px_rgba(0,0,0,0.92)] flex flex-col max-h-full overflow-hidden ${isClosing ? 'macos-window-exit' : 'macos-window-enter'}`}>
+ <div className={`absolute top-0 left-0 z-[2000] w-[285px] bg-[#071009]/95 border border-[#4bd865]/45 shadow-[0_18px_44px_rgba(0,0,0,0.92)] flex flex-col max-h-full overflow-hidden pointer-events-auto ${isClosing ? 'macos-window-exit' : 'macos-window-enter'}`}>
  {/* Header */}
  <div
    className="p-2.5 border-b border-black flex items-center justify-between shrink-0"
@@ -476,8 +476,8 @@ const GothamGlobe = React.memo(() => {
  return (
  <div className="relative w-full h-full bg-[#05070a] overflow-hidden">
 
- {/* ═══ OVERLAY PANEL (Docked on Left next to Left Vertical Command Bar) ═══ */}
- <div className="absolute top-3 left-2 bottom-8 z-[2000] pointer-events-auto">
+ {/* ═══ OVERLAY PANEL (Docked on Left next to Left Vertical Command Bar, above WATCHER-02) ═══ */}
+ <div className="absolute top-3 left-2 bottom-[150px] z-[2000] pointer-events-none">
  <OverlayPanel isOpen={overlayOpen} onClose={() => setOverlayOpen(false)} />
  </div>
 

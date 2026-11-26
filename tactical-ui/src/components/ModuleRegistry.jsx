@@ -69,14 +69,14 @@ const ModuleRegistry = ({ isOpen, onClose, isWatcherOpen = false }) => {
 
  return (
  <div
-   className={`fixed left-14 z-[19500] pointer-events-auto ${
+   className={`fixed left-14 z-[19500] pointer-events-auto transition-[bottom] duration-200 ${
      isClosing ? 'macos-window-exit' : 'macos-window-enter'
    }`}
    style={{
-     bottom: isWatcherOpen ? '146px' : '32px',
+     bottom: isWatcherOpen ? '170px' : '32px',
    }}
  >
- <div className="w-[390px] sm:w-[435px] max-w-[calc(100vw-4.5rem)] h-[430px] max-h-[calc(100dvh-165px)] bg-[#071009]/95 border border-[#4bd865]/50 shadow-[0_22px_55px_rgba(0,0,0,0.92)] flex flex-col overflow-hidden">
+ <div className="w-[390px] sm:w-[435px] max-w-[calc(100vw-4.5rem)] h-[420px] max-h-[calc(100dvh-190px)] bg-[#071009]/95 border border-[#4bd865]/50 shadow-[0_22px_55px_rgba(0,0,0,0.92)] flex flex-col overflow-hidden">
 
  {/* ═══ HEADER (WATCHER-02 Green Style) ═══ */}
  <div
