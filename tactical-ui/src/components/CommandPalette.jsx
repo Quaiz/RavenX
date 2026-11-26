@@ -21,6 +21,23 @@ const CommandPalette = () => {
   const setMapTarget = useStore(s => s.setMapTarget);
   const setBaseMap = useStore(s => s.setBaseMap);
 
+  const [shouldRender, setShouldRender] = useState(isOpen);
+  const [isClosing, setIsClosing] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setShouldRender(true);
+      setIsClosing(false);
+    } else if (shouldRender) {
+      setIsClosing(true);
+      const t = setTimeout(() => {
+        setShouldRender(false);
+        setIsClosing(false);
+      }, 215);
+      return () => clearTimeout(t);
+    }
+  }, [isOpen, shouldRender]);
+
   useEffect(() => {
     const handleKeyDown = (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
@@ -221,11 +238,11 @@ const CommandPalette = () => {
     }
   };
 
-  if (!isOpen) return null;
+  if (!shouldRender) return null;
 
   return (
-    <div className="fixed inset-0 z-[100000] bg-black/70 flex flex-col justify-end sm:justify-start sm:pt-[15vh] p-2 sm:p-0" style={{ height: '100dvh' }}>
-      <div className="w-full sm:max-w-2xl sm:mx-auto bg-[#060d08]/95 border border-[#4bd865]/50 shadow-[0_18px_48px_rgba(0,0,0,0.92)] font-mono text-[#eef6ee] flex flex-col relative overflow-hidden animate-in slide-in-from-bottom-4 sm:slide-in-from-top-4 duration-200">
+    <div className="fixed inset-0 z-[100000] bg-black/60 flex flex-col justify-end sm:justify-start sm:pt-[15vh] p-2 pl-13 sm:p-0" style={{ height: '100dvh' }}>
+      <div className={`w-full sm:max-w-2xl sm:mx-auto bg-[#060d08]/95 border border-[#4bd865]/50 shadow-[0_18px_48px_rgba(0,0,0,0.92)] font-mono text-[#eef6ee] flex flex-col relative overflow-hidden ${isClosing ? 'macos-window-exit' : 'macos-window-enter'}`}>
         {/* Watcher-02 Green Header */}
         <div
           className="flex items-center justify-between h-8 border-b border-black shrink-0"

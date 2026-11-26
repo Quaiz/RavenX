@@ -112,14 +112,14 @@ const Watcher02CommsHUD = ({ isOpen, onClose, isRegistryOpen = false, onOpenComm
 
   return (
     <div
-      className={`fixed bottom-8 left-14 z-[9500] flex flex-col items-start select-none pointer-events-none ${
+      className={`fixed bottom-6 sm:bottom-8 left-12 sm:left-14 z-[9500] flex flex-col items-start select-none pointer-events-none ${
         isClosing ? 'macos-window-exit' : 'macos-window-enter'
       }`}
     >
       {/* 1. CHAT / COMMAND PANEL (Positioned ABOVE Active Speaker Card, macOS animated) */}
       {renderComms && (
         <div
-          className={`mb-2 w-[390px] sm:w-[435px] max-w-[calc(100vw-4.5rem)] h-[390px] bg-[#060d08]/95 border border-[#4bd865]/45 shadow-[0_20px_50px_rgba(0,0,0,0.92)] flex flex-col overflow-hidden pointer-events-auto ${
+          className={`mb-2 w-[calc(100vw-3.4rem)] sm:w-[435px] h-[340px] sm:h-[390px] max-h-[calc(100dvh-185px)] bg-[#060d08]/95 border border-[#4bd865]/45 shadow-[0_20px_50px_rgba(0,0,0,0.92)] flex flex-col overflow-hidden pointer-events-auto ${
             closingComms ? 'macos-window-exit' : 'macos-window-enter'
           }`}
         >
@@ -130,7 +130,7 @@ const Watcher02CommsHUD = ({ isOpen, onClose, isRegistryOpen = false, onOpenComm
       {/* 2. ACTIVE SPEAKER BANNER (Positioned at BOTTOM, with all controls embedded neatly inside) */}
       <div className="pointer-events-auto">
         <div
-          className="w-[390px] sm:w-[435px] max-w-[calc(100vw-4.5rem)] border border-[#4bd865]/50 p-2 shadow-[0_18px_44px_rgba(0,0,0,0.92)] relative overflow-hidden"
+          className="w-[calc(100vw-3.4rem)] sm:w-[435px] border border-[#4bd865]/50 p-1.5 sm:p-2 shadow-[0_18px_44px_rgba(0,0,0,0.92)] relative overflow-hidden"
           style={{
             background:
               'linear-gradient(90deg, rgba(42,96,48,0.92) 0%, rgba(24,56,29,0.94) 48%, rgba(10,20,12,0.97) 100%)',

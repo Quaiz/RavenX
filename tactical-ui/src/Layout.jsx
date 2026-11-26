@@ -254,14 +254,18 @@ const Window = React.memo(({ id, title, icon, state = {}, isMaximized, isClosing
 
  if (isMobile) {
  return (
- <div className="absolute inset-0 z-50 flex flex-col pointer-events-auto bg-[#05070a]" style={{ paddingBottom: 'calc(3.5rem + env(safe-area-inset-bottom))' }}>
+ <div
+   className="absolute top-11 left-1.5 right-1.5 z-50 flex flex-col pointer-events-auto"
+   style={{ bottom: 'calc(2.85rem + env(safe-area-inset-bottom))' }}
+ >
  <ModuleContainer
  id={id}
  title={title}
  icon={icon}
+ isClosing={isClosing}
  onClose={handleClose}
- onMinimize={() => {}} // Disabled on mobile
- onMaximize={() => {}} // Disabled on mobile
+ onMinimize={() => {}}
+ onMaximize={() => {}}
  >
  {children}
  </ModuleContainer>
@@ -517,18 +521,39 @@ const ModuleContent = React.memo(({ id, activeCountry }) => {
   }
 });
 
-// ═══ TOP BAR CLOCK ═══
+// ═══ TACTICAL DATE & LIVE CLOCK HUD PILL (Top-Right of Map Stage) ═══
 const TopBarClock = () => {
- const [time, setTime] = useState(new Date());
- useEffect(() => {
- const timer = setInterval(() => setTime(new Date()), 1000);
- return () => clearInterval(timer);
- }, []);
- return (
- <span className="text-[9px] md:text-[10px] text-white/30 uppercase tracking-widest flex items-center font-mono tabular-nums whitespace-nowrap min-w-[55px] sm:min-w-[70px] justify-end shrink-0">
- {time.toLocaleTimeString('en-GB', { hour12: false })} <span className="hidden sm:inline ml-1">UTC</span>
- </span>
- );
+  const [time, setTime] = useState(new Date());
+  useEffect(() => {
+    const timer = setInterval(() => setTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const dateStr = time.toLocaleDateString('en-CA'); // YYYY-MM-DD
+  const localTimeStr = time.toLocaleTimeString('en-GB', { hour12: false });
+  const utcTimeStr = time.toISOString().slice(11, 19);
+
+  return (
+    <div
+      className="fixed top-2.5 right-2.5 z-[9000] pointer-events-none border border-[#4bd865]/45 px-2.5 py-1.5 shadow-[0_8px_24px_rgba(0,0,0,0.85)] flex items-center gap-2 font-mono select-none"
+      style={{
+        background:
+          'linear-gradient(90deg, rgba(42,96,48,0.88) 0%, rgba(24,56,29,0.92) 50%, rgba(10,20,12,0.96) 100%)',
+      }}
+    >
+      <span className="w-1.5 h-1.5 rounded-full bg-[#39e75f] shadow-[0_0_6px_#39e75f] shrink-0" />
+      <span className="text-[9px] sm:text-[10px] font-bold text-[#eef6ee] tracking-[0.14em] tabular-nums whitespace-nowrap">
+        {dateStr}
+      </span>
+      <span className="text-[#39e75f]/45 text-[9px]">//</span>
+      <span className="text-[9px] sm:text-[10px] font-bold text-[#39e75f] tracking-[0.14em] tabular-nums whitespace-nowrap">
+        {localTimeStr}
+      </span>
+      <span className="hidden md:inline text-[8px] text-[#a3cca7]/70 tracking-widest uppercase ml-0.5 tabular-nums">
+        ({utcTimeStr} UTC)
+      </span>
+    </div>
+  );
 };
 
 const Layout = ({ user, showGreeting, onEnterDashboard, onLogout, onUsernameChange }) => {
@@ -575,6 +600,22 @@ const Layout = ({ user, showGreeting, onEnterDashboard, onLogout, onUsernameChan
    });
  }, []);
  const [isNotiOpen, setIsNotiOpen] = useState(false);
+ const [renderNoti, setRenderNoti] = useState(false);
+ const [closingNoti, setClosingNoti] = useState(false);
+
+ useEffect(() => {
+   if (isNotiOpen) {
+     setRenderNoti(true);
+     setClosingNoti(false);
+   } else if (renderNoti) {
+     setClosingNoti(true);
+     const t = setTimeout(() => {
+       setRenderNoti(false);
+       setClosingNoti(false);
+     }, 215);
+     return () => clearTimeout(t);
+   }
+ }, [isNotiOpen, renderNoti]);
  const [isThemeOpen, setIsThemeOpen] = useState(false);
  const [bootHovered, setBootHovered] = useState(false);
  const [bootReady, setBootReady] = useState(false);
@@ -705,8 +746,8 @@ const Layout = ({ user, showGreeting, onEnterDashboard, onLogout, onUsernameChan
 
  {/* ═══ LEFT VERTICAL COMMAND BAR (WATCHER-02 Emerald Green Stack) ═══ */}
  <div
-   className="w-12 border-r border-[#4bd865]/30 bg-[#060d08]/95 z-[10000] flex flex-col items-center justify-between py-2.5 px-1 shrink-0 select-none"
-   style={{ paddingTop: 'max(0.625rem, env(safe-area-inset-top))' }}
+   className="w-11 sm:w-12 border-r border-[#4bd865]/30 bg-[#060d08]/95 z-[10000] flex flex-col items-center justify-between py-2 sm:py-2.5 px-1 shrink-0 select-none overflow-y-auto no-scrollbar"
+   style={{ paddingTop: 'max(0.5rem, env(safe-area-inset-top))', paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))' }}
  >
    {/* Top Stack: Static Brand Emblem + Modules Registry + 4 Map Tools (Layers, Rangefinder, Geofence, Fusion) */}
    <div className="flex flex-col items-center gap-1.5 w-full">
@@ -889,6 +930,9 @@ const Layout = ({ user, showGreeting, onEnterDashboard, onLogout, onUsernameChan
      </WindowErrorBoundary>
    </div>
 
+   {/* 1.5 Top-Right Tactical Date & Live Clock HUD Pill */}
+   {!showGreeting && <TopBarClock />}
+
    {/* 2. WATCHER-02 Comms HUD (Shown when toggled ON from Left Vertical Bar) */}
    {!showGreeting && (
      <Watcher02CommsHUD
@@ -901,12 +945,13 @@ const Layout = ({ user, showGreeting, onEnterDashboard, onLogout, onUsernameChan
 
    {/* 3. Optional Floating Modules Layer (Pointer-Events-None container so Map stays interactive) */}
    {isMobile ? (
-     mobileActiveTab && mobileActiveTab !== 'MAP_MODULE' && visibleModules.includes(mobileActiveTab) && (
+     mobileActiveTab && mobileActiveTab !== 'MAP_MODULE' && renderedModules.includes(mobileActiveTab) && (
        <Window
          key={mobileActiveTab}
          id={mobileActiveTab}
          title={getModuleTitle(mobileActiveTab, activeCountry)}
          icon={getModuleIcon(mobileActiveTab)}
+         isClosing={!visibleModules.includes(mobileActiveTab)}
          onClose={toggleModule}
          isMobile={true}
          layoutScale={1}
@@ -973,19 +1018,25 @@ const Layout = ({ user, showGreeting, onEnterDashboard, onLogout, onUsernameChan
  {/* SLIM BOTTOM NEWS TICKER — always visible below modules ON DESKTOP */}
  {!isMobile && <NewsTicker minimizedModules={minimizedModules} restoreModule={restoreModule} getModuleIcon={getModuleIcon} />}
 
- {/* MOBILE BOTTOM TABS */}
- {isMobile && !showGreeting && (
- <div className="fixed bottom-0 left-0 w-full bg-[#0a0d11]/98 border-t border-white/10 z-[100000] flex items-center px-2 overflow-x-auto no-scrollbar shadow-[0_-5px_20px_rgba(0,0,0,0.8)] backdrop-blur-md"style={{ paddingBottom: 'env(safe-area-inset-bottom)', height: 'calc(3.5rem + env(safe-area-inset-bottom))' }}>
+ {/* MOBILE BOTTOM TABS (Offset to right of Left Vertical Bar so it never covers bottom buttons) */}
+ {isMobile && !showGreeting && visibleModules.length > 0 && (
+ <div
+   className="fixed bottom-0 left-11 right-0 bg-[#060d08]/96 border-t border-[#4bd865]/35 z-[9900] flex items-center px-1.5 overflow-x-auto no-scrollbar shadow-[0_-5px_20px_rgba(0,0,0,0.85)]"
+   style={{ paddingBottom: 'env(safe-area-inset-bottom)', height: 'calc(2.6rem + env(safe-area-inset-bottom))' }}
+ >
  <button
  onClick={() => { audio.playClick(); setMobileActiveTab('MAP_MODULE'); }}
- className={`flex-shrink-0 min-w-[60px] h-10 flex flex-col items-center justify-center mx-1 relative transition-colors ${mobileActiveTab === 'MAP_MODULE' ? 'text-primary' : 'text-white/40 hover:text-white/80'}`}
+ className={`flex-shrink-0 px-2.5 h-8 flex items-center gap-1.5 mx-0.5 border transition-colors ${
+   mobileActiveTab === 'MAP_MODULE'
+     ? 'bg-[#17361d] border-[#39e75f] text-[#eef6ee]'
+     : 'bg-[#09140b] border-[#39e75f]/25 text-[#a3cca7]/60'
+ }`}
  >
- <Map size={14} className="mb-1"/>
- <span className="text-[7px] font-bold uppercase tracking-widest">Map</span>
- {mobileActiveTab === 'MAP_MODULE' && <div className="absolute bottom-0 left-0 w-full h-[3px] bg-primary shadow-[0_0_8px_rgba(var(--color-primary),0.8)]" style={{ marginBottom: 'env(safe-area-inset-bottom)' }} />}
+ <Map size={12} className="text-[#39e75f]"/>
+ <span className="text-[8px] font-bold uppercase tracking-widest">MAP</span>
  </button>
 
- {activeModules.filter(id => id !== 'MAP_MODULE').map(id => {
+ {visibleModules.map(id => {
  const IconComp = getModuleIcon(id);
  const title = getModuleTitle(id).replace('// ', '');
  const isActive = mobileActiveTab === id;
@@ -993,13 +1044,16 @@ const Layout = ({ user, showGreeting, onEnterDashboard, onLogout, onUsernameChan
  <button
  key={id}
  onClick={() => { audio.playClick(); setMobileActiveTab(id); }}
- className={`flex-shrink-0 min-w-[70px] px-2 h-10 flex flex-col items-center justify-center mx-1 relative transition-colors ${isActive ? 'text-primary' : 'text-white/40 hover:text-white/80'}`}
+ className={`flex-shrink-0 max-w-[130px] px-2.5 h-8 flex items-center gap-1.5 mx-0.5 border transition-colors ${
+   isActive
+     ? 'bg-[#17361d] border-[#39e75f] text-[#eef6ee]'
+     : 'bg-[#09140b] border-[#39e75f]/25 text-[#a3cca7]/60'
+ }`}
  >
- <IconComp size={14} className="mb-1"/>
- <span className="text-[7px] font-bold uppercase tracking-widest truncate w-full text-center">{title}</span>
- {isActive && <div className="absolute bottom-0 left-0 w-full h-[3px] bg-primary shadow-[0_0_8px_rgba(var(--color-primary),0.8)]" style={{ marginBottom: 'env(safe-area-inset-bottom)' }} />}
+ <IconComp size={12} className="text-[#39e75f] shrink-0"/>
+ <span className="text-[8px] font-bold uppercase tracking-wider truncate">{title}</span>
  </button>
- )
+ );
  })}
  </div>
  )}
@@ -1011,9 +1065,10 @@ const Layout = ({ user, showGreeting, onEnterDashboard, onLogout, onUsernameChan
    isWatcherOpen={isWatcherOpen}
  />
 
- {/* Profile Modal */}
- {isProfileOpen && currentUser && (
+ {/* Profile Modal (macOS animated open & close) */}
+ {currentUser && (
  <ProfileModal
+ isOpen={isProfileOpen}
  user={currentUser}
  token={user?.token}
  onClose={() => setIsProfileOpen(false)}
@@ -1026,9 +1081,9 @@ const Layout = ({ user, showGreeting, onEnterDashboard, onLogout, onUsernameChan
 
   {/* TOAST NOTIFICATIONS */}
  {!showGreeting && (
- <div className="fixed top-16 right-6 z-[99999] flex flex-col gap-2 pointer-events-none">
+ <div className="fixed top-12 right-3 sm:right-6 z-[99999] flex flex-col gap-2 pointer-events-none">
  {(notifications || []).filter(n => n.isToast).map(noti => (
- <div key={noti.id} className={`w-80 pointer-events-auto tactical-glass border-l-4 ${noti.type === 'CRITICAL' ? 'border-l-red-500' : noti.type === 'WARNING' ? 'border-l-yellow-500' : 'border-l-primary'} p-3 shadow-2xl bg-[#05080d]/90 backdrop-blur-md animate-in slide-in-from-right fade-in duration-300`}>
+ <div key={noti.id} className={`w-72 sm:w-80 pointer-events-auto tactical-glass border-l-4 ${noti.type === 'CRITICAL' ? 'border-l-red-500' : noti.type === 'WARNING' ? 'border-l-yellow-500' : 'border-l-primary'} p-3 shadow-2xl bg-[#060d08]/95 macos-window-enter`}>
  <div className="flex justify-between items-start mb-1">
  <div className="flex items-center gap-2">
  {noti.type === 'CRITICAL' && <AlertTriangle size={12} className="text-red-500"/>}
@@ -1047,33 +1102,58 @@ const Layout = ({ user, showGreeting, onEnterDashboard, onLogout, onUsernameChan
  </div>
  )}
 
- {/* NOTIFICATION LOG PANEL */}
- {isNotiOpen && (
- <div className="fixed top-14 right-0 bottom-6 w-80 bg-[#05080d]/95 backdrop-blur-md border-l border-white/10 z-[99990] flex flex-col shadow-2xl animate-in slide-in-from-right duration-200">
- <div className="h-10 border-b border-white/10 flex items-center justify-between px-4 shrink-0 bg-white/[0.02]">
- <div className="flex items-center gap-2">
- <Bell size={12} className="text-primary"/>
- <span className="text-[10px] font-bold text-primary tracking-widest uppercase">SYSTEM LOGS</span>
+ {/* NOTIFICATION LOG PANEL (macOS animated open & close, WATCHER-02 Green Frame) */}
+ {renderNoti && (
+ <div
+   className={`fixed bottom-8 left-12 sm:left-14 w-[calc(100vw-3.4rem)] sm:w-[370px] h-[380px] sm:h-[420px] max-h-[calc(100dvh-100px)] bg-[#060d08]/95 border border-[#4bd865]/50 z-[99990] flex flex-col shadow-[0_20px_50px_rgba(0,0,0,0.92)] overflow-hidden ${
+     closingNoti ? 'macos-window-exit' : 'macos-window-enter'
+   }`}
+ >
+ <div
+   className="h-8 border-b border-black flex items-center justify-between shrink-0"
+   style={{
+     background:
+       'linear-gradient(90deg, rgba(42,96,48,0.9) 0%, rgba(24,56,29,0.92) 48%, rgba(10,20,12,0.96) 100%)',
+   }}
+ >
+   <div className="flex items-center h-full">
+     <button
+       type="button"
+       onClick={() => { audio.playClick(); setIsNotiOpen(false); }}
+       className="w-8 h-full bg-[#261111] hover:bg-[#e05252] text-[#ff6b6b] hover:text-[#090c09] border-r border-black/80 font-mono text-[11px] font-bold flex items-center justify-center transition-colors cursor-pointer"
+       title="Close System Logs"
+     >
+       X
+     </button>
+     <div className="flex items-center gap-2 px-3">
+       <Bell size={13} className="text-[#39e75f]"/>
+       <span className="text-[11px] font-bold text-[#eef6ee] tracking-[0.16em] uppercase">// SYSTEM LOGS</span>
+     </div>
+   </div>
+   <div className="flex items-center h-full">
+     <div className="h-5 px-2 bg-[#071109] border border-[#39e75f]/40 text-[#39e75f] font-mono text-[8px] font-bold tracking-widest flex items-center justify-center">
+       ON.SE1
+     </div>
+     <div className="w-1.5 h-full bg-[#39e75f] ml-1.5 border-l border-black/80" />
+   </div>
  </div>
- <button onClick={() => setIsNotiOpen(false)} className="text-white/50 hover:text-white"><X size={14}/></button>
- </div>
- <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-3">
+ <div className="flex-1 overflow-y-auto custom-scrollbar p-3.5 space-y-2.5 bg-[#050b07]/90">
  {!(notifications && notifications.length > 0) ? (
- <div className="text-[10px] text-white/30 uppercase tracking-widest text-center mt-10">No recent alerts</div>
+ <div className="text-[10px] text-[#a3cca7]/40 font-mono uppercase tracking-widest text-center mt-12">No recent alerts</div>
  ) : (
  notifications.map(noti => (
- <div key={noti.id} className={`border border-white/5 p-3 bg-white/[0.02] ${noti.type === 'CRITICAL' ? 'border-l-2 border-l-red-500' : noti.type === 'WARNING' ? 'border-l-2 border-l-yellow-500' : 'border-l-2 border-l-primary'}`}>
+ <div key={noti.id} className={`border border-[#4bd865]/20 p-2.5 bg-[#0a160c]/60 ${noti.type === 'CRITICAL' ? 'border-l-2 border-l-red-500' : noti.type === 'WARNING' ? 'border-l-2 border-l-yellow-500' : 'border-l-2 border-l-[#39e75f]'}`}>
  <div className="flex justify-between items-start mb-1">
- <span className={`text-[9px] font-bold tracking-widest ${noti.type === 'CRITICAL' ? 'text-red-500' : noti.type === 'WARNING' ? 'text-yellow-500' : 'text-primary'}`}>{noti.type}</span>
- <span className="text-[8px] text-white/40">{new Date(noti.time).toLocaleTimeString()}</span>
+ <span className={`text-[9px] font-bold tracking-widest ${noti.type === 'CRITICAL' ? 'text-red-500' : noti.type === 'WARNING' ? 'text-yellow-500' : 'text-[#39e75f]'}`}>{noti.type}</span>
+ <span className="text-[8px] text-[#a3cca7]/45 font-mono">{new Date(noti.time).toLocaleTimeString()}</span>
  </div>
- <div className="text-[10px] text-white/80 font-mono mt-1 leading-relaxed">{noti.text}</div>
+ <div className="text-[10px] text-[#eef6ee]/85 font-mono mt-1 leading-relaxed">{noti.text}</div>
  </div>
  ))
  )}
  </div>
- <div className="p-3 border-t border-white/10 shrink-0">
- <button onClick={() => useStore.getState().clearNotifications()} className="w-full py-1.5 border border-white/10 text-[9px] uppercase tracking-widest text-white/50 hover:text-white hover:bg-white/5 transition-colors">
+ <div className="p-2.5 border-t border-[#4bd865]/25 bg-[#071109] shrink-0">
+ <button onClick={() => useStore.getState().clearNotifications()} className="w-full py-1.5 border border-[#4bd865]/30 text-[9px] font-mono font-bold uppercase tracking-widest text-[#a3cca7]/70 hover:text-[#eef6ee] hover:bg-[#17361d] transition-colors cursor-pointer">
  Clear Logs
  </button>
  </div>

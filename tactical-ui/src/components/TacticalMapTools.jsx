@@ -61,171 +61,297 @@ export function HexGridOverlay() {
  );
 }
 
-// 3. Tactical Rangefinder
+// 3. Tactical Rangefinder (Persists measurements on map until clicked to remove, just like Geofence)
 export function TacticalRangefinder({ active }) {
- const [points, setPoints] = useState([]);
- const map = useMapEvents({
- mousedown(e) {
- if (!active) return;
-  const isMobileOrTouch = window.innerWidth < 768 || (e.originalEvent && (
-    e.originalEvent.pointerType === 'touch' ||
-    (window.TouchEvent && e.originalEvent instanceof TouchEvent) ||
-    (e.originalEvent.touches && e.originalEvent.touches.length > 0)
-  ));
-  const isTrigger = isMobileOrTouch || (e.originalEvent && e.originalEvent.button === 1);
-  if (isTrigger) { // Middle mouse button (or tap on mobile)
-  if (e.originalEvent.button === 1) e.originalEvent.preventDefault(); // Stop browser auto-scroll
- if (points.length >= 2) {
- setPoints([e.latlng]); // Reset to new starting point
- } else {
- setPoints([...points, e.latlng]);
- }
- }
- }
- });
+  const [points, setPoints] = useState([]);
+  const [hoverPoint, setHoverPoint] = useState(null);
+  const [savedRanges, setSavedRanges] = useState([]);
+  const setRangefinderActive = useStore(s => s.setRangefinderActive);
 
- useEffect(() => {
- if (active) {
- map.getContainer().style.cursor = 'crosshair';
- } else {
- map.getContainer().style.cursor = '';
- setPoints([]);
- }
- }, [active, map]);
+  const calculateDistance = (p1, p2, mapInst) => {
+    return (mapInst.distance(p1, p2) / 1000).toFixed(2); // km
+  };
 
- const calculateDistance = (p1, p2) => {
- return (map.distance(p1, p2) / 1000).toFixed(2); // km
- };
+  const calculateBearing = (p1, p2) => {
+    const lat1 = (p1.lat * Math.PI) / 180;
+    const lat2 = (p2.lat * Math.PI) / 180;
+    const dlng = ((p2.lng - p1.lng) * Math.PI) / 180;
+    const y = Math.sin(dlng) * Math.cos(lat2);
+    const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dlng);
+    const brng = (Math.atan2(y, x) * 180) / Math.PI;
+    return ((brng + 360) % 360).toFixed(1);
+  };
 
- const calculateBearing = (p1, p2) => {
- const lat1 = p1.lat * Math.PI / 180;
- const lat2 = p2.lat * Math.PI / 180;
- const dlng = (p2.lng - p1.lng) * Math.PI / 180;
- const y = Math.sin(dlng) * Math.cos(lat2);
- const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dlng);
- const brng = Math.atan2(y, x) * 180 / Math.PI;
- return ((brng + 360) % 360).toFixed(1);
- };
+  const removeRange = (id) => {
+    setSavedRanges(prev => prev.filter(r => r.id !== id));
+  };
 
- return (
- <>
- {active && points.length > 0 && points[0] && !isNaN(Number(points[0].lat)) && !isNaN(Number(points[0].lng)) && (
- <Marker position={points[0]} icon={L.divIcon({ className: 'bg-red-500 w-2 h-2 rounded-full border border-black shadow-[0_0_8px_#ef4444]', iconSize: [8,8] })} />
- )}
- 
- {active && points.length === 2 && points[1] && !isNaN(Number(points[1].lat)) && !isNaN(Number(points[1].lng)) && (
- <>
- <Marker position={points[1]} icon={L.divIcon({ className: 'bg-red-500 w-2 h-2 rounded-full border border-black shadow-[0_0_8px_#ef4444]', iconSize: [8,8] })} />
- <Polyline positions={points} color="#ef4444"weight={2} dashArray="5, 5">
- <Tooltip permanent direction="top"className="bg-black/80 border border-red-500/50 text-red-400 font-mono text-[9px] tracking-widest">
- DIST: {calculateDistance(points[0], points[1])}KM<br/>
- BRNG: {calculateBearing(points[0], points[1])}°
- </Tooltip>
- </Polyline>
- </>
- )}
- </>
- );
+  const map = useMapEvents({
+    mousedown(e) {
+      if (!active) return;
+      const isMobileOrTouch =
+        window.innerWidth < 768 ||
+        (e.originalEvent &&
+          (e.originalEvent.pointerType === 'touch' ||
+            (window.TouchEvent && e.originalEvent instanceof TouchEvent) ||
+            (e.originalEvent.touches && e.originalEvent.touches.length > 0)));
+      const isTrigger = isMobileOrTouch || (e.originalEvent && e.originalEvent.button === 1);
+      if (isTrigger) {
+        if (e.originalEvent?.button === 1) e.originalEvent.preventDefault();
+        if (points.length === 0) {
+          setPoints([e.latlng]);
+        } else if (points.length === 1) {
+          const p1 = points[0];
+          const p2 = e.latlng;
+          const dist = calculateDistance(p1, p2, map);
+          const brng = calculateBearing(p1, p2);
+          setSavedRanges(prev => [
+            ...prev,
+            {
+              id: `RNG-${Date.now()}-${Math.floor(Math.random() * 900 + 100)}`,
+              p1: { lat: p1.lat, lng: p1.lng },
+              p2: { lat: p2.lat, lng: p2.lng },
+              mid: { lat: (p1.lat + p2.lat) / 2, lng: (p1.lng + p2.lng) / 2 },
+              dist,
+              brng,
+            },
+          ]);
+          setPoints([]);
+          setHoverPoint(null);
+          if (setRangefinderActive) setRangefinderActive(false);
+        }
+      }
+    },
+    mousemove(e) {
+      if (!active || points.length !== 1) return;
+      setHoverPoint(e.latlng);
+    },
+  });
+
+  useEffect(() => {
+    if (active) {
+      map.getContainer().style.cursor = 'crosshair';
+    } else {
+      map.getContainer().style.cursor = '';
+      setPoints([]);
+      setHoverPoint(null);
+    }
+  }, [active, map]);
+
+  const pointDotIcon = L.divIcon({
+    className: 'custom-range-dot',
+    html: `<div style="width:10px;height:10px;border-radius:50%;background:#ef4444;border:2px solid #050806;box-shadow:0 0 8px #ef4444;"></div>`,
+    iconSize: [10, 10],
+    iconAnchor: [5, 5],
+  });
+
+  const removeBadgeIcon = L.divIcon({
+    className: 'custom-range-remove',
+    html: `<div title="Click to remove range" style="width:20px;height:20px;border-radius:50%;background:#1f0a0a;border:1.5px solid #ef4444;color:#ff7b7b;font-family:monospace;font-size:10px;font-weight:bold;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 0 10px rgba(239,68,68,0.6);">✕</div>`,
+    iconSize: [20, 20],
+    iconAnchor: [10, 10],
+  });
+
+  return (
+    <>
+      {/* Live in-progress range line while drawing */}
+      {active && points.length === 1 && (
+        <>
+          <Marker position={points[0]} icon={pointDotIcon} />
+          {hoverPoint && (
+            <Polyline positions={[points[0], hoverPoint]} color="#ef4444" weight={2} dashArray="5, 5">
+              <Tooltip permanent direction="top" className="bg-black/85 border border-red-500/50 text-red-400 font-mono text-[9px] tracking-widest">
+                DIST: {calculateDistance(points[0], hoverPoint, map)}KM | BRNG: {calculateBearing(points[0], hoverPoint)}°
+              </Tooltip>
+            </Polyline>
+          )}
+        </>
+      )}
+
+      {/* Saved Rangefinder measurements on map (Click X or line to remove) */}
+      {savedRanges.map((r) => (
+        <React.Fragment key={r.id}>
+          <Marker
+            position={r.p1}
+            icon={pointDotIcon}
+            eventHandlers={{
+              click: (e) => {
+                L.DomEvent.stopPropagation(e);
+                removeRange(r.id);
+              },
+            }}
+          />
+          <Marker
+            position={r.p2}
+            icon={pointDotIcon}
+            eventHandlers={{
+              click: (e) => {
+                L.DomEvent.stopPropagation(e);
+                removeRange(r.id);
+              },
+            }}
+          />
+          <Polyline
+            positions={[r.p1, r.p2]}
+            color="#ef4444"
+            weight={2.5}
+            dashArray="5, 5"
+            eventHandlers={{
+              click: (e) => {
+                L.DomEvent.stopPropagation(e);
+                removeRange(r.id);
+              },
+            }}
+          >
+            <Tooltip permanent direction="top" className="bg-black/85 border border-red-500/50 text-red-400 font-mono text-[9px] tracking-widest">
+              DIST: {r.dist}KM<br />
+              BRNG: {r.brng}° [CLICK TO REMOVE]
+            </Tooltip>
+          </Polyline>
+          <Marker
+            position={r.mid}
+            icon={removeBadgeIcon}
+            eventHandlers={{
+              click: (e) => {
+                L.DomEvent.stopPropagation(e);
+                removeRange(r.id);
+              },
+            }}
+          />
+        </React.Fragment>
+      ))}
+    </>
+  );
 }
 
 // 3.5 Tactical Geofence
 export function TacticalGeofence({ active, onToggle }) {
- const [center, setCenter] = useState(null);
- const [radiusPoints, setRadiusPoints] = useState(null);
- const addGeofence = useStore(s => s.addGeofence);
- const geofences = useStore(state => state.geofences || []);
+  const [center, setCenter] = useState(null);
+  const [radiusPoints, setRadiusPoints] = useState(null);
+  const addGeofence = useStore(s => s.addGeofence);
+  const removeGeofence = useStore(s => s.removeGeofence);
+  const geofences = useStore(state => state.geofences || []);
 
- const map = useMapEvents({
- mousedown(e) {
- if (!active) return;
-  const isMobileOrTouch = window.innerWidth < 768 || (e.originalEvent && (
-    e.originalEvent.pointerType === 'touch' ||
-    (window.TouchEvent && e.originalEvent instanceof TouchEvent) ||
-    (e.originalEvent.touches && e.originalEvent.touches.length > 0)
-  ));
-  const isTrigger = isMobileOrTouch || (e.originalEvent && e.originalEvent.button === 1);
-  if (isTrigger) { // Middle click (or tap on mobile)
-           if (e.originalEvent.button === 1) e.originalEvent.preventDefault();
- if (!center) {
- setCenter(e.latlng);
- } else {
- // Confirm radius
- const radiusKM = (map.distance(center, e.latlng) / 1000).toFixed(2);
- addGeofence({
- lat: center.lat,
- lng: center.lng,
- radius: parseFloat(radiusKM),
- name: `GEOFENCE-${Math.floor(Math.random() * 900) + 100}`
- });
- setCenter(null);
- setRadiusPoints(null);
- onToggle(false); // Turn off tool
- }
- }
- },
- mousemove(e) {
- if (!active || !center) return;
- setRadiusPoints(e.latlng);
- }
- });
+  const map = useMapEvents({
+    mousedown(e) {
+      if (!active) return;
+      const isMobileOrTouch =
+        window.innerWidth < 768 ||
+        (e.originalEvent &&
+          (e.originalEvent.pointerType === 'touch' ||
+            (window.TouchEvent && e.originalEvent instanceof TouchEvent) ||
+            (e.originalEvent.touches && e.originalEvent.touches.length > 0)));
+      const isTrigger = isMobileOrTouch || (e.originalEvent && e.originalEvent.button === 1);
+      if (isTrigger) {
+        if (e.originalEvent?.button === 1) e.originalEvent.preventDefault();
+        if (!center) {
+          setCenter(e.latlng);
+        } else {
+          const radiusKM = (map.distance(center, e.latlng) / 1000).toFixed(2);
+          addGeofence({
+            lat: center.lat,
+            lng: center.lng,
+            radius: parseFloat(radiusKM),
+            name: `GEOFENCE-${Math.floor(Math.random() * 900) + 100}`,
+          });
+          setCenter(null);
+          setRadiusPoints(null);
+          onToggle(false);
+        }
+      }
+    },
+    mousemove(e) {
+      if (!active || !center) return;
+      setRadiusPoints(e.latlng);
+    },
+  });
 
- useEffect(() => {
- if (active) {
- map.getContainer().style.cursor = 'crosshair';
- } else {
- map.getContainer().style.cursor = '';
- setCenter(null);
- setRadiusPoints(null);
- }
- }, [active, map]);
+  useEffect(() => {
+    if (active) {
+      map.getContainer().style.cursor = 'crosshair';
+    } else {
+      map.getContainer().style.cursor = '';
+      setCenter(null);
+      setRadiusPoints(null);
+    }
+  }, [active, map]);
 
- return (
- <>
- {/* Active Drawing */}
- {active && center && radiusPoints && (
- <>
- <Circle center={center} radius={map.distance(center, radiusPoints)} pathOptions={{ color: '#ef4444', weight: 1, dashArray: '4 4', fillOpacity: 0.1 }} />
- <Polyline positions={[center, radiusPoints]} color="#ef4444"weight={1}>
- <Tooltip permanent direction="top"className="bg-black/80 border border-red-500/50 text-red-400 font-mono text-[9px] tracking-widest">
- RADIUS: {(map.distance(center, radiusPoints) / 1000).toFixed(2)}KM<br/>
- CLICK TO SET PERIMETER
- </Tooltip>
- </Polyline>
- </>
- )}
+  const geofenceRemoveIcon = L.divIcon({
+    className: 'custom-geofence-center',
+    html: `<div title="Click to remove geofence" style="display:flex;justify-content:center;align-items:center;width:22px;height:22px;border-radius:50%;background:#1f0a0a;border:1.5px solid #ef4444;color:#ff7b7b;font-family:monospace;font-size:10px;font-weight:bold;cursor:pointer;box-shadow:0 0 10px #ef4444;">✕</div>`,
+    iconSize: [22, 22],
+    iconAnchor: [11, 11],
+  });
 
- {/* Render existing geofences */}
- {(geofences || []).filter(gf => !isNaN(Number(gf?.lat ?? gf?.latitude)) && !isNaN(Number(gf?.lng ?? gf?.lon ?? gf?.longitude))).map(gf => {
-   const lat = Number(gf.lat ?? gf.latitude);
-   const lng = Number(gf.lng ?? gf.lon ?? gf.longitude);
-   const radius = (Number(gf.radius) || 1) * 1000;
-   return (
-     <Circle key={gf.id} center={[lat, lng]} radius={radius} pathOptions={{ color: '#ef4444', weight: 2, fillColor: '#ef4444', fillOpacity: 0.05, className: 'geofence-pulse' }}>
-       <Tooltip permanent direction="bottom" className="bg-transparent border-none shadow-none text-red-500 font-bold font-mono text-[9px] tracking-widest mt-2">
-         [ {gf.name || 'GEOFENCE'} ]<br/>
-         ACTIVE PERIMETER
-       </Tooltip>
-       <Marker position={[lat, lng]} icon={L.divIcon({
-         className: 'custom-geofence-center',
-         html: `<div style="display:flex; justify-content:center; align-items:center; width:20px; height:20px; cursor:pointer;" title="Click to remove" onclick="window.dispatchEvent(new CustomEvent('remove-geofence', {detail: '${gf.id}'}))"><div style="width:6px; height:6px; background:#ef4444; border-radius:50%; box-shadow:0 0 10px #ef4444;"></div></div>`,
-         iconSize: [20,20],
-         iconAnchor: [10,10]
-       })} />
-     </Circle>
-   );
- })}
+  return (
+    <>
+      {/* Active Drawing */}
+      {active && center && radiusPoints && (
+        <>
+          <Circle center={center} radius={map.distance(center, radiusPoints)} pathOptions={{ color: '#ef4444', weight: 1, dashArray: '4 4', fillOpacity: 0.1 }} />
+          <Polyline positions={[center, radiusPoints]} color="#ef4444" weight={1}>
+            <Tooltip permanent direction="top" className="bg-black/80 border border-red-500/50 text-red-400 font-mono text-[9px] tracking-widest">
+              RADIUS: {(map.distance(center, radiusPoints) / 1000).toFixed(2)}KM<br />
+              CLICK TO SET PERIMETER
+            </Tooltip>
+          </Polyline>
+        </>
+      )}
 
- <style dangerouslySetInnerHTML={{__html: `
- @keyframes geofenceSpin {
- 100% { stroke-dashoffset: -200; }
- }
- .geofence-pulse {
- stroke-dasharray: 10 15;
- animation: geofenceSpin 10s linear infinite;
- }
- `}} />
- </>
- );
+      {/* Render existing geofences (Click center X or circle perimeter to remove) */}
+      {(geofences || [])
+        .filter(gf => !isNaN(Number(gf?.lat ?? gf?.latitude)) && !isNaN(Number(gf?.lng ?? gf?.lon ?? gf?.longitude)))
+        .map(gf => {
+          const lat = Number(gf.lat ?? gf.latitude);
+          const lng = Number(gf.lng ?? gf.lon ?? gf.longitude);
+          const radius = (Number(gf.radius) || 1) * 1000;
+          return (
+            <React.Fragment key={gf.id}>
+              <Circle
+                center={[lat, lng]}
+                radius={radius}
+                pathOptions={{ color: '#ef4444', weight: 2, fillColor: '#ef4444', fillOpacity: 0.05, className: 'geofence-pulse' }}
+                eventHandlers={{
+                  click: (e) => {
+                    L.DomEvent.stopPropagation(e);
+                    removeGeofence(gf.id);
+                  },
+                }}
+              >
+                <Tooltip permanent direction="bottom" className="bg-transparent border-none shadow-none text-red-500 font-bold font-mono text-[9px] tracking-widest mt-2">
+                  [ {gf.name || 'GEOFENCE'} ]<br />
+                  CLICK TO REMOVE
+                </Tooltip>
+              </Circle>
+              <Marker
+                position={[lat, lng]}
+                icon={geofenceRemoveIcon}
+                eventHandlers={{
+                  click: (e) => {
+                    L.DomEvent.stopPropagation(e);
+                    removeGeofence(gf.id);
+                  },
+                }}
+              />
+            </React.Fragment>
+          );
+        })}
+
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+          @keyframes geofenceSpin {
+            100% { stroke-dashoffset: -200; }
+          }
+          .geofence-pulse {
+            stroke-dasharray: 10 15;
+            animation: geofenceSpin 10s linear infinite;
+          }
+          `,
+        }}
+      />
+    </>
+  );
 }
 
 // Global listener for removing geofence from DOM click
