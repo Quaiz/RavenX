@@ -406,13 +406,11 @@ class TacticalAudioEngine {
   _splitSentencesForTTS(rawText) {
     const clean = (rawText || '')
       .replace(/\[INCOMING TRANSMISSION[^\]]*\]/gi, '')
-      .replace(/AWAITING YOUR COMMAND[.:]?[\s\S]*$/gi, '')
-      .replace(/(?:^|\s)\/(?:sitrep|threats|airspace|intercept|maritime|briefing|forecast|[a-z0-9_-]{2,20})\b/gi, ' ')
       .replace(/\*{1,3}([^*]+)\*{1,3}/g, '$1')
       .replace(/`([^`]+)`/g, '$1')
       .replace(/^#+\s*/gm, '')
       .replace(/\/\//g, ',')
-      .replace(/[▸⚠|]/g, ' ')
+      .replace(/[▸⚠]/g, '')
       .replace(/\s+/g, ' ')
       .trim()
       .slice(0, 8000);
@@ -421,18 +419,23 @@ class TacticalAudioEngine {
     const rawParts = clean.match(/[^.!?]+[.!?]+(?:\s|$)|[^.!?]+$/g) || [clean];
     const chunks = [];
     let cur = '';
-    const MAX_CHUNK = 180;
+    // Keep chunk 0 small (<=150 chars) so the opening line synthesizes in ~1s and speaks immediately;
+    // make subsequent chunks larger (<=380 chars) so a full briefing only needs 2-4 requests total.
+    const getMaxLen = () => (chunks.length === 0 ? 150 : 380);
+
     const pushPiece = (piece) => {
-      if (piece.length <= MAX_CHUNK) {
+      const limit = getMaxLen();
+      if (piece.length <= limit) {
         chunks.push(piece);
         return;
       }
       const words = piece.split(/\s+/);
       let buf = '';
       for (const w of words) {
+        const curLimit = getMaxLen();
         if (!buf) {
           buf = w;
-        } else if (buf.length + 1 + w.length <= MAX_CHUNK) {
+        } else if (buf.length + 1 + w.length <= curLimit) {
           buf = `${buf} ${w}`;
         } else {
           chunks.push(buf);
@@ -445,17 +448,19 @@ class TacticalAudioEngine {
     for (const part of rawParts) {
       const p = part.trim();
       if (!p) continue;
+      const limit = getMaxLen();
       if (!cur) {
-        if (p.length > MAX_CHUNK) {
+        if (p.length > limit) {
           pushPiece(p);
         } else {
           cur = p;
         }
-      } else if (cur.length + 1 + p.length <= MAX_CHUNK) {
+      } else if (cur.length + 1 + p.length <= limit) {
         cur = `${cur} ${p}`;
       } else {
         pushPiece(cur);
-        if (p.length > MAX_CHUNK) {
+        const nextLimit = getMaxLen();
+        if (p.length > nextLimit) {
           pushPiece(p);
           cur = '';
         } else {
@@ -468,32 +473,42 @@ class TacticalAudioEngine {
   }
 
   async _fetchTtsAudio(text, headers, parentSignal) {
-    const timeoutController = new AbortController();
-    const timer = setTimeout(() => timeoutController.abort(), 30000);
-    const onParentAbort = () => timeoutController.abort();
-    if (parentSignal) {
-      if (parentSignal.aborted) {
-        clearTimeout(timer);
-        throw new DOMException('Aborted', 'AbortError');
+    let lastErr = null;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const timeoutController = new AbortController();
+      const timer = setTimeout(() => timeoutController.abort(), 20000);
+      const onParentAbort = () => timeoutController.abort();
+      if (parentSignal) {
+        if (parentSignal.aborted) {
+          clearTimeout(timer);
+          throw new DOMException('Aborted', 'AbortError');
+        }
+        parentSignal.addEventListener('abort', onParentAbort, { once: true });
       }
-      parentSignal.addEventListener('abort', onParentAbort, { once: true });
+      try {
+        const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/ai/tts`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ text }),
+          signal: timeoutController.signal,
+        });
+        if (!res.ok) throw new Error(`TTS HTTP ${res.status}`);
+        const arrBuf = await res.arrayBuffer();
+        const ctx = this._ensureAudioContext();
+        if (!ctx) throw new Error('No AudioContext');
+        return await ctx.decodeAudioData(arrBuf);
+      } catch (err) {
+        lastErr = err;
+        if (parentSignal?.aborted) throw err;
+        if (attempt < 2) {
+          await new Promise((r) => setTimeout(r, 350 * (attempt + 1)));
+        }
+      } finally {
+        clearTimeout(timer);
+        if (parentSignal) parentSignal.removeEventListener('abort', onParentAbort);
+      }
     }
-    try {
-      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/ai/tts`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ text }),
-        signal: timeoutController.signal,
-      });
-      if (!res.ok) throw new Error(`TTS HTTP ${res.status}`);
-      const arrBuf = await res.arrayBuffer();
-      const ctx = this._ensureAudioContext();
-      if (!ctx) throw new Error('No AudioContext');
-      return await ctx.decodeAudioData(arrBuf);
-    } finally {
-      clearTimeout(timer);
-      if (parentSignal) parentSignal.removeEventListener('abort', onParentAbort);
-    }
+    throw lastErr || new Error('TTS fetch failed');
   }
 
   async speakText(text, { token, interrupt = true, onDone } = {}) {

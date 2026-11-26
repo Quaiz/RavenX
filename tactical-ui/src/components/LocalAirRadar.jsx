@@ -238,11 +238,11 @@ const LocalAirRadar = () => {
 
     const localInterval = setInterval(() => {
       if (rangeMode === 'LOCAL') fetchLocalFlights(userLoc.lat, userLoc.lon);
-    }, 2000);
+    }, 8000);
 
     const globalInterval = setInterval(() => {
       fetchGlobalFlights(userLoc.lat, userLoc.lon);
-    }, 10000);
+    }, 15000);
 
     return () => {
       clearInterval(localInterval);

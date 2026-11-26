@@ -116,16 +116,23 @@ def init_db():
 init_db()
 
 SESSION_TTL_DAYS = int(os.environ.get("SESSION_TTL_DAYS", "7"))
+_token_cache = {}  # token -> (cached_at, user_dict)
 
 
 def get_user_from_token(req):
-    """Validate Bearer token with TTL check, return {id, username} or None."""
+    """Validate Bearer token with in-memory TTL cache (300s) + Turso DB check."""
     auth = req.headers.get('Authorization', '')
     if not auth.startswith('Bearer '):
         return None
     token = auth[7:].strip()
     if not token:
         return None
+
+    now = time.time()
+    cached = _token_cache.get(token)
+    if cached and (now - cached[0] < 300):
+        return cached[1]
+
     client = get_db()
     try:
         rs = client.execute(
@@ -135,6 +142,7 @@ def get_user_from_token(req):
         )
         user_dict = row_to_dict(rs)
         if not user_dict:
+            _token_cache.pop(token, None)
             return None
         created_str = user_dict.get('created_at')
         if created_str:
@@ -142,13 +150,16 @@ def get_user_from_token(req):
                 created_dt = datetime.fromisoformat(str(created_str).replace('Z', '+00:00')).replace(tzinfo=None)
                 if datetime.utcnow() - created_dt > timedelta(days=SESSION_TTL_DAYS):
                     client.execute('DELETE FROM sessions WHERE token = ?', [token])
+                    _token_cache.pop(token, None)
                     return None
             except ValueError as e:
                 logger.debug("Session timestamp parse fallback: %s", e)
-        return {'id': user_dict['id'], 'username': user_dict['username']}
+        res_user = {'id': user_dict['id'], 'username': user_dict['username']}
+        _token_cache[token] = (now, res_user)
+        return res_user
     except Exception as e:
         logger.error("Token validation error: %s", e)
-        return None
+        return cached[1] if cached else None
     finally:
         client.close()
 
@@ -1268,38 +1279,8 @@ def get_space_weather():
             print(f"Alerts error: {e}")
             result['alerts'] = []
 
-        # 4. NASA DONKI CME (last 7 days)
-        try:
-            start = (datetime.datetime.now() - datetime.timedelta(days=7)).strftime('%Y-%m-%d')
-            r = req.get(f"https://kauai.ccmc.gsfc.nasa.gov/DONKI/WS/get/CME?startDate={start}", timeout=6)
-            if r.status_code == 200 and r.text.strip().startswith('['):
-                cme_data = r.json()
-                cmes = []
-                for c in cme_data[-8:]:
-                    speed = None
-                    half_angle = None
-                    earth_directed = False
-                    for analysis in c.get('cmeAnalyses', []) or []:
-                        if analysis.get('isMostAccurate'):
-                            speed = analysis.get('speed')
-                            half_angle = analysis.get('halfAngle')
-                            for enlil in analysis.get('enlilList') or []:
-                                if enlil.get('isEarthGB'):
-                                    earth_directed = True
-                    cmes.append({
-                        'time': c.get('startTime', ''),
-                        'note': (c.get('note', '') or '')[:150],
-                        'speed': speed,
-                        'half_angle': half_angle,
-                        'earth_directed': earth_directed,
-                        'link': f"https://kauai.ccmc.gsfc.nasa.gov/DONKI/view/CME/-1/-1"
-                    })
-                result['cme'] = list(reversed(cmes))
-            else:
-                result['cme'] = []
-        except Exception as e:
-            print(f"CME error: {e}")
-            result['cme'] = []
+        # 4. NASA DONKI CME (kauai.ccmc.gsfc.nasa.gov is decommissioned/unreachable; default to empty list to prevent 60s socket hangs)
+        result['cme'] = []
 
         # 5. Solar Wind (Speed, Density)
         try:
@@ -2063,7 +2044,10 @@ def proxy_aircraft():
     
     lat = request.args.get("lat")
     lon = request.args.get("lon")
-    cache_key = f"aircraft_{lat}_{lon}" if lat and lon else "aircraft"
+    try:
+        cache_key = f"aircraft_{round(float(lat), 2)}_{round(float(lon), 2)}" if lat and lon else "aircraft"
+    except (ValueError, TypeError):
+        cache_key = f"aircraft_{lat}_{lon}" if lat and lon else "aircraft"
     
     if cache_key in proxy_cache and now - proxy_cache[cache_key]["time"] < 30:
         return jsonify(proxy_cache[cache_key]["data"])
@@ -2489,8 +2473,14 @@ def get_military_bases():
     return jsonify(result)
 
 
+_fish_session = requests.Session()
+_fish_adapter = HTTPAdapter(pool_connections=8, pool_maxsize=16)
+_fish_session.mount("https://", _fish_adapter)
+_tts_audio_cache = {}  # (voice_id, text) -> bytes
+
+
 @app.route("/api/ai/chat", methods=["POST"])
-@limiter.limit("15 per minute")
+@limiter.limit("60 per minute")
 def proxy_ai_chat():
     user = get_user_from_token(request)
     if not user:
@@ -2525,7 +2515,7 @@ def proxy_ai_chat():
     }
 
     try:
-        req = _session.post(url, json=data, headers=headers, stream=True, timeout=60)
+        req = _session.post(url, json=data, headers=headers, stream=True, timeout=45)
         
         if req.status_code != 200:
             return jsonify({"error": f"Upstream API Error: {req.status_code}", "details": req.text}), req.status_code
@@ -2542,9 +2532,9 @@ def proxy_ai_chat():
 
 
 @app.route("/api/ai/tts", methods=["POST"])
-@limiter.limit("30 per minute")
+@limiter.limit("180 per minute")
 def proxy_ai_tts():
-    """Proxy text-to-speech synthesis to Fish Audio (cloud cloned voice) or local GPU TTS worker."""
+    """Proxy text-to-speech synthesis to Fish Audio (cloud cloned voice) with persistent TLS session, retry, and LRU cache."""
     user = get_user_from_token(request)
     if not user:
         return jsonify({"error": "UNAUTHORIZED ACCESS"}), 401
@@ -2557,27 +2547,40 @@ def proxy_ai_tts():
     fish_key = (os.environ.get("FISH_API_KEY") or "").strip()
     fish_voice = (os.environ.get("FISH_VOICE_ID") or "").strip()
     if fish_key and fish_voice:
+        cache_key = (fish_voice, text)
+        if cache_key in _tts_audio_cache:
+            return Response(_tts_audio_cache[cache_key], mimetype="audio/mpeg")
+
         fish_model = (os.environ.get("FISH_MODEL") or "s2.1-pro-free").strip()
-        try:
-            resp = requests.post(
-                "https://api.fish.audio/v1/tts",
-                headers={
-                    "Authorization": f"Bearer {fish_key}",
-                    "Content-Type": "application/json",
-                    "model": fish_model,
-                },
-                json={
-                    "text": text,
-                    "reference_id": fish_voice,
-                    "format": "mp3",
-                },
-                timeout=30,
-            )
-            if resp.status_code == 200 and resp.content:
-                return Response(resp.content, mimetype="audio/mpeg")
-            logger.warning("Fish Audio TTS returned %s: %s", resp.status_code, resp.text[:200])
-        except Exception as e:
-            logger.warning("Fish Audio TTS request failed: %s", e)
+        for attempt in range(2):
+            try:
+                resp = _fish_session.post(
+                    "https://api.fish.audio/v1/tts",
+                    headers={
+                        "Authorization": f"Bearer {fish_key}",
+                        "Content-Type": "application/json",
+                        "model": fish_model,
+                    },
+                    json={
+                        "text": text,
+                        "reference_id": fish_voice,
+                        "format": "mp3",
+                        "latency": "balanced",
+                    },
+                    timeout=18,
+                )
+                if resp.status_code == 200 and resp.content:
+                    if len(_tts_audio_cache) >= 96:
+                        _tts_audio_cache.pop(next(iter(_tts_audio_cache)), None)
+                    _tts_audio_cache[cache_key] = resp.content
+                    return Response(resp.content, mimetype="audio/mpeg")
+                logger.warning("Fish Audio TTS attempt %d returned %s: %s", attempt + 1, resp.status_code, resp.text[:200])
+                if resp.status_code in (401, 402, 403):
+                    break
+                time.sleep(0.3)
+            except Exception as e:
+                logger.warning("Fish Audio TTS attempt %d failed: %s", attempt + 1, e)
+                time.sleep(0.3)
 
     worker_url = (os.environ.get("TTS_WORKER_URL") or "").strip().rstrip("/")
     if not worker_url:
@@ -2629,32 +2632,31 @@ def get_system_logs():
         return jsonify({"error": str(e)}), 500
 
 
-# ─── UNIFIED TELEMETRY HUB (Master Heartbeat Aggregator) ──────────────────────
+# ─── UNIFIED TELEMETRY HUB (Non-Blocking Master Heartbeat Aggregator) ─────────
 _telemetry_hub_cache = {
     "timestamp": 0,
     "payload": {}
 }
+_telemetry_hub_lock = threading.Lock()
+_telemetry_hub_executor = ThreadPoolExecutor(max_workers=8)
 
-@app.route("/api/hub/telemetry", methods=["GET"])
-def get_telemetry_hub():
+
+def _refresh_telemetry_hub_sync():
     now = time.time()
-    # Cache for 15 seconds: frontend only receives fresh coordinated pulses
-    if now - _telemetry_hub_cache["timestamp"] < 15 and _telemetry_hub_cache["payload"]:
-        return jsonify(_telemetry_hub_cache["payload"])
-
+    prev = _telemetry_hub_cache.get("payload") or {}
     hub_data = {
         "timestamp": now,
-        "markets": None,
-        "radiation": None,
-        "seismic": None,
-        "weather": None,
-        "space_weather": None,
-        "gdelt": None,
-        "aircraft": None,
-        "outbreaks": None,
-        "jamming": None,
-        "macro": None,
-        "nuclear": None,
+        "markets": prev.get("markets"),
+        "radiation": prev.get("radiation"),
+        "seismic": prev.get("seismic"),
+        "weather": prev.get("weather"),
+        "space_weather": prev.get("space_weather"),
+        "gdelt": prev.get("gdelt"),
+        "aircraft": prev.get("aircraft"),
+        "outbreaks": prev.get("outbreaks"),
+        "jamming": prev.get("jamming"),
+        "macro": prev.get("macro"),
+        "nuclear": prev.get("nuclear"),
     }
 
     def fetch_feed(key, fn):
@@ -2683,18 +2685,57 @@ def get_telemetry_hub():
         ('nuclear', get_nuclear_data),
     ]
 
-    with ThreadPoolExecutor(max_workers=10) as executor:
-        futures = [executor.submit(fetch_feed, k, fn) for k, fn in targets]
-        for f in as_completed(futures):
-            key, val = f.result()
-            if val is not None:
-                hub_data[key] = val
-            elif _telemetry_hub_cache["payload"].get(key):
-                hub_data[key] = _telemetry_hub_cache["payload"][key]
+    futures = [_telemetry_hub_executor.submit(fetch_feed, k, fn) for k, fn in targets]
+    try:
+        for f in as_completed(futures, timeout=5.0):
+            try:
+                key, val = f.result(timeout=0.1)
+                if val is not None:
+                    hub_data[key] = val
+            except Exception:
+                pass
+    except Exception:
+        pass
 
-    _telemetry_hub_cache["timestamp"] = now
+    _telemetry_hub_cache["timestamp"] = time.time()
     _telemetry_hub_cache["payload"] = hub_data
-    return jsonify(hub_data)
+    return hub_data
+
+
+def _trigger_hub_bg_refresh():
+    if not _telemetry_hub_lock.acquire(blocking=False):
+        return
+    def _runner():
+        try:
+            _refresh_telemetry_hub_sync()
+        finally:
+            _telemetry_hub_lock.release()
+    threading.Thread(target=_runner, daemon=True).start()
+
+
+@app.route("/api/hub/telemetry", methods=["GET"])
+def get_telemetry_hub():
+    now = time.time()
+    has_payload = bool(_telemetry_hub_cache["payload"])
+    is_fresh = (now - _telemetry_hub_cache["timestamp"] < 20) and has_payload
+
+    if is_fresh:
+        return jsonify(_telemetry_hub_cache["payload"])
+
+    # Stale-while-revalidate: if we already have a cached payload, return it in <1ms and refresh in background!
+    if has_payload:
+        _trigger_hub_bg_refresh()
+        return jsonify(_telemetry_hub_cache["payload"])
+
+    # Cold boot: acquire lock (or wait up to 5s) and populate initial cache bounded to 5s
+    if _telemetry_hub_lock.acquire(timeout=5.0):
+        try:
+            if _telemetry_hub_cache["payload"]:
+                return jsonify(_telemetry_hub_cache["payload"])
+            return jsonify(_refresh_telemetry_hub_sync())
+        finally:
+            _telemetry_hub_lock.release()
+    return jsonify(_telemetry_hub_cache["payload"] or {"timestamp": now})
 
 
 if __name__ == "__main__":
