@@ -1,7 +1,7 @@
-import React, { useState, useMemo } from 'react';
-import useStore, { MODULE_CATEGORIES, WORKSPACE_MODULES } from '../store';
+import React, { useState, useMemo, useEffect } from 'react';
+import useStore, { MODULE_CATEGORIES } from '../store';
 import { audio } from '../utils/audioEngine';
-import { X, Search, Globe, TrendingUp, Shield, Activity, Map, ChevronRight } from 'lucide-react';
+import { X, Search, Globe, TrendingUp, Shield, Activity, Map } from 'lucide-react';
 
 const CATEGORY_META = {
  CORE: { icon: Map, color: 'text-primary' },
@@ -11,10 +11,26 @@ const CATEGORY_META = {
  ENVIRONMENTAL: { icon: Activity, color: 'text-green-500' },
 };
 
-const ModuleRegistry = ({ isOpen, onClose }) => {
- const { activeModules, toggleModule, activeWorkspace } = useStore();
+const ModuleRegistry = ({ isOpen, onClose, isWatcherOpen = false }) => {
+ const { activeModules, toggleModule } = useStore();
  const [activeTab, setActiveTab] = useState('ALL');
  const [search, setSearch] = useState('');
+ const [shouldRender, setShouldRender] = useState(isOpen);
+ const [isClosing, setIsClosing] = useState(false);
+
+ useEffect(() => {
+   if (isOpen) {
+     setShouldRender(true);
+     setIsClosing(false);
+   } else if (shouldRender) {
+     setIsClosing(true);
+     const t = setTimeout(() => {
+       setShouldRender(false);
+       setIsClosing(false);
+     }, 215);
+     return () => clearTimeout(t);
+   }
+ }, [isOpen, shouldRender]);
 
  const categories = Object.keys(MODULE_CATEGORIES);
 
@@ -47,13 +63,20 @@ const ModuleRegistry = ({ isOpen, onClose }) => {
  }, [filteredModules]);
 
  const totalCount = allModules.length;
- const activeCount = activeModules.length;
+ const activeCount = activeModules.filter(id => id !== 'MAP_MODULE' && id !== 'AI_ANALYST').length;
 
- if (!isOpen) return null;
+ if (!shouldRender) return null;
 
  return (
- <div className="fixed inset-0 z-[20000] flex items-center justify-center p-4 bg-black/75">
- <div className="w-full max-w-xl h-[560px] bg-[#071009]/95 border border-[#4bd865]/50 shadow-[0_22px_55px_rgba(0,0,0,0.92)] flex flex-col overflow-hidden">
+ <div
+   className={`fixed left-14 z-[19500] pointer-events-auto ${
+     isClosing ? 'macos-window-exit' : 'macos-window-enter'
+   }`}
+   style={{
+     bottom: isWatcherOpen ? '146px' : '32px',
+   }}
+ >
+ <div className="w-[390px] sm:w-[435px] max-w-[calc(100vw-4.5rem)] h-[430px] max-h-[calc(100dvh-165px)] bg-[#071009]/95 border border-[#4bd865]/50 shadow-[0_22px_55px_rgba(0,0,0,0.92)] flex flex-col overflow-hidden">
 
  {/* ═══ HEADER (WATCHER-02 Green Style) ═══ */}
  <div

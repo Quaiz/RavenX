@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import useStore, { MODULE_CATEGORIES } from './store';
 import { audio } from './utils/audioEngine';
-import { Shield, Radar, Moon, Globe, Database, Settings, Radio, Activity, Clock, BarChart3, Video, Grid, X, Minus, Square, Plus, Mic, Map, User, Bot, Bell, AlertTriangle, Info, Tv, ChevronRight, ChevronsRight, Network, LineChart, Volume2, VolumeX, LogOut, Terminal } from 'lucide-react';
+import { Shield, Radar, Moon, Globe, Database, Settings, Radio, Activity, Clock, BarChart3, Video, Grid, X, Minus, Square, Plus, Mic, Layers, Navigation, ShieldAlert, Crosshair, Map, User, Bot, Bell, AlertTriangle, Info, Tv, ChevronRight, ChevronsRight, Network, LineChart, Volume2, VolumeX, LogOut, Terminal } from 'lucide-react';
 import { Rnd } from 'react-rnd';
 import TopographicCanvas from './components/TopographicCanvas';
 import Watcher02CommsHUD from './components/Watcher02CommsHUD';
@@ -133,7 +133,7 @@ const NewsTicker = ({ minimizedModules, restoreModule, getModuleIcon }) => {
 // ═══ MODULE CONTAINER FOR GRID ═══
 const MODULES_NO_ZOOM = ['MAP_MODULE', 'LINK_ANALYSIS', 'GLOBAL_NEWS', 'LIVE_WEBCAMS', 'AIS_VESSELS'];
 
-const ModuleContainer = React.memo(React.forwardRef(({ id, title, icon: Icon, children, onClose, ...props }, ref) => {
+const ModuleContainer = React.memo(React.forwardRef(({ id, title, icon: Icon, children, onClose, isClosing = false, ...props }, ref) => {
   const uiScale = useStore(state => state.uiScale);
   const shouldZoom = !MODULES_NO_ZOOM.includes(id);
   const dbCode = `IW-${String(id || 'MOD').replace(/[^A-Z0-9]/gi, '').slice(0, 4).toUpperCase()}-A`;
@@ -143,7 +143,9 @@ const ModuleContainer = React.memo(React.forwardRef(({ id, title, icon: Icon, ch
     <div
       ref={ref}
       {...props}
-      className={`flex flex-col w-full h-full overflow-hidden relative bg-[#060d08]/95 border border-[#4bd865]/45 shadow-[0_18px_44px_rgba(0,0,0,0.92)] ${props.className || ''}`}
+      className={`flex flex-col w-full h-full overflow-hidden relative bg-[#060d08]/95 border border-[#4bd865]/45 shadow-[0_18px_44px_rgba(0,0,0,0.92)] ${
+        isClosing ? 'macos-window-exit' : 'macos-window-enter'
+      } ${props.className || ''}`}
       style={{ contain: 'layout style', ...(props.style || {}) }}
     >
       {/* Watcher Program IWV Header (Synced with WATCHER-02 Emerald Green) */}
@@ -220,7 +222,7 @@ const ModuleContainer = React.memo(React.forwardRef(({ id, title, icon: Icon, ch
 }));
 
 // ═══ ABSOLUTE FREE-FLOATING WINDOW (60FPS HARDWARE ACCELERATED) ═══
-const Window = React.memo(({ id, title, icon, state = {}, isMaximized, onDrag, onResize, onFocus, onClose, onMinimize, onMaximize, children, isMobile, layoutScale = 1 }) => {
+const Window = React.memo(({ id, title, icon, state = {}, isMaximized, isClosing = false, onDrag, onResize, onFocus, onClose, onMinimize, onMaximize, children, isMobile, layoutScale = 1 }) => {
  const handleFocus = useCallback(() => {
  onFocus?.(id);
  }, [onFocus, id]);
@@ -289,6 +291,7 @@ const Window = React.memo(({ id, title, icon, state = {}, isMaximized, onDrag, o
  id={id}
  title={title}
  icon={icon}
+ isClosing={isClosing}
  onClose={handleClose}
  onMinimize={handleMinimize}
  onMaximize={handleMaximize}
@@ -658,8 +661,30 @@ const Layout = ({ user, showGreeting, onEnterDashboard, onLogout, onUsernameChan
    id => !minimizedModules.includes(id) && id !== 'MAP_MODULE' && id !== 'AI_ANALYST'
  );
 
- const maxModuleBottomPx = visibleModules.length > 0 
- ? Math.max(...visibleModules.map(id => (windowStates[id]?.y || 0) + (windowStates[id]?.h || 0) + 150))
+ // Track closing modules for 215ms so macOS window-close animation plays smoothly before unmount
+ const [closingModules, setClosingModules] = useState([]);
+ const prevVisibleRef = useRef(visibleModules);
+
+ useEffect(() => {
+   const prev = prevVisibleRef.current;
+   const removed = prev.filter(id => !visibleModules.includes(id));
+   prevVisibleRef.current = visibleModules;
+   if (removed.length > 0) {
+     setClosingModules(curr => [...new Set([...curr, ...removed])]);
+     const t = setTimeout(() => {
+       setClosingModules(curr => curr.filter(id => !removed.includes(id)));
+     }, 215);
+     return () => clearTimeout(t);
+   }
+ }, [visibleModules]);
+
+ const renderedModules = [
+   ...visibleModules,
+   ...closingModules.filter(id => !visibleModules.includes(id)),
+ ];
+
+ const maxModuleBottomPx = renderedModules.length > 0 
+ ? Math.max(...renderedModules.map(id => (windowStates[id]?.y || 0) + (windowStates[id]?.h || 0) + 150))
  : 0;
  const wrapperHeight = maxModuleBottomPx * layoutScale;
 
@@ -674,8 +699,8 @@ const Layout = ({ user, showGreeting, onEnterDashboard, onLogout, onUsernameChan
    className="w-12 border-r border-[#4bd865]/30 bg-[#060d08]/95 z-[10000] flex flex-col items-center justify-between py-2.5 px-1 shrink-0 select-none"
    style={{ paddingTop: 'max(0.625rem, env(safe-area-inset-top))' }}
  >
-   {/* Top Stack: Static Brand Emblem + Modules Registry */}
-   <div className="flex flex-col items-center gap-2 w-full">
+   {/* Top Stack: Static Brand Emblem + Modules Registry + 4 Map Tools (Layers, Rangefinder, Geofence, Fusion) */}
+   <div className="flex flex-col items-center gap-1.5 w-full">
      {/* Static RavenX Core Emblem (Not a button) */}
      <div
        title="RAVEN-X // WATCHER PROGRAM"
@@ -685,12 +710,12 @@ const Layout = ({ user, showGreeting, onEnterDashboard, onLogout, onUsernameChan
        <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-[#39e75f] border border-[#060d08]" />
      </div>
 
-     <div className="w-6 h-px bg-[#39e75f]/20" />
+     <div className="w-6 h-px bg-[#39e75f]/20 my-0.5" />
 
-     {/* Toggle Tactical Modules Button */}
+     {/* 1. Toggle Tactical Modules Button */}
      <button
        type="button"
-       onClick={() => { audio.playClick(); setIsRegistryOpen(true); }}
+       onClick={() => { audio.playClick(); setIsRegistryOpen(prev => !prev); }}
        title="Toggle Tactical Modules"
        className={`w-9 h-9 border flex items-center justify-center relative transition-colors cursor-pointer ${
          isRegistryOpen || visibleModules.length > 0
@@ -704,6 +729,69 @@ const Layout = ({ user, showGreeting, onEnterDashboard, onLogout, onUsernameChan
            {visibleModules.length}
          </span>
        )}
+     </button>
+
+     <div className="w-6 h-px bg-[#39e75f]/20 my-0.5" />
+
+     {/* 2. Map Overlays / Layers Button */}
+     <button
+       type="button"
+       onClick={toggleMapOverlayOpen}
+       title="Map Layers & Overlays"
+       className={`w-9 h-8 border flex items-center justify-center relative transition-colors cursor-pointer ${
+         mapOverlayOpen || activeOverlayCount > 0
+           ? 'bg-[#17361d] border-[#39e75f] text-[#eef6ee] shadow-[0_0_10px_rgba(57,231,95,0.22)]'
+           : 'bg-[#09140b] border-[#39e75f]/30 text-[#4de068] hover:border-[#39e75f] hover:text-[#eef6ee]'
+       }`}
+     >
+       <Layers size={14} />
+       {activeOverlayCount > 0 && (
+         <span className="absolute -top-1 -right-1 min-w-[13px] h-[13px] px-0.5 bg-[#39e75f] text-[#060d08] font-mono text-[7px] font-bold flex items-center justify-center">
+           {activeOverlayCount}
+         </span>
+       )}
+     </button>
+
+     {/* 3. Tactical Rangefinder Button */}
+     <button
+       type="button"
+       onClick={toggleRangefinder}
+       title="Tactical Rangefinder (Middle Click Map)"
+       className={`w-9 h-8 border flex items-center justify-center transition-colors cursor-pointer ${
+         rangefinderActive
+           ? 'bg-[#361616] border-[#ef5350] text-[#ff7b7b] shadow-[0_0_10px_rgba(239,83,80,0.35)]'
+           : 'bg-[#09140b] border-[#39e75f]/30 text-[#4de068] hover:border-[#39e75f] hover:text-[#eef6ee]'
+       }`}
+     >
+       <Navigation size={13} />
+     </button>
+
+     {/* 4. Draw Geofence Perimeter Button */}
+     <button
+       type="button"
+       onClick={toggleGeofence}
+       title="Draw Geofence Perimeter"
+       className={`w-9 h-8 border flex items-center justify-center transition-colors cursor-pointer ${
+         geofenceActive
+           ? 'bg-[#361616] border-[#ef5350] text-[#ff7b7b] shadow-[0_0_10px_rgba(239,83,80,0.35)]'
+           : 'bg-[#09140b] border-[#39e75f]/30 text-[#4de068] hover:border-[#39e75f] hover:text-[#eef6ee]'
+       }`}
+     >
+       <ShieldAlert size={13} />
+     </button>
+
+     {/* 5. Data Fusion Predictive Tracking Button */}
+     <button
+       type="button"
+       onClick={togglePredictiveTracking}
+       title="Data Fusion Predictive Tracking"
+       className={`w-9 h-8 border flex items-center justify-center transition-colors cursor-pointer ${
+         predictiveTrackingActive
+           ? 'bg-[#382210] border-[#f97316] text-[#fdba74] shadow-[0_0_10px_rgba(249,115,22,0.35)]'
+           : 'bg-[#09140b] border-[#39e75f]/30 text-[#4de068] hover:border-[#39e75f] hover:text-[#eef6ee]'
+       }`}
+     >
+       <Crosshair size={13} />
      </button>
    </div>
 
@@ -787,6 +875,8 @@ const Layout = ({ user, showGreeting, onEnterDashboard, onLogout, onUsernameChan
      <Watcher02CommsHUD
        isOpen={isWatcherOpen}
        onClose={() => setIsWatcherOpen(false)}
+       isRegistryOpen={isRegistryOpen}
+       onOpenComms={() => setIsRegistryOpen(false)}
      />
    )}
 
@@ -808,7 +898,7 @@ const Layout = ({ user, showGreeting, onEnterDashboard, onLogout, onUsernameChan
        </Window>
      )
    ) : (
-     visibleModules.length > 0 && (
+     renderedModules.length > 0 && (
        <div className="absolute inset-0 z-10 overflow-y-auto overflow-x-hidden custom-scrollbar pointer-events-none">
          <div style={{ minHeight: '100%', height: wrapperHeight > 0 ? `${wrapperHeight}px` : '100%', overflow: 'hidden' }}>
            <div
@@ -821,12 +911,13 @@ const Layout = ({ user, showGreeting, onEnterDashboard, onLogout, onUsernameChan
              }}
            >
              <div className="absolute top-0 left-0 right-0 h-[10000px] pointer-events-none">
-               {visibleModules.map((id) => {
+               {renderedModules.map((id) => {
                  const isMaximized = preMaxStates[id] !== undefined;
+                 const isClosing = !visibleModules.includes(id);
                  const pad = 20 / layoutScale;
                  const maxW = `calc(100% - ${pad * 2}px)`;
                  const maxH = (window.innerHeight - 60) / layoutScale;
-                 const defaultState = windowStates[id] || { x: 120, y: 90, w: 440, h: 340, z: 10 };
+                 const defaultState = windowStates[id] || { x: 460, y: 80, w: 460, h: 360, z: 10 };
 
                  return (
                    <Window
@@ -836,6 +927,7 @@ const Layout = ({ user, showGreeting, onEnterDashboard, onLogout, onUsernameChan
                      icon={getModuleIcon(id)}
                      state={isMaximized ? { ...defaultState, w: maxW, h: maxH, x: pad, y: pad } : defaultState}
                      isMaximized={isMaximized}
+                     isClosing={isClosing}
                      onDrag={setWindowPos}
                      onResize={setWindowPos}
                      onFocus={bringToFront}
@@ -893,8 +985,12 @@ const Layout = ({ user, showGreeting, onEnterDashboard, onLogout, onUsernameChan
  </div>
  )}
 
- {/* Module Registry Modal */}
- <ModuleRegistry isOpen={isRegistryOpen} onClose={() => setIsRegistryOpen(false)} />
+ {/* Module Registry Docked Panel (Sits directly above WATCHER-02 Active Speaker) */}
+ <ModuleRegistry
+   isOpen={isRegistryOpen}
+   onClose={() => setIsRegistryOpen(false)}
+   isWatcherOpen={isWatcherOpen}
+ />
 
  {/* Profile Modal */}
  {isProfileOpen && currentUser && (

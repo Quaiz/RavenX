@@ -452,6 +452,37 @@ const useStore = create(persist((set, get) => ({
  layerOpacity: 0.8,
  },
 
+ mapOverlayOpen: false,
+ rangefinderActive: false,
+ geofenceActive: false,
+ toggleMapOverlayOpen: () => set(state => {
+  audio.playClick();
+  return { mapOverlayOpen: !state.mapOverlayOpen };
+ }),
+ setMapOverlayOpen: (val) => set({ mapOverlayOpen: Boolean(val) }),
+ toggleRangefinder: () => set(state => {
+  audio.playClick();
+  const next = !state.rangefinderActive;
+  return { rangefinderActive: next, ...(next ? { geofenceActive: false } : {}) };
+ }),
+ toggleGeofence: () => set(state => {
+  audio.playClick();
+  const next = !state.geofenceActive;
+  return {
+   geofenceActive: next,
+   ...(next
+    ? {
+       rangefinderActive: false,
+       predictiveTracking: { ...state.predictiveTracking, active: false, status: 'IDLE' },
+      }
+    : {}),
+  };
+ }),
+ setGeofenceActive: (val) => set(state => {
+  const next = typeof val === 'function' ? val(state.geofenceActive) : Boolean(val);
+  return { geofenceActive: next, ...(next ? { rangefinderActive: false } : {}) };
+ }),
+
  predictiveTracking: {
  active: false,
  points: [], // [{lat, lon}]
@@ -463,8 +494,9 @@ const useStore = create(persist((set, get) => ({
 
  togglePredictiveTracking: () => set(state => {
  const next = !state.predictiveTracking.active;
- if (next) audio.playClick();
+ audio.playClick();
  return {
+  ...(next ? { rangefinderActive: false, geofenceActive: false } : {}),
   predictiveTracking: {
   active: next,
   points: [],

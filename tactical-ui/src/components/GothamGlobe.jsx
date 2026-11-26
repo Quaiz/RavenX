@@ -289,11 +289,27 @@ function OverlayPanel({ isOpen, onClose }) {
  );
 
  const activeOverlayCount = mapConfig.activeOverlays.length;
+ const [shouldRender, setShouldRender] = useState(isOpen);
+ const [isClosing, setIsClosing] = useState(false);
 
- if (!isOpen) return null;
+ useEffect(() => {
+   if (isOpen) {
+     setShouldRender(true);
+     setIsClosing(false);
+   } else if (shouldRender) {
+     setIsClosing(true);
+     const t = setTimeout(() => {
+       setShouldRender(false);
+       setIsClosing(false);
+     }, 215);
+     return () => clearTimeout(t);
+   }
+ }, [isOpen, shouldRender]);
+
+ if (!shouldRender) return null;
 
  return (
- <div className="absolute top-0 right-0 z-[2000] w-[270px] bg-[#071009]/95 border border-[#4bd865]/45 shadow-[0_18px_44px_rgba(0,0,0,0.92)] flex flex-col h-full overflow-hidden">
+ <div className={`absolute top-0 left-0 z-[2000] w-[285px] bg-[#071009]/95 border border-[#4bd865]/45 shadow-[0_18px_44px_rgba(0,0,0,0.92)] flex flex-col max-h-full overflow-hidden ${isClosing ? 'macos-window-exit' : 'macos-window-enter'}`}>
  {/* Header */}
  <div
    className="p-2.5 border-b border-black flex items-center justify-between shrink-0"
@@ -433,13 +449,14 @@ const GothamGlobe = React.memo(() => {
  // or layerOpacity actually change — not when overlays/aircraft/data update.
  const baseMapId = useStore(s => s.mapConfig.baseMap);
  const layerOpacity = useStore(s => s.mapConfig.layerOpacity);
- const activeOverlayCount = useStore(s => s.mapConfig.activeOverlays.length);
  const baseMaps = useStore(s => s.baseMaps);
  const fetchGeoData = useStore(s => s.fetchGeoData);
 
- const [overlayOpen, setOverlayOpen] = useState(false);
- const [rangefinderActive, setRangefinderActive] = useState(false);
- const [geofenceActive, setGeofenceActive] = useState(false);
+ const overlayOpen = useStore(s => s.mapOverlayOpen);
+ const setOverlayOpen = useStore(s => s.setMapOverlayOpen);
+ const rangefinderActive = useStore(s => s.rangefinderActive);
+ const geofenceActive = useStore(s => s.geofenceActive);
+ const setGeofenceActive = useStore(s => s.setGeofenceActive);
 
  const predictiveTracking = useStore(s => s.predictiveTracking);
  const togglePredictiveTracking = useStore(s => s.togglePredictiveTracking);
@@ -459,71 +476,8 @@ const GothamGlobe = React.memo(() => {
  return (
  <div className="relative w-full h-full bg-[#05070a] overflow-hidden">
 
- {/* ═══ MAP TACTICAL TOOLBAR (Top-Right Floating Control Strip — WATCHER-02 Green Sync) ═══ */}
- <div
-   className="absolute top-3 right-3 z-[1500] h-8 border border-[#4bd865]/45 flex items-center px-2.5 gap-1.5 sm:gap-2.5 overflow-x-auto no-scrollbar shadow-[0_8px_24px_rgba(0,0,0,0.85)]"
-   style={{
-     background: 'linear-gradient(90deg, rgba(42,96,48,0.88) 0%, rgba(24,56,29,0.92) 50%, rgba(10,20,12,0.95) 100%)',
-   }}
- >
- <div className="w-1.5 h-1.5 rounded-full bg-[#39e75f] shadow-[0_0_6px_#39e75f] shrink-0"/>
- <span className="text-[9px] font-bold text-[#eef6ee] tracking-[0.2em] uppercase shrink-0 hidden sm:inline">TACTICAL MAP</span>
- <div className="h-3 w-px bg-[#39e75f]/25 shrink-0 hidden sm:block"/>
- <button
- onClick={() => setOverlayOpen(prev => !prev)}
- className={`flex items-center gap-1.5 px-2.5 py-1 text-[8px] font-bold tracking-widest uppercase transition-all shrink-0 cursor-pointer ${overlayOpen
- ? 'bg-[#39e75f] text-[#060d08] border border-[#39e75f] shadow-[0_0_10px_rgba(57,231,95,0.4)]'
- : 'bg-[#071109]/80 text-[#a3cca7] border border-[#39e75f]/35 hover:text-[#eef6ee] hover:border-[#39e75f]'
- }`}
- >
- <Layers size={10} />
- LAYERS
- </button>
- {activeOverlayCount > 0 && (
- <span className="text-[7px] font-bold text-[#39e75f] tracking-widest shrink-0">{activeOverlayCount} ACTIVE</span>
- )}
-
- <div className="h-3 w-px bg-[#39e75f]/25 ml-1 sm:ml-2 shrink-0"/>
- 
- <button
- onClick={() => { setRangefinderActive(prev => !prev); setGeofenceActive(false); }}
- className={`flex items-center gap-1.5 px-2.5 py-1 text-[8px] font-bold tracking-widest uppercase transition-all shrink-0 cursor-pointer ${rangefinderActive
- ? 'bg-red-500/20 text-red-400 border border-red-500/50 shadow-[0_0_8px_rgba(239,68,68,0.3)]'
- : 'bg-[#071109]/80 text-[#a3cca7] border border-[#39e75f]/30 hover:text-[#eef6ee] hover:border-[#39e75f]/60'
- }`}
- title="Tactical Rangefinder (Middle Click to use)"
- >
- <Navigation size={10} />
- RANGEFINDER {rangefinderActive ? 'ON' : ''}
- </button>
-
- <button
- onClick={() => { setGeofenceActive(prev => !prev); setRangefinderActive(false); if(predictiveTracking.active) togglePredictiveTracking(); }}
- className={`flex items-center gap-1.5 px-2.5 py-1 text-[8px] font-bold tracking-widest uppercase transition-all shrink-0 cursor-pointer ${geofenceActive
- ? 'bg-red-500/20 text-red-400 border border-red-500/50 shadow-[0_0_8px_rgba(239,68,68,0.3)]'
- : 'bg-[#071109]/80 text-[#a3cca7] border border-[#39e75f]/30 hover:text-[#eef6ee] hover:border-[#39e75f]/60'
- }`}
- title="Draw Geofence Perimeter"
- >
- <ShieldAlert size={10} />
- GEOFENCE {geofenceActive ? 'DRAWING' : ''}
- </button>
-
- <button
- onClick={() => { togglePredictiveTracking(); setRangefinderActive(false); setGeofenceActive(false); }}
- className={`flex items-center gap-1.5 px-2.5 py-1 text-[8px] font-bold tracking-widest uppercase transition-all shrink-0 cursor-pointer ${predictiveTracking.active
- ? 'bg-orange-500/20 text-orange-400 border border-orange-500/50 shadow-[0_0_8px_rgba(249,115,22,0.3)]'
- : 'bg-[#071109]/80 text-[#a3cca7] border border-[#39e75f]/30 hover:text-[#eef6ee] hover:border-[#39e75f]/60'
- }`}
- title="Target Predictive Tracking (Data Fusion)"
- >
- <Crosshair size={10} />
- FUSION {predictiveTracking.active ? 'ACTIVE' : ''}
- </button>
- </div>
-
- {/* ═══ OVERLAY PANEL (Top-Right below Map Toolbar) ═══ */}
- <div className="absolute top-12 right-3 bottom-8 z-[2000] pointer-events-auto">
+ {/* ═══ OVERLAY PANEL (Docked on Left next to Left Vertical Command Bar) ═══ */}
+ <div className="absolute top-3 left-2 bottom-8 z-[2000] pointer-events-auto">
  <OverlayPanel isOpen={overlayOpen} onClose={() => setOverlayOpen(false)} />
  </div>
 
