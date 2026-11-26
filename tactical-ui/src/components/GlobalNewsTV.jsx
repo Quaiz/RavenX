@@ -1,324 +1,551 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Signal, Radio, Globe, Tv, RefreshCcw, Search } from 'lucide-react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { Tv, RefreshCw, Volume2, VolumeX, Globe, Radio, ChevronRight, Signal } from 'lucide-react';
+import useTacticalStore from '../store';
 
+// Dedicated country-specific live news channels — NEVER mixes or falls back to other countries
 const COUNTRIES = [
- { id: 'usa', name: 'USA', query: 'NBC News Live Fox News' },
- { id: 'uk', name: 'UNITED KINGDOM', query: 'Sky News Live' },
- { id: 'canada', name: 'CANADA', query: 'CBC News Live' },
- { id: 'germany', name: 'GERMANY', query: 'DW News Live' },
- { id: 'france', name: 'FRANCE', query: 'France 24 Live' },
- { id: 'qatar', name: 'QATAR (AL JAZEERA)', query: 'Al Jazeera Live' },
- { id: 'turkey', name: 'TURKEY (TRT)', query: 'TRT World Live' },
- { id: 'israel', name: 'ISRAEL', query: 'i24 News Live' },
- { id: 'china', name: 'CHINA (CGTN)', query: 'CGTN Live' },
- { id: 'india', name: 'INDIA', query: 'India Today Live WION' },
- { id: 'singapore', name: 'SINGAPORE (CNA)', query: 'CNA Live' },
- { id: 'vietnam', name: 'VIETNAM', query: 'VTC Now truc tiep' },
- { id: 'korea', name: 'SOUTH KOREA', query: 'Arirang TV Live' },
- { id: 'pakistan', name: 'PAKISTAN', query: 'Geo News Live' },
- { id: 'philippines', name: 'PHILIPPINES', query: 'GMA News Live' },
- { id: 'indonesia', name: 'INDONESIA', query: 'Kompas TV Live' },
- { id: 'australia', name: 'AUSTRALIA', query: 'ABC News Australia Live' },
- { id: 'africa', name: 'PAN-AFRICA', query: 'AfricaNews Live' },
- { id: 'south_africa', name: 'SOUTH AFRICA', query: 'SABC News Live' },
- { id: 'markets', name: 'GLOBAL MARKETS', query: 'Bloomberg TV Live' },
+  {
+    id: 'usa',
+    name: 'UNITED STATES',
+    short: 'USA',
+    channels: [
+      { id: 'nbc', name: 'NBC NEWS NOW', query: 'NBC News NOW live' },
+      { id: 'abc', name: 'ABC NEWS LIVE', query: 'ABC News Live' },
+      { id: 'cbs', name: 'CBS NEWS 24/7', query: 'CBS News 24/7 live' },
+      { id: 'fox', name: 'LIVENOW FOX', query: 'LiveNOW from FOX live' },
+      { id: 'scripps', name: 'SCRIPPS NEWS', query: 'Scripps News live' },
+      { id: 'ap', name: 'ASSOCIATED PRESS', query: 'Associated Press live' },
+      { id: 'bloomberg', name: 'BLOOMBERG US', query: 'Bloomberg Television live' },
+    ],
+  },
+  {
+    id: 'uk',
+    name: 'UNITED KINGDOM',
+    short: 'UK',
+    channels: [
+      { id: 'sky', name: 'SKY NEWS UK', query: 'Sky News live' },
+      { id: 'gbnews', name: 'GB NEWS', query: 'GB News live' },
+      { id: 'talktv', name: 'TALKTV UK', query: 'TalkTV live' },
+    ],
+  },
+  {
+    id: 'vietnam',
+    name: 'VIETNAM',
+    short: 'VNM',
+    channels: [
+      { id: 'vtc', name: 'VTC NOW', query: 'VTC Now trực tiếp tin tức' },
+      { id: 'antv', name: 'ANTV CAND', query: 'ANTV truyền hình công an nhân dân trực tiếp' },
+      { id: 'vnews', name: 'VNEWS TTXVN', query: 'Truyền hình Thông tấn VNews trực tiếp' },
+      { id: 'quochoi', name: 'TH QUỐC HỘI / VOV', query: 'VOV Live tin tức trực tiếp' },
+    ],
+  },
+  {
+    id: 'japan',
+    name: 'JAPAN',
+    short: 'JPN',
+    channels: [
+      { id: 'nhk', name: 'NHK WORLD-JAPAN', query: 'NHK World Japan live' },
+      { id: 'ann', name: 'ANN NEWS JP', query: 'ANNnewsCH live' },
+      { id: 'tbs', name: 'TBS NEWS DIG', query: 'TBS NEWS DIG live' },
+      { id: 'fnn', name: 'FNNプライム', query: 'FNNプライムオンライン live' },
+    ],
+  },
+  {
+    id: 'korea',
+    name: 'SOUTH KOREA',
+    short: 'KOR',
+    channels: [
+      { id: 'ytn', name: 'YTN NEWS 24', query: 'YTN 24 실시간 뉴스 live' },
+      { id: 'yonhap', name: 'YONHAP NEWS TV', query: '연합뉴스TV 실시간 live' },
+      { id: 'arirang', name: 'ARIRANG TV', query: 'Arirang TV live' },
+      { id: 'kbs', name: 'KBS WORLD', query: 'KBS World TV live' },
+    ],
+  },
+  {
+    id: 'france',
+    name: 'FRANCE',
+    short: 'FRA',
+    channels: [
+      { id: 'f24en', name: 'FRANCE 24 EN', query: 'France 24 English live' },
+      { id: 'f24fr', name: 'FRANCE 24 FR', query: 'France 24 en direct' },
+      { id: 'franceinfo', name: 'FRANCEINFO', query: 'franceinfo en direct' },
+      { id: 'euronews', name: 'EURONEWS', query: 'euronews live' },
+    ],
+  },
+  {
+    id: 'germany',
+    name: 'GERMANY',
+    short: 'DEU',
+    channels: [
+      { id: 'dw', name: 'DW NEWS', query: 'DW News live' },
+      { id: 'welt', name: 'WELT LIVE', query: 'WELT Nachrichtensender live' },
+    ],
+  },
+  {
+    id: 'singapore',
+    name: 'SINGAPORE',
+    short: 'SGP',
+    channels: [
+      { id: 'cna', name: 'CNA 24/7', query: 'CNA live news Singapore' },
+    ],
+  },
+  {
+    id: 'china',
+    name: 'CHINA',
+    short: 'CHN',
+    channels: [
+      { id: 'cgtn', name: 'CGTN LIVE', query: 'CGTN live' },
+      { id: 'cctv', name: 'PHOENIX / CCTV', query: 'Phoenix TV live news' },
+    ],
+  },
+  {
+    id: 'india',
+    name: 'INDIA',
+    short: 'IND',
+    channels: [
+      { id: 'wion', name: 'WION LIVE', query: 'WION live' },
+      { id: 'indiatoday', name: 'INDIA TODAY', query: 'India Today live' },
+      { id: 'ndtv', name: 'NDTV 24X7', query: 'NDTV 24x7 live' },
+    ],
+  },
+  {
+    id: 'qatar',
+    name: 'QATAR / MENA',
+    short: 'QAT',
+    channels: [
+      { id: 'aje', name: 'AL JAZEERA EN', query: 'Al Jazeera English live' },
+      { id: 'aja', name: 'AL JAZEERA AR', query: 'Al Jazeera Arabic live' },
+    ],
+  },
+  {
+    id: 'turkey',
+    name: 'TURKEY',
+    short: 'TUR',
+    channels: [
+      { id: 'trtworld', name: 'TRT WORLD', query: 'TRT World live' },
+      { id: 'haberturk', name: 'HABERTÜRK TV', query: 'Habertürk TV canlı' },
+      { id: 'ntv', name: 'NTV TÜRKIYE', query: 'NTV canlı yayın' },
+    ],
+  },
+  {
+    id: 'israel',
+    name: 'ISRAEL',
+    short: 'ISR',
+    channels: [
+      { id: 'i24', name: 'I24NEWS EN', query: 'i24NEWS English live' },
+      { id: 'kan11', name: 'KAN 11 LIVE', query: 'כאן 11 שידור חי Kan 11 live' },
+    ],
+  },
+  {
+    id: 'canada',
+    name: 'CANADA',
+    short: 'CAN',
+    channels: [
+      { id: 'cbc', name: 'CBC NEWS', query: 'CBC News live' },
+      { id: 'globalca', name: 'GLOBAL NEWS CA', query: 'Global News live Canada' },
+    ],
+  },
+  {
+    id: 'australia',
+    name: 'AUSTRALIA',
+    short: 'AUS',
+    channels: [
+      { id: 'abcau', name: 'ABC NEWS AU', query: 'ABC News Australia live' },
+      { id: 'skyau', name: 'SKY NEWS AU', query: 'Sky News Australia live' },
+    ],
+  },
+  {
+    id: 'brazil',
+    name: 'BRAZIL',
+    short: 'BRA',
+    channels: [
+      { id: 'cnnbr', name: 'CNN BRASIL', query: 'CNN Brasil ao vivo' },
+      { id: 'band', name: 'BAND JORNALISMO', query: 'Band Jornalismo ao vivo' },
+    ],
+  },
+  {
+    id: 'russia',
+    name: 'RUSSIA / EURASIA',
+    short: 'RUS',
+    channels: [
+      { id: 'currenttime', name: 'CURRENT TIME TV', query: 'Настоящее Время прямой эфир live' },
+      { id: 'rtvi', name: 'RTVI NEWS', query: 'RTVI прямой эфир live' },
+    ],
+  },
+  {
+    id: 'africa',
+    name: 'PAN-AFRICA',
+    short: 'AFR',
+    channels: [
+      { id: 'africanews', name: 'AFRICANEWS', query: 'Africanews live' },
+      { id: 'sabc', name: 'SABC NEWS ZA', query: 'SABC News live' },
+      { id: 'channels', name: 'CHANNELS TV NG', query: 'Channels Television live' },
+    ],
+  },
 ];
 
-// Custom wrapper to catch YouTube errors natively
-const NativeYouTubePlayer = ({ videoId, onError }) => {
- const containerRef = useRef(null);
- const onErrorRef = useRef(onError);
-
- // Keep callback ref updated without triggering re-initialization
- useEffect(() => {
- onErrorRef.current = onError;
- }, [onError]);
-
- useEffect(() => {
- let player;
- let timeoutId;
-
- const initPlayer = () => {
- if (!containerRef.current) return;
- 
- // Clear container and create a fresh mount point
- containerRef.current.innerHTML = '';
- const div = document.createElement('div');
- containerRef.current.appendChild(div);
-
- player = new window.YT.Player(div, {
- videoId: videoId,
- width: '100%',
- height: '100%',
- playerVars: {
- autoplay: 1,
- mute: 1,
- modestbranding: 1,
- controls: 1,
- playsinline: 1
- },
- events: {
- onReady: (e) => {
- e.target.playVideo();
- },
- onError: (e) => {
- console.warn("YouTube Player Error:", e.data);
- if (onErrorRef.current) {
- onErrorRef.current();
- onErrorRef.current = null; // Prevent rapid fire from same video
- }
- }
- }
- });
- };
-
- if (!window.YT) {
- const tag = document.createElement('script');
- tag.src = 'https://www.youtube.com/iframe_api';
- document.body.appendChild(tag);
- window.onYouTubeIframeAPIReady = initPlayer;
- } else if (window.YT && window.YT.Player) {
- timeoutId = setTimeout(initPlayer, 100);
- }
-
- return () => {
- clearTimeout(timeoutId);
- if (player && player.destroy) {
- try {
- player.destroy();
- } catch(e) {}
- }
- };
- }, [videoId]); // ONLY re-run when videoId changes!
-
- return <div ref={containerRef} className="w-full h-full pointer-events-auto bg-black"/>;
+// Map common globe country names to our country IDs
+const COUNTRY_NAME_MAP = {
+  'united states': 'usa',
+  'united states of america': 'usa',
+  'usa': 'usa',
+  'united kingdom': 'uk',
+  'uk': 'uk',
+  'great britain': 'uk',
+  'vietnam': 'vietnam',
+  'viet nam': 'vietnam',
+  'japan': 'japan',
+  'south korea': 'korea',
+  'korea': 'korea',
+  'republic of korea': 'korea',
+  'france': 'france',
+  'germany': 'germany',
+  'singapore': 'singapore',
+  'china': 'china',
+  'india': 'india',
+  'qatar': 'qatar',
+  'turkey': 'turkey',
+  'türkiye': 'turkey',
+  'israel': 'israel',
+  'canada': 'canada',
+  'australia': 'australia',
+  'brazil': 'brazil',
+  'russia': 'russia',
+  'russian federation': 'russia',
+  'south africa': 'africa',
+  'nigeria': 'africa',
+  'kenya': 'africa',
 };
 
-const GlobalNewsTV = () => {
- const [activeCountry, setActiveCountry] = useState(() => {
- const saved = sessionStorage.getItem('gnn_country');
- if (saved) {
- const found = COUNTRIES.find(c => c.id === saved);
- if (found) return found;
- }
- return COUNTRIES[0];
- });
- const [videoIds, setVideoIds] = useState([]);
- const [currentIndex, setCurrentIndex] = useState(0);
- const [skipCounter, setSkipCounter] = useState(0);
- const [isSearching, setIsSearching] = useState(true);
- const [isSwitching, setIsSwitching] = useState(false);
- const [errorCount, setErrorCount] = useState(0);
- const [allCountries, setAllCountries] = useState(COUNTRIES);
- const [searchQuery, setSearchQuery] = useState('');
+export default function GlobalNewsTV() {
+  const { activeCountry } = useTacticalStore();
 
- useEffect(() => {
- fetch('https://restcountries.com/v3.1/all')
- .then(res => res.json())
- .then(data => {
- const fetched = data.map(d => ({
- id: d.cca3?.toLowerCase() || d.name.common,
- name: d.name.common.toUpperCase(),
- query: `${d.name.common} Live News`
- }));
- 
- const mergedMap = new Map();
- fetched.forEach(c => mergedMap.set(c.id, c));
- COUNTRIES.forEach(c => mergedMap.set(c.id, c)); // Overwrite with custom
- 
- const mergedArray = Array.from(mergedMap.values()).sort((a,b) => a.name.localeCompare(b.name));
- setAllCountries(mergedArray);
- })
- .catch(err => console.error("Failed to load countries", err));
- }, []);
+  const [selectedCountryId, setSelectedCountryId] = useState('usa');
+  const [selectedChannelIdx, setSelectedChannelIdx] = useState(0);
+  const [streams, setStreams] = useState([]);
+  const [streamIndex, setStreamIndex] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isMuted, setIsMuted] = useState(true);
+  const [searchFilter, setSearchFilter] = useState('');
 
- const fetchStreams = async (country) => {
- setIsSearching(true);
- setVideoIds([]);
- setCurrentIndex(0);
- setErrorCount(0);
- try {
- const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/tv/search?query=${encodeURIComponent(country.query)}`);
- const data = await res.json();
- let ids = data.videoIds || [];
- 
- // Always append multiple known 24/7 global news streams as ultimate fallbacks
- let fallbacks = ['bNwOPMAOQG0', '9Auq9mYxFEE', 'X3jLNeaLsmA']; // Al Jazeera, Sky, DW
- 
- // Inject country-specific fallbacks at the BEGINNING if the backend completely failed
- if (country.id === 'vietnam') {
- fallbacks = ['ZzWBpGwKoaI', 'V9b2Xh8vLdI', ...fallbacks]; // VTC Now
- } else if (country.id === 'usa') {
- fallbacks = ['XWq5kBlakcQ', 'F-lNeJvI5bI', ...fallbacks];
- }
- 
- // Ensure we have at least these fallbacks
- fallbacks.forEach(f => {
- if (!ids.includes(f)) ids.push(f);
- });
- 
- // If the backend failed entirely, ensure we start with the country fallback
- setVideoIds(ids);
- } catch (err) {
- console.error("Error fetching streams", err);
- 
- let fallbacks = ['bNwOPMAOQG0', '9Auq9mYxFEE', 'X3jLNeaLsmA'];
- if (country.id === 'vietnam') {
- fallbacks = ['ZzWBpGwKoaI', 'V9b2Xh8vLdI', ...fallbacks];
- } else if (country.id === 'usa') {
- fallbacks = ['XWq5kBlakcQ', 'F-lNeJvI5bI', ...fallbacks];
- }
- 
- setVideoIds(fallbacks);
- }
- setIsSearching(false);
- };
+  // Client-side stream cache keyed by channel query for 0ms switching
+  const streamCacheRef = useRef({});
+  const abortRef = useRef(null);
 
- useEffect(() => {
- fetchStreams(activeCountry);
- }, [activeCountry]);
+  const selectedCountry = useMemo(
+    () => COUNTRIES.find((c) => c.id === selectedCountryId) || COUNTRIES[0],
+    [selectedCountryId]
+  );
 
- const handleCountrySelect = (c) => {
- if (activeCountry.id === c.id) return;
- setActiveCountry(c);
- sessionStorage.setItem('gnn_country', c.id);
- };
+  const activeChannel = useMemo(
+    () => selectedCountry.channels[selectedChannelIdx] || selectedCountry.channels[0],
+    [selectedCountry, selectedChannelIdx]
+  );
 
- const handleManualSkip = () => {
- if (videoIds.length > 0) {
- setErrorCount(0); // Reset error count on manual skip
- setIsSwitching(true);
- setCurrentIndex(prev => (prev + 1) % videoIds.length);
- setSkipCounter(c => c + 1);
- setTimeout(() => setIsSwitching(false), 800); // Show switching UI for 800ms
- }
- };
+  // Sync with Global Map Click (activeCountry)
+  useEffect(() => {
+    if (!activeCountry) return;
+    const norm = activeCountry.trim().toLowerCase();
+    const mappedId = COUNTRY_NAME_MAP[norm];
+    if (mappedId && mappedId !== selectedCountryId) {
+      setSelectedCountryId(mappedId);
+      setSelectedChannelIdx(0);
+    }
+  }, [activeCountry]);
 
- const handleVideoError = () => {
- setErrorCount(prev => {
- const newCount = prev + 1;
- if (newCount > videoIds.length * 2) {
- // If we've looped through multiple times and all failed, force error screen
- setCurrentIndex(videoIds.length);
- return newCount;
- }
- setCurrentIndex(curr => (curr + 1) % videoIds.length);
- setSkipCounter(c => c + 1);
- return newCount;
- });
- };
+  const fetchChannelStream = async (channel, forceRefresh = false) => {
+    if (!channel) return;
+    const cacheKey = channel.query;
 
- const currentVideoId = videoIds[currentIndex];
- const filteredCountries = allCountries.filter(c => c.name.includes(searchQuery.toUpperCase()));
+    if (!forceRefresh && streamCacheRef.current[cacheKey]?.length > 0) {
+      setStreams(streamCacheRef.current[cacheKey]);
+      setStreamIndex(0);
+      setIsLoading(false);
+      return;
+    }
 
- return (
- <div className="h-full flex flex-col md:flex-row text-white font-military bg-black/40">
- {/* Sidebar - Country List (Bottom on mobile, Left on Desktop) */}
- <div className="w-full md:w-56 border-t md:border-t-0 md:border-r border-white/10 flex flex-col shrink-0 bg-black/60 h-1/2 md:h-full order-2 md:order-1">
- <div className="p-3 border-b border-white/10 flex items-center gap-2 bg-white/[0.02] shrink-0">
- <Globe size={14} className="text-primary"/>
- <span className="text-[10px] font-bold tracking-widest text-primary uppercase">Global Feeds</span>
- </div>
- 
- {/* Search Bar */}
- <div className="p-2 border-b border-white/10 shrink-0">
- <div className="relative flex items-center">
- <Search size={12} className="absolute left-2 text-white/40"/>
- <input 
- type="text"
- placeholder="SEARCH NATION..." 
- value={searchQuery}
- onChange={(e) => setSearchQuery(e.target.value)}
- className="w-full bg-black/40 border border-white/10 text-white text-[10px] uppercase font-mono tracking-widest px-7 py-1.5 focus:outline-none focus:border-primary/50 transition-colors"
- />
- </div>
- </div>
+    if (abortRef.current) {
+      abortRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortRef.current = controller;
 
- <div className="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-1">
- {filteredCountries.map(c => (
- <button
- key={c.id}
- onClick={() => handleCountrySelect(c)}
- className={`w-full text-left px-2 py-2 flex flex-col gap-1 border transition-colors ${
- activeCountry.id === c.id 
- ? 'border-primary/50 bg-primary/10' 
- : 'border-transparent hover:bg-white/5 hover:border-white/10'
- }`}
- >
- <div className="flex items-center justify-between">
- <span className={`text-[9px] font-bold tracking-widest uppercase ${activeCountry.id === c.id ? 'text-primary' : 'text-white/80'}`}>
- {c.name}
- </span>
- {activeCountry.id === c.id && <Radio size={10} className="text-primary animate-pulse shrink-0"/>}
- </div>
- </button>
- ))}
- </div>
- </div>
+    setIsLoading(true);
+    try {
+      const res = await fetch(
+        `/api/tv/search?query=${encodeURIComponent(channel.query)}${forceRefresh ? '&refresh=1' : ''}`,
+        { signal: controller.signal }
+      );
+      const data = await res.json();
+      const list =
+        Array.isArray(data.streams) && data.streams.length > 0
+          ? data.streams
+          : Array.isArray(data.videoIds)
+          ? data.videoIds.map((vid) => ({ videoId: vid, title: channel.name }))
+          : [];
 
- {/* Main Video Area (Top on mobile, Right on Desktop) */}
- <div className="flex-1 relative flex flex-col bg-black order-1 md:order-2 min-h-[50%] md:min-h-0">
- {/* Top Info Bar */}
- <div className="h-8 border-b border-white/10 flex items-center justify-between px-4 bg-black/80 z-10 shrink-0 absolute top-0 left-0 right-0 pointer-events-none">
- <div className="flex items-center gap-2">
- <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse shadow-[0_0_8px_#ef4444]" />
- <span className="text-[9px] font-bold tracking-widest text-white/90">LIVE FEED : {activeCountry.name}</span>
- </div>
- <div className="flex items-center gap-3">
- <span className="text-[8px] font-mono text-primary/70">
- {currentVideoId ? `VID:${String(currentVideoId).substring(0,8)}` : 'SCANNING...'}
- </span>
- <button 
- onClick={handleManualSkip}
- className="flex items-center gap-1 text-[8px] text-white/50 hover:text-white px-2 py-0.5 border border-white/10 bg-white/5 hover:bg-white/10 transition-colors pointer-events-auto"
- title="Force switch to next available stream"
- >
- <RefreshCcw size={10} />
- NEXT STREAM
- </button>
- </div>
- </div>
+      if (list.length > 0) {
+        streamCacheRef.current[cacheKey] = list;
+      }
+      setStreams(list);
+      setStreamIndex(0);
+    } catch (err) {
+      if (err.name !== 'AbortError') {
+        console.error('[GlobalNewsTV] Stream fetch error:', err);
+        setStreams([]);
+      }
+    } finally {
+      if (abortRef.current === controller) {
+        setIsLoading(false);
+      }
+    }
+  };
 
- {/* Video Player */}
- <div className="flex-1 relative overflow-hidden mt-8">
- {(isSearching || isSwitching) ? (
- <div className="absolute inset-0 flex items-center justify-center bg-[#0a0a0a]">
- <div className="absolute inset-0 opacity-10"style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,1) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
- <div className="flex flex-col items-center gap-3 z-10">
- <Signal size={24} className="text-white/30 animate-ping"/>
- <span className="text-[10px] text-white/50 tracking-[0.3em] uppercase font-mono">
- {isSwitching ? 'ACQUIRING NEW SATELLITE LINK...' : 'Intercepting Satellite Signals...'}
- </span>
- </div>
- </div>
- ) : videoIds.length === 0 || currentIndex >= videoIds.length ? (
- <div className="absolute inset-0 flex items-center justify-center bg-[#0a0a0a]">
- <div className="flex flex-col items-center gap-3 z-10 text-center">
- <Tv size={24} className="text-red-500/50"/>
- <span className="text-[10px] text-red-500/80 tracking-[0.3em] uppercase font-mono">NO ACTIVE STREAMS FOUND</span>
- <span className="text-[8px] text-white/40 tracking-widest max-w-[250px]">
- All intercepted feeds are offline or geoblocked in your sector.
- </span>
- </div>
- </div>
- ) : (
- <>
- {errorCount > 0 && (
- <div className="absolute top-2 right-2 z-50 pointer-events-none px-2 py-1 bg-red-500/20 border border-red-500/50 text-red-500 text-[8px] font-bold tracking-widest animate-pulse">
- AUTO-SWITCHED ({errorCount} BLOCKED)
- </div>
- )}
- <NativeYouTubePlayer 
- key={skipCounter}
- videoId={currentVideoId} 
- onError={handleVideoError} 
- />
- </>
- )}
- </div>
- </div>
- </div>
- );
-};
+  // Fetch active channel and prefetch sibling channels of the selected country in background
+  useEffect(() => {
+    fetchChannelStream(activeChannel, false);
 
-export default GlobalNewsTV;
+    // Prefetch remaining channels of this country after 250ms so clicking another channel is instant
+    const timer = setTimeout(() => {
+      selectedCountry.channels.forEach((ch, idx) => {
+        if (idx === selectedChannelIdx) return;
+        const key = ch.query;
+        if (streamCacheRef.current[key]) return;
+        fetch(`/api/tv/search?query=${encodeURIComponent(ch.query)}`)
+          .then((r) => r.json())
+          .then((d) => {
+            const list =
+              Array.isArray(d.streams) && d.streams.length > 0
+                ? d.streams
+                : Array.isArray(d.videoIds)
+                ? d.videoIds.map((vid) => ({ videoId: vid, title: ch.name }))
+                : [];
+            if (list.length > 0) {
+              streamCacheRef.current[key] = list;
+            }
+          })
+          .catch(() => {});
+      });
+    }, 250);
+
+    return () => clearTimeout(timer);
+  }, [selectedCountryId, selectedChannelIdx]);
+
+  const handleSelectCountry = (countryId) => {
+    if (countryId === selectedCountryId) return;
+    setSelectedCountryId(countryId);
+    setSelectedChannelIdx(0);
+    setStreamIndex(0);
+  };
+
+  const handleNextBackupStream = () => {
+    if (streams.length > 1) {
+      setStreamIndex((prev) => (prev + 1) % streams.length);
+    } else if (selectedCountry.channels.length > 1) {
+      // Switch to next dedicated channel within the SAME country
+      setSelectedChannelIdx((prev) => (prev + 1) % selectedCountry.channels.length);
+    }
+  };
+
+  const currentStream = streams[streamIndex] || null;
+  const currentVideoId = currentStream?.videoId || null;
+
+  const filteredCountries = useMemo(() => {
+    const q = searchFilter.trim().toLowerCase();
+    if (!q) return COUNTRIES;
+    return COUNTRIES.filter(
+      (c) =>
+        c.name.toLowerCase().includes(q) ||
+        c.short.toLowerCase().includes(q) ||
+        c.channels.some((ch) => ch.name.toLowerCase().includes(q))
+    );
+  }, [searchFilter]);
+
+  return (
+    <div className="w-full h-full flex flex-col bg-[#060d08] font-mono text-xs select-none overflow-hidden text-[#d8f8e1]">
+      {/* Sub-header Bar */}
+      <div className="flex items-center justify-between px-3 py-1.5 bg-[#09150d] border-b border-[#39e75f]/25 shrink-0">
+        <div className="flex items-center gap-2 min-w-0">
+          <Tv className="w-3.5 h-3.5 text-[#39e75f] shrink-0" />
+          <span className="font-bold tracking-widest text-[#39e75f] text-[10px] uppercase truncate">
+            SATCOM TV // {selectedCountry.name}
+          </span>
+          <span className="text-[9px] text-[#39e75f]/70 border border-[#39e75f]/30 bg-[#39e75f]/10 px-1.5 py-0.5 uppercase tracking-wider shrink-0">
+            {activeChannel?.name}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-1.5 shrink-0">
+          <div className="flex items-center gap-1 bg-[#39e75f]/15 border border-[#39e75f]/40 px-1.5 py-0.5">
+            <span className="w-1.5 h-1.5 bg-[#39e75f] animate-pulse" />
+            <span className="text-[9px] text-[#39e75f] font-bold tracking-wider">LIVE</span>
+          </div>
+
+          {streams.length > 1 && (
+            <button
+              onClick={handleNextBackupStream}
+              className="px-1.5 py-0.5 text-[9px] font-bold tracking-wider border border-[#39e75f]/30 bg-[#0d1f14] hover:bg-[#39e75f]/20 text-[#39e75f] transition-colors"
+              title="Switch alternate stream feed for this channel"
+            >
+              FEED {streamIndex + 1}/{streams.length}
+            </button>
+          )}
+
+          <button
+            onClick={() => setIsMuted(!isMuted)}
+            className={`p-1 border transition-colors ${
+              isMuted
+                ? 'border-red-500/40 bg-red-950/30 text-red-400 hover:bg-red-900/40'
+                : 'border-[#39e75f]/40 bg-[#39e75f]/15 text-[#39e75f] hover:bg-[#39e75f]/25'
+            }`}
+            title={isMuted ? 'Unmute Audio' : 'Mute Audio'}
+          >
+            {isMuted ? <VolumeX className="w-3 h-3" /> : <Volume2 className="w-3 h-3" />}
+          </button>
+
+          <button
+            onClick={() => fetchChannelStream(activeChannel, true)}
+            className="p-1 border border-[#39e75f]/30 bg-[#0d1f14] hover:bg-[#39e75f]/20 text-[#39e75f] transition-colors"
+            title="Force Refresh Channel Feed"
+          >
+            <RefreshCw className={`w-3 h-3 ${isLoading ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
+      </div>
+
+      {/* Country-Specific Dedicated Channel Bar */}
+      <div className="flex items-center gap-1 px-2.5 py-1.5 bg-[#07110b] border-b border-[#39e75f]/20 overflow-x-auto custom-scrollbar shrink-0">
+        <span className="text-[9px] text-[#39e75f]/60 uppercase tracking-widest mr-1 shrink-0 flex items-center gap-1">
+          <Radio className="w-2.5 h-2.5 text-[#39e75f]" /> CHANNELS ({selectedCountry.short}):
+        </span>
+        {selectedCountry.channels.map((ch, idx) => {
+          const isActive = idx === selectedChannelIdx;
+          return (
+            <button
+              key={ch.id}
+              onClick={() => {
+                setSelectedChannelIdx(idx);
+                setStreamIndex(0);
+              }}
+              className={`px-2 py-0.5 text-[9px] font-bold tracking-wider uppercase transition-all shrink-0 border ${
+                isActive
+                  ? 'bg-[#39e75f] text-[#041007] border-[#39e75f] shadow-[0_0_8px_rgba(57,231,95,0.4)]'
+                  : 'bg-[#0b1910] text-[#8bc99a] border-[#39e75f]/25 hover:border-[#39e75f]/60 hover:text-[#d8f8e1]'
+              }`}
+            >
+              {ch.name}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Main Layout: Left Country Selector + Right Video Feed */}
+      <div className="flex flex-1 min-h-0 overflow-hidden">
+        {/* Left Country List */}
+        <div className="w-1/3 max-w-[165px] bg-[#07110a] border-r border-[#39e75f]/20 flex flex-col z-10">
+          <div className="p-1.5 border-b border-[#39e75f]/20 bg-[#09160d]">
+            <div className="text-[8px] font-bold text-[#39e75f]/80 tracking-widest mb-1 px-0.5 flex items-center justify-between">
+              <span className="flex items-center gap-1">
+                <Globe className="w-2.5 h-2.5 text-[#39e75f]" /> REGION
+              </span>
+              <span>{COUNTRIES.length} NATIONS</span>
+            </div>
+            <input
+              type="text"
+              placeholder="FILTER NATION..."
+              value={searchFilter}
+              onChange={(e) => setSearchFilter(e.target.value)}
+              className="w-full bg-[#040a06] border border-[#39e75f]/30 px-1.5 py-0.5 text-[9px] text-[#d8f8e1] placeholder-[#39e75f]/40 focus:outline-none focus:border-[#39e75f]"
+            />
+          </div>
+
+          <div className="overflow-y-auto custom-scrollbar flex-1 p-1 space-y-0.5">
+            {filteredCountries.map((c) => {
+              const isSelected = selectedCountryId === c.id;
+              return (
+                <button
+                  key={c.id}
+                  onClick={() => handleSelectCountry(c.id)}
+                  className={`w-full text-left px-2 py-1.5 text-[9px] font-bold tracking-wider transition-all flex items-center justify-between border ${
+                    isSelected
+                      ? 'bg-[#39e75f]/20 text-[#39e75f] border-[#39e75f]/60 shadow-[inset_2px_0_0_#39e75f]'
+                      : 'text-[#8bc99a] border-transparent hover:bg-[#39e75f]/10 hover:text-[#d8f8e1]'
+                  }`}
+                >
+                  <span className="truncate">{c.name}</span>
+                  <span className="text-[8px] opacity-70 ml-1 shrink-0">
+                    {c.channels.length}CH
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Right Video Player */}
+        <div className="flex-1 relative bg-black flex flex-col justify-center overflow-hidden">
+          {isLoading ? (
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#050b07] z-20">
+              <div className="w-7 h-7 border-2 border-[#39e75f] border-t-transparent rounded-full animate-spin mb-2" />
+              <div className="text-[10px] text-[#39e75f] tracking-widest uppercase animate-pulse">
+                LOCKING TRANSPONDER: {activeChannel?.name}...
+              </div>
+              <div className="text-[9px] text-[#39e75f]/60 mt-1">
+                REGION: {selectedCountry.name}
+              </div>
+            </div>
+          ) : currentVideoId ? (
+            <div className="relative w-full h-full">
+              <iframe
+                key={`${currentVideoId}-${isMuted}`}
+                className="w-full h-full border-0"
+                src={`https://www.youtube.com/embed/${currentVideoId}?autoplay=1&mute=${
+                  isMuted ? 1 : 0
+                }&controls=1&modestbranding=1&rel=0&playsinline=1`}
+                title={activeChannel?.name || 'Live News TV'}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+
+              {/* Top-left HUD tag */}
+              <div className="absolute top-2 left-2 pointer-events-none z-20 flex items-center gap-1.5 bg-[#050c07]/85 border border-[#39e75f]/40 px-2 py-0.5 backdrop-blur-sm">
+                <Signal className="w-3 h-3 text-[#39e75f]" />
+                <span className="text-[9px] font-bold text-[#39e75f] tracking-wider uppercase">
+                  {selectedCountry.short} // {activeChannel?.name}
+                </span>
+                {currentStream?.title && (
+                  <span className="text-[9px] text-[#d8f8e1]/70 truncate max-w-[180px] hidden sm:inline">
+                    — {currentStream.title}
+                  </span>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center text-[#39e75f]/70 p-4 text-center">
+              <Tv className="w-8 h-8 mb-2 opacity-40" />
+              <span className="text-[10px] font-bold tracking-widest uppercase">
+                NO ACTIVE LIVE STREAM FOR {activeChannel?.name}
+              </span>
+              <div className="flex items-center gap-2 mt-3">
+                <button
+                  onClick={() => fetchChannelStream(activeChannel, true)}
+                  className="px-2.5 py-1 bg-[#39e75f]/20 border border-[#39e75f]/50 text-[#39e75f] text-[9px] font-bold tracking-wider uppercase hover:bg-[#39e75f]/30"
+                >
+                  RETRY UPLINK
+                </button>
+                {selectedCountry.channels.length > 1 && (
+                  <button
+                    onClick={handleNextBackupStream}
+                    className="px-2.5 py-1 bg-[#0b1910] border border-[#39e75f]/30 text-[#d8f8e1] text-[9px] font-bold tracking-wider uppercase hover:border-[#39e75f]"
+                  >
+                    NEXT {selectedCountry.short} CHANNEL <ChevronRight className="w-3 h-3 inline" />
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

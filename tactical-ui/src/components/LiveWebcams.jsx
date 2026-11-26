@@ -1,264 +1,285 @@
-import React, { useEffect, useState, useRef } from 'react';
-import ReactPlayer from 'react-player';
-import { MonitorPlay, Settings2, Loader2, Signal, Target } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Video, RefreshCw, Radio, Globe, MapPin, Camera, ChevronRight } from 'lucide-react';
+import useTacticalStore from '../store';
 
-const REGIONS_DB = {
-  "Asia": {
-    "Japan": ["Tokyo","Osaka","Kyoto","Sapporo","Fuji"],
-    "South Korea": ["Seoul","Busan","Jeju"],
-    "Vietnam": ["Hanoi","Ho Chi Minh City","Da Nang"],
-    "China": ["Beijing","Shanghai","Hong Kong","Macau"],
-    "India": ["Mumbai","New Delhi","Bangalore","Goa"],
-    "Thailand": ["Bangkok","Phuket","Pattaya"]
-  },
-  "Europe": {
-    "UK": ["London","Edinburgh","Manchester","Liverpool"],
-    "France": ["Paris","Lyon","Marseille","Nice"],
-    "Germany": ["Berlin","Munich","Hamburg","Frankfurt"],
-    "Italy": ["Rome","Milan","Venice","Florence"],
-    "Spain": ["Madrid","Barcelona","Ibiza"],
-    "Netherlands": ["Amsterdam","Rotterdam","The Hague"]
-  },
-  "Americas": {
-    "USA": ["New York","Los Angeles","Chicago","Miami","Las Vegas","Seattle","Washington DC"],
-    "Canada": ["Toronto","Vancouver","Montreal","Banff"],
-    "Mexico": ["Mexico City","Cancun","Tulum"],
-    "Brazil": ["Rio de Janeiro","Sao Paulo","Salvador"]
-  },
-  "Africa": {
-    "South Africa": ["Cape Town","Johannesburg","Durban"],
-    "Egypt": ["Cairo","Alexandria"],
-    "Kenya": ["Nairobi","Mombasa"]
-  },
-  "Oceania": {
-    "Australia": ["Sydney","Melbourne","Brisbane","Gold Coast","Perth"],
-    "New Zealand": ["Auckland","Wellington","Queenstown"]
-  }
+const COUNTRY_CITIES = {
+  'United States': ['New York', 'Los Angeles', 'Chicago', 'Miami', 'Las Vegas', 'San Francisco', 'Washington DC'],
+  'United Kingdom': ['London', 'Edinburgh', 'Manchester', 'Birmingham', 'Liverpool'],
+  'Vietnam': ['Ho Chi Minh City', 'Hanoi', 'Da Nang', 'Nha Trang', 'Phu Quoc'],
+  'Japan': ['Tokyo', 'Shibuya', 'Shinjuku', 'Osaka', 'Kyoto', 'Sapporo', 'Fukuoka'],
+  'South Korea': ['Seoul', 'Busan', 'Incheon', 'Jeju', 'Daegu'],
+  'France': ['Paris', 'Marseille', 'Lyon', 'Nice', 'Cannes'],
+  'Germany': ['Berlin', 'Munich', 'Frankfurt', 'Hamburg', 'Cologne'],
+  'Italy': ['Rome', 'Venice', 'Milan', 'Florence', 'Naples'],
+  'Spain': ['Madrid', 'Barcelona', 'Ibiza', 'Mallorca', 'Seville'],
+  'Russia': ['Moscow', 'Saint Petersburg', 'Sochi', 'Vladivostok'],
+  'China': ['Shanghai', 'Beijing', 'Hong Kong', 'Shenzhen', 'Chongqing'],
+  'Thailand': ['Bangkok', 'Phuket', 'Pattaya', 'Koh Samui', 'Chiang Mai'],
+  'Singapore': ['Singapore', 'Marina Bay'],
+  'Australia': ['Sydney', 'Melbourne', 'Brisbane', 'Perth', 'Gold Coast'],
+  'Canada': ['Toronto', 'Vancouver', 'Montreal', 'Calgary', 'Niagara Falls'],
+  'Brazil': ['Rio de Janeiro', 'Sao Paulo', 'Brasilia', 'Florianopolis'],
+  'United Arab Emirates': ['Dubai', 'Abu Dhabi'],
+  'Taiwan': ['Taipei', 'Kaohsiung', 'Taichung', 'Jiufen'],
+  'Netherlands': ['Amsterdam', 'Rotterdam', 'The Hague'],
+  'Switzerland': ['Zurich', 'Geneva', 'Zermatt', 'Interlaken'],
+  'Turkey': ['Istanbul', 'Ankara', 'Antalya', 'Izmir'],
+  'Greece': ['Athens', 'Santorini', 'Mykonos'],
+  'Ukraine': ['Kyiv', 'Lviv', 'Odessa'],
+  'Israel': ['Jerusalem', 'Tel Aviv', 'Haifa'],
+  'Egypt': ['Cairo', 'Alexandria', 'Hurghada'],
+  'India': ['Mumbai', 'New Delhi', 'Bengaluru'],
+  'Philippines': ['Manila', 'Cebu', 'Boracay'],
+  'Indonesia': ['Jakarta', 'Bali', 'Yogyakarta'],
+  'Malaysia': ['Kuala Lumpur', 'Penang'],
+  'Mexico': ['Mexico City', 'Cancun', 'Cabo San Lucas'],
+  'Argentina': ['Buenos Aires', 'Ushuaia'],
 };
 
-const LiveWebcams = () => {
-  const continents = Object.keys(REGIONS_DB);
-  const [activeContinent, setActiveContinent] = useState(() => {
-    return sessionStorage.getItem('cam_continent') || continents[0];
-  });
-  
-  const countries = Object.keys(REGIONS_DB[activeContinent] || {});
-  const [activeCountry, setActiveCountry] = useState(() => {
-    const saved = sessionStorage.getItem('cam_country');
-    return (saved && countries.includes(saved)) ? saved : (countries[0] || null);
-  });
+const ALL_COUNTRIES = Object.keys(COUNTRY_CITIES);
 
-  const cities = activeCountry ? (REGIONS_DB[activeContinent]?.[activeCountry] || []) : [];
-  const [activeCity, setActiveCity] = useState(() => {
-    const saved = sessionStorage.getItem('cam_city');
-    return (saved && cities.includes(saved)) ? saved : (cities[0] || null);
-  });
+export default function LiveWebcams() {
+  const { activeCountry, setActiveCountry } = useTacticalStore();
+  const selectedNation = activeCountry && COUNTRY_CITIES[activeCountry] ? activeCountry : 'Japan';
 
-  const [activeStream, setActiveStream] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [cities, setCities] = useState(COUNTRY_CITIES['Japan']);
+  const [activeCity, setActiveCity] = useState('Tokyo');
+  const [cameras, setCameras] = useState([]);
+  const [cameraIdx, setCameraIdx] = useState(0);
+  const [loading, setLoading] = useState(true);
 
-  const handleContinentClick = (c) => {
-    setActiveContinent(c);
-    sessionStorage.setItem('cam_continent', c);
-    
-    const newCountries = Object.keys(REGIONS_DB[c] || {});
-    const newCountry = newCountries[0] || null;
-    setActiveCountry(newCountry);
-    if (newCountry) sessionStorage.setItem('cam_country', newCountry);
-    else sessionStorage.removeItem('cam_country');
+  // Client-side cache keyed by "Country::City" for instant 0ms city switching
+  const camCacheRef = useRef({});
+  const abortRef = useRef(null);
 
-    const newCities = newCountry ? (REGIONS_DB[c]?.[newCountry] || []) : [];
-    const newCity = newCities[0] || null;
-    setActiveCity(newCity);
-    if (newCity) sessionStorage.setItem('cam_city', newCity);
-    else sessionStorage.removeItem('cam_city');
-  };
-
-  const handleCountryClick = (c) => {
-    setActiveCountry(c);
-    sessionStorage.setItem('cam_country', c);
-    
-    const newCities = REGIONS_DB[activeContinent]?.[c] || [];
-    const newCity = newCities[0] || null;
-    setActiveCity(newCity);
-    if (newCity) sessionStorage.setItem('cam_city', newCity);
-    else sessionStorage.removeItem('cam_city');
-  };
-
-  const handleCityClick = (c) => {
-    setActiveCity(c);
-    sessionStorage.setItem('cam_city', c);
-  };
-
-  // Fetch YouTube Live stream from Backend when city changes
+  // Sync country -> city list
   useEffect(() => {
-    let isMounted = true;
-    if (!activeCity) return;
+    const cityList = COUNTRY_CITIES[selectedNation] || [selectedNation];
+    setCities(cityList);
+    setActiveCity(cityList[0]);
+    setCameraIdx(0);
+  }, [selectedNation]);
 
-    const fetchStream = async () => {
-      setLoading(true);
-      setError(null);
-      setActiveStream(null);
-      setIsPlaying(false);
+  const fetchWebcam = async (city, country, forceRefresh = false) => {
+    if (!city) return;
+    const cacheKey = `${country}::${city}`;
 
-      try {
-        const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/webcam/search?city=${encodeURIComponent(activeCity)}`);
+    if (!forceRefresh && camCacheRef.current[cacheKey]?.length > 0) {
+      setCameras(camCacheRef.current[cacheKey]);
+      setCameraIdx(0);
+      setLoading(false);
+      return;
+    }
+
+    if (abortRef.current) {
+      abortRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    setLoading(true);
+    try {
+      const res = await fetch(
+        `/api/webcam/search?city=${encodeURIComponent(city)}&country=${encodeURIComponent(country || '')}${
+          forceRefresh ? '&refresh=1' : ''
+        }`,
+        { signal: controller.signal }
+      );
+      if (res.ok) {
         const data = await res.json();
-
-        if (!res.ok) {
-          throw new Error(data.error || 'Failed to intercept stream');
+        const camList =
+          Array.isArray(data.cameras) && data.cameras.length > 0
+            ? data.cameras
+            : data.videoId
+            ? [{ videoId: data.videoId, title: data.title || `${city} Live Cam` }]
+            : [];
+        if (camList.length > 0) {
+          camCacheRef.current[cacheKey] = camList;
         }
-
-        if (isMounted && data.videoId) {
-          setActiveStream(data);
-        } else if (isMounted) {
-          throw new Error('NO CAMERAS FOUND');
-        }
-      } catch (err) {
-        if (isMounted) setError(err.message.toUpperCase());
-      } finally {
-        if (isMounted) setLoading(false);
+        setCameras(camList);
+        setCameraIdx(0);
       }
-    };
+    } catch (e) {
+      if (e.name !== 'AbortError') {
+        console.error('[LiveWebcams] Failed to fetch webcam:', e);
+      }
+    } finally {
+      if (abortRef.current === controller) {
+        setLoading(false);
+      }
+    }
+  };
 
-    fetchStream();
-    return () => { isMounted = false; };
-  }, [activeCity]);
+  // Fetch active city and prefetch sibling cities in the selected country
+  useEffect(() => {
+    if (!activeCity) return;
+    fetchWebcam(activeCity, selectedNation, false);
+
+    const timer = setTimeout(() => {
+      cities.slice(0, 5).forEach((city) => {
+        if (city === activeCity) return;
+        const key = `${selectedNation}::${city}`;
+        if (camCacheRef.current[key]) return;
+        fetch(
+          `/api/webcam/search?city=${encodeURIComponent(city)}&country=${encodeURIComponent(
+            selectedNation
+          )}`
+        )
+          .then((r) => r.json())
+          .then((data) => {
+            const camList =
+              Array.isArray(data.cameras) && data.cameras.length > 0
+                ? data.cameras
+                : data.videoId
+                ? [{ videoId: data.videoId, title: data.title || `${city} Live Cam` }]
+                : [];
+            if (camList.length > 0) {
+              camCacheRef.current[key] = camList;
+            }
+          })
+          .catch(() => {});
+      });
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [activeCity, selectedNation]);
+
+  const currentCam = cameras[cameraIdx] || null;
 
   return (
-    <div className="w-full h-full bg-[#111111] flex flex-col font-mono text-white/80 overflow-hidden relative">
-      {/* HEADER BAR */}
-      <div className="flex items-center justify-between px-4 py-3 shrink-0 border-b border-white/5">
-        <div className="flex items-center gap-2">
-          <div className="w-1.5 h-1.5 rounded-full bg-teal-400"/>
-          <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-white/60">LIVE WEBCAMS</span>
+    <div className="w-full h-full flex flex-col bg-[#060d08] font-mono select-none overflow-hidden text-[#d8f8e1]">
+      {/* Sub-header with Country Selector, Camera Switcher & Refresh */}
+      <div className="flex items-center justify-between px-3 py-1.5 bg-[#09150d] border-b border-[#39e75f]/25 shrink-0 gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <Video className="w-3.5 h-3.5 text-[#39e75f] shrink-0" />
+          <span className="text-[10px] font-bold tracking-widest text-[#39e75f] uppercase shrink-0">
+            OPTICAL SURVEILLANCE //
+          </span>
+          <select
+            value={selectedNation}
+            onChange={(e) => setActiveCountry(e.target.value)}
+            className="bg-[#050c07] border border-[#39e75f]/40 text-[#d8f8e1] text-[10px] font-bold tracking-wider px-2 py-0.5 uppercase focus:outline-none focus:border-[#39e75f] cursor-pointer"
+          >
+            {ALL_COUNTRIES.map((country) => (
+              <option key={country} value={country} className="bg-[#060d08] text-[#d8f8e1]">
+                {country.toUpperCase()}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="flex items-center gap-1.5 shrink-0">
+          {cameras.length > 1 && (
+            <button
+              onClick={() => setCameraIdx((prev) => (prev + 1) % cameras.length)}
+              className="flex items-center gap-1 px-2 py-0.5 text-[9px] font-bold tracking-wider uppercase border border-[#39e75f]/40 bg-[#39e75f]/15 text-[#39e75f] hover:bg-[#39e75f]/25 transition-colors"
+              title="Switch to next live camera in this city"
+            >
+              <Camera className="w-3 h-3" /> CAM {cameraIdx + 1}/{cameras.length}
+              <ChevronRight className="w-2.5 h-2.5" />
+            </button>
+          )}
+          <button
+            onClick={() => fetchWebcam(activeCity, selectedNation, true)}
+            className="p-1 text-[#39e75f] hover:bg-[#39e75f]/20 border border-[#39e75f]/30 bg-[#0b1910] transition-colors"
+            title="Force Rescan Optical Feed"
+          >
+            <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
+          </button>
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col overflow-y-auto custom-scrollbar p-4 space-y-4">
-        {/* ROW 1: CONTINENTS */}
-        <div className="flex flex-wrap gap-2">
-          {continents.map(c => (
+      {/* City Selector Bar */}
+      <div className="flex items-center gap-1 px-2.5 py-1.5 bg-[#07110b] border-b border-[#39e75f]/20 overflow-x-auto custom-scrollbar shrink-0">
+        <span className="text-[9px] text-[#39e75f]/60 uppercase tracking-widest mr-1 shrink-0 flex items-center gap-1">
+          <MapPin className="w-2.5 h-2.5 text-[#39e75f]" /> SECTOR:
+        </span>
+        {cities.map((city) => {
+          const isActive = activeCity === city;
+          return (
             <button
-              key={c}
-              onClick={() => handleContinentClick(c)}
-              className={`px-3 py-1.5 text-[9px] font-bold tracking-widest uppercase border transition-colors ${
-                activeContinent === c
-                  ? 'border-teal-400 text-teal-400 bg-teal-400/5'
-                  : 'border-white/10 text-white/50 hover:bg-white/5 hover:border-white/20'
+              key={city}
+              onClick={() => {
+                setActiveCity(city);
+                setCameraIdx(0);
+              }}
+              className={`px-2.5 py-0.5 text-[9px] font-bold tracking-wider uppercase transition-all shrink-0 border ${
+                isActive
+                  ? 'bg-[#39e75f] text-[#041007] border-[#39e75f] shadow-[0_0_8px_rgba(57,231,95,0.4)]'
+                  : 'bg-[#0b1910] text-[#8bc99a] border-[#39e75f]/25 hover:border-[#39e75f]/60 hover:text-[#d8f8e1]'
               }`}
             >
-              {c}
+              {city}
             </button>
-          ))}
-        </div>
+          );
+        })}
+      </div>
 
-        {/* ROW 2: COUNTRIES */}
-        {countries.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {countries.map(c => (
-              <button
-                key={c}
-                onClick={() => handleCountryClick(c)}
-                className={`px-3 py-1.5 text-[9px] font-bold tracking-widest uppercase border transition-colors ${
-                  activeCountry === c
-                    ? 'border-amber-400 text-amber-400 bg-amber-400/5'
-                    : 'border-white/10 text-white/50 hover:bg-white/5 hover:border-white/20'
-                }`}
-              >
-                {c}
-              </button>
-            ))}
+      {/* Video Viewport */}
+      <div className="flex-1 bg-black relative flex items-center justify-center overflow-hidden">
+        {loading ? (
+          <div className="flex flex-col items-center justify-center gap-2 text-[#39e75f]">
+            <div className="w-7 h-7 border-2 border-[#39e75f] border-t-transparent rounded-full animate-spin" />
+            <span className="text-[10px] tracking-widest uppercase animate-pulse">
+              CONNECTING TO {activeCity.toUpperCase()} CCTV GRID...
+            </span>
+          </div>
+        ) : currentCam?.videoId ? (
+          <div className="w-full h-full relative">
+            <iframe
+              key={currentCam.videoId}
+              src={`https://www.youtube.com/embed/${currentCam.videoId}?autoplay=1&mute=1&controls=1&modestbranding=1&rel=0&playsinline=1`}
+              title={currentCam.title || activeCity}
+              className="w-full h-full object-cover border-0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+
+            {/* Top-left HUD Overlay */}
+            <div className="absolute top-2 left-2 bg-[#050c07]/85 backdrop-blur-sm border border-[#39e75f]/40 px-2.5 py-1 flex items-center gap-2 pointer-events-none z-10">
+              <Radio className="w-3 h-3 text-[#39e75f] animate-pulse" />
+              <span className="text-[9px] font-bold text-[#39e75f] tracking-wider uppercase">
+                LIVE // {selectedNation.toUpperCase()} — {activeCity.toUpperCase()}
+              </span>
+              {currentCam.title && (
+                <span className="text-[9px] text-[#d8f8e1]/70 truncate max-w-[180px] hidden sm:inline">
+                  ({currentCam.title})
+                </span>
+              )}
+            </div>
+
+            {/* Camera presets pills at top-right if multiple cameras exist */}
+            {cameras.length > 1 && (
+              <div className="absolute top-2 right-2 flex items-center gap-1 z-10">
+                {cameras.map((cam, idx) => (
+                  <button
+                    key={cam.videoId}
+                    onClick={() => setCameraIdx(idx)}
+                    className={`px-1.5 py-0.5 text-[8px] font-bold tracking-wider border backdrop-blur-sm transition-all ${
+                      idx === cameraIdx
+                        ? 'bg-[#39e75f] text-[#041007] border-[#39e75f]'
+                        : 'bg-[#050c07]/80 text-[#39e75f] border-[#39e75f]/40 hover:bg-[#39e75f]/20'
+                    }`}
+                  >
+                    CAM {idx + 1}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="text-[#39e75f]/60 text-[10px] tracking-widest uppercase flex flex-col items-center gap-2">
+            <Globe className="w-7 h-7 opacity-40" />
+            <span>NO PUBLIC OPTICAL FEED IN {activeCity.toUpperCase()}</span>
+            <button
+              onClick={() => fetchWebcam(activeCity, selectedNation, true)}
+              className="mt-1 px-2.5 py-1 bg-[#39e75f]/20 border border-[#39e75f]/50 text-[#39e75f] text-[9px] font-bold tracking-wider uppercase hover:bg-[#39e75f]/30"
+            >
+              RESCAN SECTOR
+            </button>
           </div>
         )}
-
-        {/* ROW 3: CITIES */}
-        {cities.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {cities.map(c => (
-              <button
-                key={c}
-                onClick={() => handleCityClick(c)}
-                className={`px-3 py-1.5 text-[9px] font-bold tracking-widest uppercase border transition-colors ${
-                  activeCity === c
-                    ? 'border-cyan-400 text-cyan-400 bg-cyan-400/5'
-                    : 'border-white/10 text-white/50 hover:bg-white/5 hover:border-white/20'
-                }`}
-              >
-                {c}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {/* STREAMS COUNT & VIDEO SECTION */}
-        <div className="flex flex-col flex-1 min-h-[250px] border-t border-white/10 pt-4 mt-2">
-          <div className="flex justify-between items-center mb-3">
-            <div className="text-[10px] text-white/40 tracking-widest font-mono">
-              // ACTIVE FEED: {activeCity?.toUpperCase() || 'UNKNOWN'}
-            </div>
-            <div className="flex items-center gap-1.5 text-red-500">
-              <div className={`w-1.5 h-1.5 rounded-full bg-red-500 ${isPlaying ? 'animate-pulse' : 'opacity-50'}`} />
-              <span className="text-[9px] font-bold tracking-widest uppercase">REC</span>
-            </div>
-          </div>
-
-          <div className="relative w-full h-[350px] bg-black border border-white/5 overflow-hidden group">
-            {/* TACTICAL HUD OVERLAYS */}
-            <div className="absolute top-3 left-3 z-20 pointer-events-none">
-              <div className="text-[8px] text-white/50 tracking-widest font-mono bg-black/40 px-2 py-1 backdrop-blur-sm border border-white/10">
-                {error ? 'NO SIGNAL' : loading ? 'SEARCHING YOUTUBE...' : isPlaying ? '1080P // HLS DECODED' : 'BUFFERING...'}
-              </div>
-            </div>
-
-            {/* ERROR / LOADING STATE */}
-            {loading && (
-              <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm">
-                <Loader2 size={32} className="text-teal-400 mb-2 animate-spin"/>
-                <div className="text-[10px] font-bold text-teal-400 tracking-[0.3em] uppercase">INTERCEPTING SATELLITE...</div>
-                <div className="text-[8px] text-white/40 tracking-widest mt-1">EXTRACTING M3U8 FROM YOUTUBE API</div>
-              </div>
-            )}
-
-            {error && !loading && (
-              <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-black/90 backdrop-blur-md">
-                <Settings2 size={32} className="text-red-500 mb-2 animate-spin-slow"/>
-                <div className="text-sm font-bold text-red-500 tracking-[0.3em] uppercase">{error}</div>
-                <div className="text-[10px] text-white/40 tracking-widest mt-1">TARGET OFFLINE OR NO PUBLIC FEEDS AVAILABLE.</div>
-              </div>
-            )}
-
-            {/* RAW YOUTUBE IFRAME */}
-            {activeStream && !loading && !error && (
-              <div className="absolute inset-0 overflow-hidden bg-black flex items-center justify-center">
-                <iframe
-                  src={`https://www.youtube.com/embed/${activeStream.videoId}?autoplay=1&mute=1&controls=0&modestbranding=1&showinfo=0&rel=0&iv_load_policy=3&fs=0&disablekb=1&playsinline=1`}
-                  className="w-full h-full border-none pointer-events-none"
-                  allow="autoplay; encrypted-media"
-                  title="Live CCTV"
-                  onLoad={() => setIsPlaying(true)}
-                />
-              </div>
-            )}
-          </div>
-
-          {/* BOTTOM TICKER / STATUS */}
-          {activeStream && !loading && !error && (
-            <div className="mt-4 pt-2 border-t border-white/5 flex flex-col gap-1">
-              <div className="text-[9px] text-white/30 tracking-[0.2em] uppercase truncate flex items-center gap-2">
-                <Signal size={10} className="text-teal-400 animate-pulse"/>
-                {activeStream.title}
-              </div>
-              <div className="text-[7px] text-teal-400/50 tracking-widest uppercase">
-                ID: {activeStream.videoId} // HLS PLAYLIST DECODED
-              </div>
-            </div>
-          )}
-        </div>
       </div>
     </div>
   );
-};
-export default LiveWebcams;
+}

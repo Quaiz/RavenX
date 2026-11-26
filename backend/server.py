@@ -711,79 +711,93 @@ def get_chokepoints():
 def health():
     return jsonify({"status": "ok", "service": "ravenx-news-backend"})
 
+def _fast_youtube_live_search(query: str, limit: int = 6):
+    """Fast (<0.4s) YouTube Live filter query using persistent session, preserving exact relevance order."""
+    import urllib.parse
+    q = urllib.parse.quote(query)
+    # sp=EgJAAQ%253D%253D filters YouTube search strictly to active LIVE streams
+    url = f"https://www.youtube.com/results?search_query={q}&sp=EgJAAQ%253D%253D"
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        "Accept-Language": "en-US,en;q=0.9",
+    }
+    resp = _session.get(url, headers=headers, timeout=4)
+    html = resp.text
+
+    # Extract (videoId, title) pairs from videoRenderer blocks in exact relevance order
+    matches = re.findall(
+        r'"videoRenderer":\{"videoId":"([a-zA-Z0-9_-]{11})".*?"title":\{"runs":\[\{"text":"([^"]+)"',
+        html,
+    )
+    results = []
+    seen = set()
+    for vid, title in matches:
+        if vid not in seen:
+            seen.add(vid)
+            results.append({"videoId": vid, "title": title})
+            if len(results) >= limit:
+                return results
+
+    # Fallback if title structure differs
+    for vid in re.findall(r'"videoId":"([a-zA-Z0-9_-]{11})"', html):
+        if vid not in seen:
+            seen.add(vid)
+            results.append({"videoId": vid, "title": query})
+            if len(results) >= limit:
+                break
+
+    return results
+
+
 @app.route("/api/webcam/search", methods=["GET"])
 def search_webcam():
     try:
         city = request.args.get("city", "").strip() or "Tokyo"
-        cache_key = f"webcam_{city.lower()}"
+        country = request.args.get("country", "").strip()
+        force_refresh = request.args.get("refresh", "") == "1"
+        cache_key = f"webcam_{country.lower()}_{city.lower()}"
         now = time.time()
 
-        if cache_key in _cache:
+        if not force_refresh and cache_key in _cache:
             cached_time, cached_data = _cache[cache_key]
-            if now - cached_time < 3600:
+            if now - cached_time < 1800:
                 return jsonify(cached_data)
 
         known_cams = {
             "tokyo": ("1EiC9bvVGnk", "Live Camera: Tokyo Shibuya Crossing"),
             "shibuya": ("1EiC9bvVGnk", "Live Camera: Tokyo Shibuya Crossing"),
-            "new york": ("mRe-514tGMg", "Live Camera: New York Times Square"),
-            "london": ("LXb3EKWsInQ", "Live Camera: London Live"),
-            "paris": ("DduElmsPZyo", "Live Camera: Paris Eiffel Tower"),
-            "seoul": ("5f_n0C1v1xU", "Live Camera: Seoul Gangnam"),
-            "hanoi": ("e2U_vY_U5Y8", "Live Camera: Hanoi"),
-            "ho chi minh city": ("86YLFOog4GM", "Live Camera: Ho Chi Minh City"),
-            "da nang": ("sE3b1CjX6fA", "Live Camera: Da Nang Han River")
+            "new york": ("rnXIjl_Rzy4", "Live Camera: New York City"),
+            "london": ("Lxqcg1qt0XU", "Live Camera: London Street View"),
+            "paris": ("OzYp4NRZlwQ", "Live Camera: Paris Eiffel Tower"),
+            "seoul": ("_J2uDG7332U", "Live Camera: Seoul Hangang River"),
+            "venice": ("ph1vpnYIxJk", "Live Camera: Venice Grand Canal"),
         }
 
-        video_id = None
-        video_title = f"Live Camera: {city}"
-
-        # 1. Search YouTube via VideosSearch
+        location_query = f"{city} {country}".strip()
+        cameras = []
         try:
-            search = VideosSearch(f"{city} live street cam", limit=15)
-            results = search.result().get('result', [])
-            for res in results:
-                if res.get('id') and (res.get('duration') is None or 'LIVE' in str(res.get('title', '')).upper()):
-                    video_id = res.get('id')
-                    video_title = res.get('title', video_title)
-                    break
-            if not video_id and results and results[0].get('id'):
-                video_id = results[0].get('id')
-                video_title = results[0].get('title', video_title)
+            cameras = _fast_youtube_live_search(f"{location_query} live webcam camera", limit=6)
         except Exception as e:
-            print(f"[Webcam] VideosSearch error for {city}: {e}")
+            print(f"[Webcam] Fast search error for {location_query}: {e}")
 
-        # 2. Fallback: regex search on YouTube HTML if VideosSearch failed
-        if not video_id:
-            try:
-                import urllib.parse
-                q = urllib.parse.quote(f"{city} live cam")
-                u = f"https://www.youtube.com/results?search_query={q}&sp=EgJAAQ%253D%253D"
-                req = urllib.request.Request(u, headers={'User-Agent': 'Mozilla/5.0'})
-                html = urllib.request.urlopen(req, timeout=5).read().decode('utf-8')
-                vids = re.findall(r"watch\?v=([a-zA-Z0-9_-]{11})", html)
-                if vids:
-                    video_id = vids[0]
-            except Exception as e:
-                print(f"[Webcam] Regex fallback error for {city}: {e}")
-
-        # 3. Fallback: known curated stream
-        if not video_id:
+        if not cameras:
             c_low = city.lower()
-            for k, v in known_cams.items():
+            for k, (vid, title) in known_cams.items():
                 if k in c_low or c_low in k:
-                    video_id, video_title = v
+                    cameras = [{"videoId": vid, "title": title}]
                     break
 
-        if not video_id:
-            video_id = "1EiC9bvVGnk"
-            video_title = f"Live Stream: {city}"
+        if not cameras:
+            cameras = [{"videoId": "1EiC9bvVGnk", "title": f"Live Camera: {city}"}]
 
+        primary = cameras[0]
         res = {
             "city": city,
-            "title": video_title,
-            "videoId": video_id,
-            "url": f"https://www.youtube.com/watch?v={video_id}"
+            "country": country,
+            "title": primary["title"],
+            "videoId": primary["videoId"],
+            "url": f"https://www.youtube.com/watch?v={primary['videoId']}",
+            "cameras": cameras,
         }
         _cache[cache_key] = (now, res)
         return jsonify(res)
@@ -797,37 +811,24 @@ def search_tv():
     query = request.args.get("query", "").strip()
     if not query:
         return jsonify({"error": "Missing query parameter"}), 400
-    
+
+    force_refresh = request.args.get("refresh", "") == "1"
+    cache_key = f"tv_{query.lower()}"
+    now = time.time()
+
+    if not force_refresh and cache_key in _cache:
+        cached_time, cached_data = _cache[cache_key]
+        if now - cached_time < 1800:
+            return jsonify(cached_data)
+
     try:
-        import requests
-        import re
-        import random
-        
-        # EgJAAQ%253D%253D is the base64 encoded YouTube filter for 'Features: Live'
-        # %253D%253D is URL-encoded ==
-        url = f"https://www.youtube.com/results?search_query={query}+live+news&sp=EgJAAQ%253D%253D"
-        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
-        resp = requests.get(url, headers=headers, timeout=10)
-        html = resp.text
-        
-        # Extract videoIds
-        video_ids = re.findall(r'"videoId":"([^"]{11})"', html)
-        
-        seen = set()
-        unique_ids = []
-        for vid in video_ids:
-            if vid not in seen:
-                seen.add(vid)
-                unique_ids.append(vid)
-                
-        if unique_ids:
-            # Keep top 20 and shuffle them so it's always fresh
-            live_videos = unique_ids[:20]
-            random.shuffle(live_videos)
-        else:
-            live_videos = []
-            
-        return jsonify({"videoIds": live_videos})
+        # Keep exact top relevance matches for the requested channel/country — NEVER shuffle!
+        streams = _fast_youtube_live_search(query, limit=5)
+        video_ids = [s["videoId"] for s in streams]
+        res = {"videoIds": video_ids, "streams": streams, "query": query}
+        if video_ids:
+            _cache[cache_key] = (now, res)
+        return jsonify(res)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
