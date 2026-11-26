@@ -33,10 +33,10 @@ const COUNTRIES = [
     name: 'VIETNAM',
     short: 'VNM',
     channels: [
-      { id: 'vtc', name: 'VTC NOW', query: 'VTC Now trực tiếp tin tức' },
-      { id: 'antv', name: 'ANTV CAND', query: 'ANTV truyền hình công an nhân dân trực tiếp' },
-      { id: 'vnews', name: 'VNEWS TTXVN', query: 'Truyền hình Thông tấn VNews trực tiếp' },
-      { id: 'quochoi', name: 'TH QUỐC HỘI / VOV', query: 'VOV Live tin tức trực tiếp' },
+      { id: 'vtv24', name: 'VTV24 THỜI SỰ', query: 'VTV24 tin tức mới nhất' },
+      { id: 'vtc', name: 'VTC NOW', query: 'VTC Now tin tức mới nhất' },
+      { id: 'antv', name: 'ANTV CAND', query: 'ANTV thời sự mới nhất' },
+      { id: 'vnews', name: 'VNEWS TTXVN', query: 'Truyền hình Thông tấn VNews' },
     ],
   },
   {

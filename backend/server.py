@@ -711,42 +711,70 @@ def get_chokepoints():
 def health():
     return jsonify({"status": "ok", "service": "ravenx-news-backend"})
 
-def _fast_youtube_live_search(query: str, limit: int = 6):
+_YT_STOPWORDS = {
+    "live", "news", "tv", "channel", "stream", "online", "24/7", "24", "7",
+    "trực", "tiếp", "tin", "tức", "mới", "nhất", "thời", "sự", "bản",
+    "ao", "vivo", "en", "direct", "canlı", "yayın", "실시간", "뉴스",
+    "webcam", "camera", "cam", "street",
+}
+
+
+def _parse_youtube_renderers(html: str, default_title: str):
+    """Extract (videoId, title, channel) from individual videoRenderer chunks without cross-matching."""
+    chunks = html.split('"videoRenderer":{"videoId":"')[1:16]
+    results = []
+    seen = set()
+    for c in chunks:
+        vid = c[:11]
+        if not re.match(r"^[a-zA-Z0-9_-]{11}$", vid) or vid in seen:
+            continue
+        seen.add(vid)
+        m_title = re.search(r'"title":\{"runs":\[\{"text":"([^"]+)"', c[:1800])
+        m_owner = re.search(r'"ownerText":\{"runs":\[\{"text":"([^"]+)"', c[:4000])
+        results.append({
+            "videoId": vid,
+            "title": m_title.group(1) if m_title else default_title,
+            "channel": m_owner.group(1) if m_owner else "",
+        })
+    return results
+
+
+def _fast_youtube_live_search(query: str, limit: int = 6, strict_match: bool = False):
     """Fast (<0.4s) YouTube Live filter query using persistent session, preserving exact relevance order."""
     import urllib.parse
     q = urllib.parse.quote(query)
-    # sp=EgJAAQ%253D%253D filters YouTube search strictly to active LIVE streams
-    url = f"https://www.youtube.com/results?search_query={q}&sp=EgJAAQ%253D%253D"
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-        "Accept-Language": "en-US,en;q=0.9",
+        "Accept-Language": "vi-VN,vi;q=0.9,en-US;q=0.8,en;q=0.7",
     }
-    resp = _session.get(url, headers=headers, timeout=4)
-    html = resp.text
+    tokens = [
+        t.lower() for t in re.split(r"\W+", query)
+        if len(t) >= 2 and t.lower() not in _YT_STOPWORDS
+    ]
 
-    # Extract (videoId, title) pairs from videoRenderer blocks in exact relevance order
-    matches = re.findall(
-        r'"videoRenderer":\{"videoId":"([a-zA-Z0-9_-]{11})".*?"title":\{"runs":\[\{"text":"([^"]+)"',
-        html,
-    )
-    results = []
-    seen = set()
-    for vid, title in matches:
-        if vid not in seen:
-            seen.add(vid)
-            results.append({"videoId": vid, "title": title})
-            if len(results) >= limit:
-                return results
+    def matches_tokens(item):
+        if not tokens:
+            return True
+        hay = f"{item.get('title', '')} {item.get('channel', '')}".lower()
+        return any(tok in hay for tok in tokens)
 
-    # Fallback if title structure differs
-    for vid in re.findall(r'"videoId":"([a-zA-Z0-9_-]{11})"', html):
-        if vid not in seen:
-            seen.add(vid)
-            results.append({"videoId": vid, "title": query})
-            if len(results) >= limit:
-                break
+    # 1. Search active LIVE streams (sp=EgJAAQ%253D%253D)
+    url_live = f"https://www.youtube.com/results?search_query={q}&sp=EgJAAQ%253D%253D"
+    resp = _session.get(url_live, headers=headers, timeout=4)
+    live_items = _parse_youtube_renderers(resp.text, query)
+    matched_live = [x for x in live_items if matches_tokens(x)]
 
-    return results
+    if matched_live:
+        return matched_live[:limit]
+    if not strict_match and live_items:
+        return live_items[:limit]
+
+    # 2. Fallback for channels without an active 24/7 stream: fetch latest broadcasts from that exact channel
+    url_any = f"https://www.youtube.com/results?search_query={q}"
+    resp_any = _session.get(url_any, headers=headers, timeout=4)
+    any_items = _parse_youtube_renderers(resp_any.text, query)
+    matched_any = [x for x in any_items if matches_tokens(x)]
+    return (matched_any or any_items or live_items)[:limit]
 
 
 @app.route("/api/webcam/search", methods=["GET"])
@@ -823,7 +851,7 @@ def search_tv():
 
     try:
         # Keep exact top relevance matches for the requested channel/country — NEVER shuffle!
-        streams = _fast_youtube_live_search(query, limit=5)
+        streams = _fast_youtube_live_search(query, limit=5, strict_match=True)
         video_ids = [s["videoId"] for s in streams]
         res = {"videoIds": video_ids, "streams": streams, "query": query}
         if video_ids:
