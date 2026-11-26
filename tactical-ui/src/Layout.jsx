@@ -554,6 +554,15 @@ const Layout = ({ user, showGreeting, onEnterDashboard, onLogout, onUsernameChan
  const bringToFront = useStore(state => state.bringToFront);
  const mobileActiveTab = useStore(state => state.mobileActiveTab);
  const setMobileActiveTab = useStore(state => state.setMobileActiveTab);
+ const mapOverlayOpen = useStore(state => state.mapOverlayOpen);
+ const toggleMapOverlayOpen = useStore(state => state.toggleMapOverlayOpen);
+ const activeOverlayCount = useStore(state => state.mapConfig.activeOverlays.length);
+ const rangefinderActive = useStore(state => state.rangefinderActive);
+ const toggleRangefinder = useStore(state => state.toggleRangefinder);
+ const geofenceActive = useStore(state => state.geofenceActive);
+ const toggleGeofence = useStore(state => state.toggleGeofence);
+ const predictiveTrackingActive = useStore(state => state.predictiveTracking.active);
+ const togglePredictiveTracking = useStore(state => state.togglePredictiveTracking);
 
  const [isRegistryOpen, setIsRegistryOpen] = useState(false);
  const [isWatcherOpen, setIsWatcherOpen] = useState(false);
