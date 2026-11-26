@@ -521,7 +521,7 @@ const ModuleContent = React.memo(({ id, activeCountry }) => {
   }
 });
 
-// ═══ TACTICAL DATE & LIVE CLOCK HUD PILL (Top-Right of Map Stage) ═══
+// ═══ TACTICAL DATE & LIVE CLOCK HUD PILL (Top-Right of Map Stage — Vietnam Time ICT / UTC+7) ═══
 const TopBarClock = () => {
   const [time, setTime] = useState(new Date());
   useEffect(() => {
@@ -529,9 +529,8 @@ const TopBarClock = () => {
     return () => clearInterval(timer);
   }, []);
 
-  const dateStr = time.toLocaleDateString('en-CA'); // YYYY-MM-DD
-  const localTimeStr = time.toLocaleTimeString('en-GB', { hour12: false });
-  const utcTimeStr = time.toISOString().slice(11, 19);
+  const vnDateStr = time.toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' }); // YYYY-MM-DD in VN
+  const vnTimeStr = time.toLocaleTimeString('en-GB', { timeZone: 'Asia/Ho_Chi_Minh', hour12: false });
 
   return (
     <div
@@ -543,14 +542,14 @@ const TopBarClock = () => {
     >
       <span className="w-1.5 h-1.5 rounded-full bg-[#39e75f] shadow-[0_0_6px_#39e75f] shrink-0" />
       <span className="text-[9px] sm:text-[10px] font-bold text-[#eef6ee] tracking-[0.14em] tabular-nums whitespace-nowrap">
-        {dateStr}
+        {vnDateStr}
       </span>
       <span className="text-[#39e75f]/45 text-[9px]">//</span>
       <span className="text-[9px] sm:text-[10px] font-bold text-[#39e75f] tracking-[0.14em] tabular-nums whitespace-nowrap">
-        {localTimeStr}
+        {vnTimeStr}
       </span>
-      <span className="hidden md:inline text-[8px] text-[#a3cca7]/70 tracking-widest uppercase ml-0.5 tabular-nums">
-        ({utcTimeStr} UTC)
+      <span className="text-[8px] text-[#a3cca7]/75 tracking-widest uppercase tabular-nums">
+        ICT
       </span>
     </div>
   );

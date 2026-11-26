@@ -406,11 +406,13 @@ class TacticalAudioEngine {
   _splitSentencesForTTS(rawText) {
     const clean = (rawText || '')
       .replace(/\[INCOMING TRANSMISSION[^\]]*\]/gi, '')
+      .replace(/AWAITING YOUR COMMAND[.:]?[\s\S]*$/gi, '')
+      .replace(/(?:^|\s)\/(?:sitrep|threats|airspace|intercept|maritime|briefing|forecast|[a-z0-9_-]{2,20})\b/gi, ' ')
       .replace(/\*{1,3}([^*]+)\*{1,3}/g, '$1')
       .replace(/`([^`]+)`/g, '$1')
       .replace(/^#+\s*/gm, '')
       .replace(/\/\//g, ',')
-      .replace(/[▸⚠]/g, '')
+      .replace(/[▸⚠|]/g, ' ')
       .replace(/\s+/g, ' ')
       .trim()
       .slice(0, 8000);
